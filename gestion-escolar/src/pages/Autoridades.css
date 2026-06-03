@@ -1,0 +1,110 @@
+/* src/pages/Autoridades.css */
+
+.autoridades-page {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #f8fafc;
+  overflow-x: hidden;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* =======================================================
+   HERO BANNER (FONDO VERDE CON ESPACIO PARA SUPERPONER)
+   ======================================================= */
+.hero-autoridades {
+  background-color: #008C5A;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 2px, transparent 2px);
+  background-size: 30px 30px;
+  padding: 8rem 5% 12rem; /* Mucho padding inferior */
+  text-align: center;
+  color: white;
+}
+
+.titulo-autoridades {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 900;
+  margin: 1.5rem 0 1rem;
+  letter-spacing: -1px;
+}
+
+/* =======================================================
+   GRID DE TARJETAS FLOTANTES
+   ======================================================= */
+.autoridades-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 3rem;
+  max-width: 1400px;
+  margin: -120px auto 6rem; /* El margen negativo las hace flotar sobre lo verde */
+  padding: 0 5%;
+  position: relative;
+  z-index: 10;
+}
+
+/* Diseño individual de cada tarjeta */
+.autoridad-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1);
+  overflow: hidden;
+  text-align: center;
+  padding-bottom: 2.5rem;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  border: 1px solid #f1f5f9;
+}
+
+.autoridad-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 30px 60px -15px rgba(0,0,0,0.2);
+}
+
+/* Banda de color en la parte superior de la tarjeta */
+.card-header-accent {
+  height: 120px;
+  background: linear-gradient(135deg, #002a4a 0%, #0068B3 100%);
+  position: relative;
+}
+
+/* Avatar circular (Foto de perfil) */
+.autoridad-avatar {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 6px solid white;
+  object-fit: cover;
+  margin: -75px auto 1.5rem; /* La mitad está en lo azul, la mitad en lo blanco */
+  background-color: #e2e8f0;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 2;
+}
+
+.autoridad-nombre {
+  color: #002a4a;
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0 1.5rem 0.5rem;
+}
+
+.autoridad-cargo {
+  display: inline-block;
+  background: rgba(250, 181, 41, 0.15); /* Fondo doradito translúcido */
+  color: #d97706; /* Texto dorado oscuro */
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.5rem 1.2rem;
+  border-radius: 50px;
+  margin: 0 1.5rem;
+}
+
+/* Mensaje cuando no hay datos */
+.mensaje-vacio {
+  grid-column: 1 / -1;
+  background: white;
+  padding: 4rem;
+  border-radius: 20px;
+  text-align: center;
+  color: #64748b;
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1);
+}

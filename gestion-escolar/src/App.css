@@ -1,0 +1,173 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+:root {
+  --color-verde: #008C5A;
+  --color-azul: #0068B3;
+  --color-amarillo: #FAB529;
+  --color-negro: #030405;
+  --color-blanco: #FFFFFF;
+  --fondo-gris: #F8FAFC;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  background-color: var(--fondo-gris);
+  color: var(--color-negro);
+  /* Patrón de puntos sutil para fondo moderno */
+  background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.contenedor-principal {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centra el contenido horizontalmente */
+}
+
+/* Navbar flotante y moderna (Glassmorphism) */
+.navbar {
+  width: 90%;
+  max-width: 1200px;
+  margin-top: 1.5rem;
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 9999px; /* Forma redonda de píldora */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  position: sticky;
+  top: 1.5rem;
+  z-index: 100;
+}
+
+.logo-texto {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--color-verde);
+  letter-spacing: -0.5px;
+}
+
+.btn-login-nav {
+  background-color: var(--color-amarillo);
+  color: var(--color-negro);
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-login-nav:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(250, 181, 41, 0.4);
+}
+
+/* Sección Central (Hero) */
+.hero-section {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 2rem;
+}
+
+.hero-contenido {
+  max-width: 850px;
+  background-color: var(--color-blanco);
+  padding: 4rem 3rem;
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+/* Línea decorativa superior con los 3 colores */
+.hero-contenido::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, var(--color-verde) 0%, var(--color-amarillo) 50%, var(--color-azul) 100%);
+}
+
+/* Corrección de la tipografía superpuesta */
+.titulo-principal {
+  font-size: 3.2rem;
+  font-weight: 800;
+  color: var(--color-negro);
+  margin-bottom: 1.5rem;
+  line-height: 1.1; /* <-- Esto arregla el problema de que se monten las letras */
+  letter-spacing: -1px;
+}
+
+.titulo-resaltado {
+  color: var(--color-verde);
+  display: block; /* <-- Obliga al texto a bajar limpiamente a la siguiente línea */
+  margin-top: 0.5rem;
+}
+
+.subtitulo {
+  font-size: 1.15rem;
+  color: #6B7280;
+  margin-bottom: 2.5rem;
+  line-height: 1.6;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Botones Principales */
+.grupo-botones {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.btn-primario, .btn-secundario {
+  padding: 0.9rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primario {
+  background-color: var(--color-verde);
+  color: var(--color-blanco);
+  border: none;
+  box-shadow: 0 4px 15px rgba(0, 140, 90, 0.25);
+}
+
+.btn-primario:hover {
+  background-color: #007048;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 140, 90, 0.35);
+}
+
+.btn-secundario {
+  background-color: transparent;
+  color: var(--color-azul);
+  border: 2px solid var(--color-azul);
+}
+
+.btn-secundario:hover {
+  background-color: var(--color-azul);
+  color: var(--color-blanco);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 104, 179, 0.2);
+}

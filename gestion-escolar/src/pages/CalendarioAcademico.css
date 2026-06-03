@@ -1,0 +1,234 @@
+/* src/pages/CalendarioAcademico.css */
+
+.calendario-acad-page {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+/* =======================================================
+   HERO BANNER
+   ======================================================= */
+.hero-calendario-acad {
+  background-color: #008C5A;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 2px, transparent 2px);
+  background-size: 30px 30px;
+  padding: 8rem 5% 12rem;
+  text-align: center;
+  color: white;
+}
+
+.titulo-calendario-acad {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 900;
+  margin: 1.5rem 0 1rem;
+  letter-spacing: -1px;
+}
+
+/* =======================================================
+   BANNER DE DESCARGA PDF
+   ======================================================= */
+.banner-descarga-pdf {
+  max-width: 1000px;
+  margin: -60px auto 3rem;
+  background: white;
+  border-radius: 16px;
+  padding: 2rem 3rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 10;
+  border-left: 8px solid #FAB529;
+}
+
+.banner-descarga-info h3 {
+  color: #002a4a;
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.banner-descarga-info p {
+  color: #64748b;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.btn-descargar-pdf {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background-color: #002a4a;
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-descargar-pdf:hover {
+  background-color: #0068B3;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 104, 179, 0.2);
+}
+
+/* =======================================================
+   GRID DE TRIMESTRES
+   ======================================================= */
+.layout-trimestres {
+  max-width: 1300px;
+  margin: 0 auto 6rem;
+  padding: 0 5%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 3rem;
+}
+
+.trimestre-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+  border: 1px solid #f1f5f9;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.trimestre-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px -12px rgba(0,0,0,0.1);
+}
+
+/* Detalles de color para cada trimestre */
+.trimestre-card.t1 { border-top: 6px solid #0068B3; }
+.trimestre-card.t2 { border-top: 6px solid #008C5A; }
+.trimestre-card.t3 { border-top: 6px solid #FAB529; }
+.trimestre-card.vacaciones { border-top: 6px solid #ef4444; }
+
+.trimestre-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 1.5rem;
+}
+
+.trimestre-header h3 {
+  color: #002a4a;
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.trimestre-meses {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 0.4rem 1rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* =======================================================
+   LÍNEA DE TIEMPO INTERNA
+   ======================================================= */
+.hito-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: relative;
+}
+
+/* La línea vertical conectora */
+.hito-lista::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 24px;
+  width: 2px;
+  background-color: #e2e8f0;
+  z-index: 1;
+}
+
+.hito-item {
+  display: flex;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.hito-fecha-circulo {
+  width: 50px;
+  height: 50px;
+  background: white;
+  border: 2px solid #cbd5e1;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.hito-item.destacado .hito-fecha-circulo {
+  border-color: #002a4a;
+  background: #002a4a;
+  color: white;
+}
+
+.hito-dia {
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.hito-mes {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.hito-item.destacado .hito-mes, .hito-item.destacado .hito-dia {
+  color: white;
+}
+
+.hito-info {
+  padding-top: 0.3rem;
+}
+
+.hito-info h4 {
+  color: #002a4a;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 0.4rem 0;
+}
+
+.hito-info p {
+  color: #64748b;
+  font-size: 0.95rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Responsivo */
+@media (max-width: 900px) {
+  .layout-trimestres {
+    grid-template-columns: 1fr;
+  }
+  .banner-descarga-pdf {
+    flex-direction: column;
+    text-align: center;
+    gap: 1.5rem;
+    padding: 2rem;
+  }
+}

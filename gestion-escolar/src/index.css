@@ -1,0 +1,1131 @@
+/* src/index.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* PALETA DEL COLEGIO */
+  --color-verde: #008C5A;
+  --color-azul: #0068B3;
+  --color-amarillo: #FAB529;
+  --color-negro: #030405;
+  --color-blanco: #FFFFFF;
+  --fondo-gris: #F8FAFC;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  background-color: var(--fondo-gris);
+  color: var(--color-negro);
+  background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.animacion-fade-in {
+  animation: fadeIn 0.4s ease-in-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* --- HERO ESTILO UDB --- */
+.hero-udb-style {
+  background-color: #008C5A;
+  /* Usamos un patrón SVG de fondo para simular las figuras geométricas de la UDB */
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230068b3' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  min-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-udb-content {
+  text-align: center;
+  max-width: 900px;
+  padding: 0 2rem;
+  position: relative;
+  z-index: 10;
+}
+
+.comilla-apertura, .comilla-cierre {
+  font-family: serif;
+  font-size: 8rem;
+  line-height: 0;
+  color: #FAB529; /* Celeste claro UDB */
+  position: absolute;
+  opacity: 0.8;
+}
+
+.comilla-apertura { top: 2rem; left: -2rem; }
+.comilla-cierre { bottom: -2rem; right: -2rem; }
+
+.hero-udb-content h1 {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1.2;
+  margin-bottom: 2rem;
+}
+
+.hero-udb-content h1 span {
+  color: #FAB529; /* Celeste resaltado para la palabra clave */
+}
+
+.hero-logo-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 4rem;
+  background: rgba(0,0,0,0.2);
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  backdrop-filter: blur(5px);
+}
+
+.hero-logo-bottom h2 {
+  color: white;
+  font-size: 1.5rem;
+  margin: 0;
+  text-align: left;
+  line-height: 1.1;
+}
+
+/* Flechas laterales simuladas */
+.hero-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.hero-arrow:hover {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.2);
+}
+
+.hero-arrow.left { left: 2rem; }
+.hero-arrow.right { right: 2rem; }
+
+/* --- SECCIÓN ESTADÍSTICAS (Estilo Universitario) --- */
+.seccion-stats-udb {
+  background-color: #008C5A; /* Verde Institucional de fondo */
+  color: white;
+  padding: 5rem 5%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Figura geométrica de adorno */
+.seccion-stats-udb::before {
+  content: '';
+  position: absolute;
+  top: -50px; right: -50px;
+  width: 200px; height: 200px;
+  border: 20px solid rgba(255,255,255,0.1);
+  border-radius: 50%;
+}
+
+.stats-grid-udb {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.stat-item-udb h3 {
+  font-size: 4rem;
+  font-weight: 800;
+  color: #FAB529; /* Números en Amarillo */
+  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+
+.stat-item-udb p {
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+/* =======================================================
+   ENCABEZADO PREMIUM (¡NIVEL JAW-DROPPING!)
+   ======================================================= */
+
+/* ¡AQUÍ ESTÁ EL PUNTO QUE FALTABA! */
+.premium-header-wrapper {
+  text-align: center;
+  margin-bottom: 5.5rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 1rem;
+}
+
+/* Resplandor de fondo ANIMADO (Mezcla Dorado y Azul) */
+.premium-header-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 450px;
+  height: 250px;
+  background: radial-gradient(circle, rgba(250, 181, 41, 0.15) 0%, rgba(0, 104, 179, 0.08) 40%, rgba(255,255,255,0) 70%);
+  z-index: 0;
+  pointer-events: none;
+  filter: blur(25px);
+  animation: latidoResplandor 4s ease-in-out infinite alternate;
+}
+
+@keyframes latidoResplandor {
+  0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
+  100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+}
+
+/* La Etiqueta Superior (Badge de Lujo) */
+.badge-premium {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: linear-gradient(135deg, rgba(250, 181, 41, 0.15) 0%, rgba(250, 181, 41, 0.02) 100%);
+  color: #0068B3; /* Azul Institucional */
+  border: 1px solid rgba(250, 181, 41, 0.5); /* Borde dorado translúcido */
+  padding: 0.6rem 2rem;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 8px 20px rgba(250, 181, 41, 0.15);
+  backdrop-filter: blur(5px);
+}
+
+.badge-premium svg {
+  color: #FAB529; /* Estrella en dorado intenso */
+  filter: drop-shadow(0px 2px 4px rgba(250, 181, 41, 0.5));
+}
+
+/* El Título Principal Gigante y Dinámico */
+.titulo-premium {
+  font-size: clamp(3rem, 5vw, 4.8rem); /* Crece con la pantalla */
+  font-weight: 900;
+  color: #0068B3; /* Azul Institucional */
+  line-height: 1.1;
+  margin-bottom: 1.8rem;
+  letter-spacing: -2px;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 15px 35px rgba(0, 104, 179, 0.15);
+}
+
+/* El efecto Metálico Dorado para la palabra clave */
+.titulo-premium span.resalto-dorado {
+  background: linear-gradient(135deg, #FAB529 20%, #d97706 80%, #b45309 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  padding: 0 5px;
+  position: relative;
+  filter: drop-shadow(0px 4px 15px rgba(250, 181, 41, 0.4));
+}
+
+/* Subrayado de marcador debajo de la palabra dorada */
+.titulo-premium span.resalto-dorado::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  width: 100%;
+  height: 12px;
+  background-color: rgba(250, 181, 41, 0.25);
+  z-index: -1;
+  border-radius: 4px;
+}
+
+/* El Subtítulo Elegante */
+.subtitulo-premium {
+  font-size: 1.3rem;
+  color: #4b5563;
+  max-width: 750px;
+  margin: 0 auto;
+  line-height: 1.7;
+  font-weight: 500;
+  position: relative;
+  z-index: 1;
+}
+   
+.seccion-ruta-carrusel {
+  padding: 6rem 0;
+  background-color: #ffffff;
+  overflow: hidden;
+}
+
+.ruta-wrapper {
+  position: relative;
+  max-width: 1300px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+}
+
+/* La Línea de Fondo (Conector) */
+.ruta-linea-fondo {
+  position: absolute;
+  top: 70px; /* Alineada al centro de los círculos */
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(to right, #008C5A 0%, #0068B3 50%, #FAB529 100%);
+  opacity: 0.2;
+  z-index: 1;
+}
+
+.ruta-track {
+  display: flex;
+  gap: 0; /* Controlamos el espacio con el padding de los items */
+  overflow-x: auto;
+  padding: 2rem 0 4rem 0;
+  z-index: 2;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.ruta-track::-webkit-scrollbar { display: none; }
+
+/* Estación de la Ruta (Item) */
+.ruta-estacion {
+  min-width: 350px;
+  max-width: 350px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 2rem;
+  transition: transform 0.4s ease;
+}
+
+/* El Nodo Circular */
+.ruta-nodo {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: white;
+  border: 4px solid #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2.5rem;
+  position: relative;
+  z-index: 3;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+}
+
+.ruta-estacion:hover .ruta-nodo {
+  transform: scale(1.2);
+  border-color: var(--accent-color);
+  box-shadow: 0 15px 30px var(--glow-color);
+}
+
+/* Textos */
+.ruta-titulo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #FAB529; /* Dorado solicitado */
+  margin-bottom: 1rem;
+  letter-spacing: -0.5px;
+}
+
+.ruta-desc {
+  font-size: 1.05rem;
+  color: #4b5563;
+  line-height: 1.7;
+  max-width: 280px;
+}
+
+/* Botones de navegación circulares */
+.btn-ruta {
+  position: absolute;
+  top: 70px;
+  transform: translateY(-50%);
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid #e5e7eb;
+  color: #0068B3;
+  z-index: 10;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.btn-ruta:hover {
+  background: #FAB529;
+  color: white;
+  border-color: #FAB529;
+}
+
+.btn-ruta.prev { left: 20px; }
+.btn-ruta.next { right: 20px; }
+
+/* =======================================================
+   SECCIÓN OFERTA EDUCATIVA (ESTILO BENTO GRID BLANCO)
+   ======================================================= */
+
+.seccion-oferta {
+  background-color: #f8fafc; /* Gris/azulado súper claro */
+  padding: 8rem 5%;
+  position: relative;
+  width: 100%;
+}
+
+.oferta-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 5rem;
+  width: 100%;
+}
+
+.oferta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Tarjetas Principales */
+.tarjeta-oferta {
+  background-color: #ffffff;
+  border-radius: 24px;
+  padding: 4rem 3rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.03);
+  border: 1px solid #f1f5f9;
+  transition: all 0.4s ease;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Acentos de color superiores */
+.tarjeta-oferta.basica { border-top: 6px solid #008C5A; }
+.tarjeta-oferta.tecnico { border-top: 6px solid #0068B3; }
+
+.tarjeta-oferta:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.08);
+}
+
+/* Ícono gigante de fondo (Marca de agua) */
+.marca-agua-icono {
+  position: absolute;
+  right: -30px;
+  bottom: -30px;
+  width: 220px;
+  height: 220px;
+  opacity: 0.04;
+  transform: rotate(-15deg);
+  pointer-events: none;
+}
+
+/* Ícono Principal */
+.oferta-icono-principal {
+  width: 70px;
+  height: 70px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+}
+
+.tarjeta-oferta.basica .oferta-icono-principal { background-color: rgba(0, 140, 90, 0.1); color: #008C5A; }
+.tarjeta-oferta.tecnico .oferta-icono-principal { background-color: rgba(0, 104, 179, 0.1); color: #0068B3; }
+
+.tarjeta-oferta h3 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 1.2rem;
+  line-height: 1.1;
+  letter-spacing: -1px;
+}
+
+.tarjeta-oferta p {
+  font-size: 1.15rem;
+  color: #4b5563;
+  line-height: 1.7;
+  flex-grow: 1;
+  margin-bottom: 2rem;
+}
+
+/* Etiquetas (Pills) */
+.especialidades-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: auto;
+  width: 100%;
+}
+
+.tag-especialidad {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #0068B3;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.6rem 1.4rem;
+  border-radius: 50px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.tag-especialidad:hover {
+  background-color: #0068B3;
+  color: #ffffff;
+  border-color: #0068B3;
+  transform: translateY(-3px);
+}
+
+@media (min-width: 1024px) {
+  .tarjeta-oferta.tecnico { margin-top: 5rem; }
+}
+
+@media (max-width: 768px) {
+  .oferta-grid { grid-template-columns: 1fr; }
+  .tarjeta-oferta { padding: 3rem 1.5rem; }
+  .tarjeta-oferta h3 { font-size: 1.8rem; }
+}
+
+/* =======================================================
+   CARRUSEL DE SERVICIOS (PORTAL WEB, BIBLIOTECA, ETC.)
+   ======================================================= */
+
+.servicios-container {
+  max-width: 1200px;
+  margin: 4rem auto 0;
+  padding: 0 1rem;
+}
+
+.servicios-titulo {
+  text-align: center;
+  color: #0068B3; /* Azul Institucional */
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 2rem;
+  letter-spacing: -0.5px;
+}
+
+.servicios-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.servicios-track {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 1rem 0.5rem 2rem 0.5rem;
+  /* Ocultar scrollbar */
+  scrollbar-width: none; 
+  -ms-overflow-style: none;
+}
+
+.servicios-track::-webkit-scrollbar {
+  display: none;
+}
+
+/* Tarjeta individual del servicio */
+.servicio-card {
+  min-width: 240px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.servicio-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px rgba(0, 104, 179, 0.12); /* Sombra azulada */
+  border-color: #0068B3;
+}
+
+.servicio-icon {
+  color: #0068B3; /* Azul Institucional */
+  margin-bottom: 1.2rem;
+  transition: transform 0.3s ease;
+}
+
+.servicio-card:hover .servicio-icon {
+  transform: scale(1.1);
+}
+
+.servicio-title {
+  color: #111827;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+/* Botones laterales del carrusel de servicios */
+.btn-servicio-scroll {
+  background: white;
+  color: #4b5563;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  position: absolute;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.btn-servicio-scroll:hover {
+  background: #0068B3;
+  color: white;
+}
+
+.btn-servicio-scroll.prev { left: -20px; }
+.btn-servicio-scroll.next { right: -20px; }
+
+@media (max-width: 1250px) {
+  .btn-servicio-scroll.prev { left: 0px; }
+  .btn-servicio-scroll.next { right: 0px; }
+}
+@media (max-width: 768px) {
+  .btn-servicio-scroll { display: none; } /* En móvil deslizan con el dedo */
+}
+
+/* =======================================================
+   DIAPOSITIVA CARRUSEL: TARJETA DE INSCRIPCIÓN (FULL WIDTH)
+   ======================================================= */
+
+.seccion-inscripcion-premium {
+  width: 100%;
+  height: 100%; /* Para que se estire al alto del carrusel */
+  display: flex;
+  padding: 0; /* ¡Clave! Quitamos el espacio a los lados */
+}
+
+/* El fondo verde de borde a borde */
+.banner-premium {
+  display: flex;
+  width: 100%;
+  max-width: 100%; /* ¡Clave! Le decimos que ocupe el 100% de la pantalla */
+  border-radius: 0; /* Quitamos las curvas para que toque los bordes rectos */
+background: transparent; /* ¡MAGIA! Se funde con el fondo del carrusel */  overflow: hidden; 
+  box-shadow: none; /* Quitamos la sombra porque ya no es una tarjeta flotante */
+}
+
+/* COLUMNA IZQUIERDA: TEXTOS */
+.inscripcion-info {
+  flex: 1;
+  /* Usamos porcentajes (%) en los lados para que no quede pegado a la orilla del monitor */
+  padding: 4rem 8%; 
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+}
+
+.inscripcion-info .eyebrow {
+  color: #FAB529; /* Dorado */
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 0.8rem;
+}
+
+.inscripcion-info .titulo-seccion {
+  color: white;
+  font-size: 3.5rem; /* Un poco más grande ya que hay más espacio */
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 1.2rem;
+}
+
+.inscripcion-info p {
+  color: white;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  max-width: 600px; /* Para que el texto no se estire demasiado a lo ancho */
+}
+
+/* Lista sin puntos y ordenada */
+.guia-pasos-mini {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.guia-pasos-mini li {
+  color: white;
+  font-size: 1.05rem;
+}
+
+.guia-pasos-mini strong {
+  color: #FAB529; /* Dorado para los números */
+}
+
+/* Botón */
+.btn-premium-aplicar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #FAB529;
+  color: #111827;
+  padding: 1rem 2.5rem;
+  border-radius: 50px;
+  font-weight: 800;
+  text-decoration: none;
+  align-self: flex-start;
+  transition: transform 0.2s;
+}
+
+.btn-premium-aplicar:hover {
+  transform: translateY(-3px);
+  background-color: #fdd835;
+}
+
+/* COLUMNA DERECHA: IMAGEN */
+.inscripcion-estudiantes {
+  flex: 1;
+  display: flex; 
+  min-height: 100%;
+}
+
+.composicion-estudiantes {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Responsivo para celulares */
+@media (max-width: 900px) {
+  .banner-premium { flex-direction: column; }
+  .inscripcion-info { padding: 3rem 5%; }
+  .inscripcion-estudiantes { min-height: 400px; }
+  .inscripcion-info .titulo-seccion { font-size: 2.5rem; }
+}
+/* =======================================================
+   ESTILOS PARA EL SLIDER DEL HERO (CARRUSEL PRINCIPAL)
+   ======================================================= */
+
+.hero-slider-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  /* La transición define la suavidad del deslizamiento */
+  transition: transform 0.7s cubic-bezier(0.25, 1, 0.5, 1); 
+}
+
+.hero-slide {
+  width: 100%;
+  flex-shrink: 0; /* Evita que las pantallas se aplasten */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Ajuste de z-index para que las flechas siempre estén clickeables */
+.hero-arrow {
+  z-index: 20;
+}
+
+/* =======================================================
+   FOOTER PREMIUM: ESTRUCTURA Y ESTILOS
+   ======================================================= */
+
+footer {
+  background-color: #f1f5f9; /* Gris muy claro, limpio y profesional */
+  color: #334155;
+  padding: 4rem 5% 2rem 5%;
+  border-top: 5px solid #0068B3; /* Línea superior Azul Institucional */
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 3rem;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+/* --- COLUMNA 1: LOGO E INFO --- */
+.footer-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.footer-logo-container img {
+  width: 60px;
+}
+
+.footer-logo-text h2 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #002a4a;
+  margin: 0;
+}
+
+.footer-logo-text p {
+  font-size: 0.9rem;
+  color: #0068B3;
+  margin: 0;
+  font-weight: 700;
+}
+
+.footer-info p {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin-bottom: 0.8rem;
+}
+
+/* --- COLUMNA 2 Y 3: TÍTULOS Y LINKS --- */
+.footer-titulo {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #002a4a;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.footer-links {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-links li {
+  margin-bottom: 0.8rem;
+}
+
+.footer-links a {
+  text-decoration: none;
+  color: #475569;
+  font-size: 0.95rem;
+  transition: color 0.3s;
+}
+
+.footer-links a:hover {
+  color: #0068B3;
+  padding-left: 5px;
+}
+
+/* --- REDES SOCIALES --- */
+.social-icons {
+  display: flex;
+  gap: 1rem;
+}
+
+.social-icons a {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #0068B3;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 0.8rem;
+  transition: all 0.3s;
+}
+
+.social-icons a:hover {
+  background: #FAB529; /* Dorado */
+  color: #111827;
+  transform: translateY(-3px);
+}
+
+/* --- FOOTER BOTTOM --- */
+.footer-bottom {
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid #cbd5e1;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+/* =======================================================
+   SECCIÓN NOTICIAS: ESTILO PORTAL (COLORES INSTITUCIONALES)
+   ======================================================= */
+
+.seccion-portal-noticias {
+  background-color: #f8fafc; /* Gris muy limpio para resaltar los colores */
+  padding: 5rem 5%;
+  font-family: 'Inter', sans-serif;
+}
+
+.portal-layout {
+  display: grid;
+  grid-template-columns: 2.2fr 1fr;
+  gap: 4rem;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+/* --- ENCABEZADOS ESTILO BOTÓN (Azul Institucional) --- */
+.portal-header-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 1rem;
+}
+
+.portal-badge-title {
+  background-color: #0068B3; /* Azul Institucional */
+  color: white;
+  padding: 0.6rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.portal-badge-title:hover {
+  background-color: #004d80; /* Azul más oscuro al pasar el mouse */
+  transform: translateY(-2px);
+}
+
+/* --- COLUMNA IZQUIERDA: PUBLICACIONES (NOTICIAS) --- */
+.publicaciones-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.publicacion-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.pub-img-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.1 / 1;
+  margin-bottom: 1.2rem;
+  overflow: hidden;
+  border-radius: 6px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.pub-img-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.publicacion-item:hover .pub-img-container img {
+  transform: scale(1.08);
+}
+
+/* Etiqueta flotante en la foto (Dorado) */
+.pub-tag {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background-color: #FAB529; /* Dorado Institucional */
+  color: #111827; /* Texto oscuro para contraste */
+  padding: 0.3rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  z-index: 2;
+  text-transform: uppercase;
+}
+
+/* Textos de la noticia */
+.pub-titulo {
+  font-size: 1.15rem;
+  color: #002a4a; /* Azul muy oscuro para el texto */
+  font-weight: 800;
+  line-height: 1.3;
+  margin-bottom: 0.5rem;
+  transition: color 0.3s;
+}
+
+.publicacion-item:hover .pub-titulo {
+  color: #0068B3; /* Se ilumina en azul al pasar el mouse */
+}
+
+.pub-fecha {
+  font-size: 0.8rem;
+  color: #008C5A; /* Verde Institucional */
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pub-extracto {
+  font-size: 0.9rem;
+  color: #4b5563;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  flex-grow: 1;
+}
+
+.pub-visitas {
+  text-align: right;
+  font-size: 0.75rem;
+  color: #008C5A; /* Verde Institucional */
+  font-weight: 800;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid rgba(0, 140, 90, 0.2);
+  border-radius: 50px;
+  align-self: flex-end;
+  background-color: rgba(0, 140, 90, 0.05);
+}
+
+/* --- COLUMNA DERECHA: AGENDA Y EVENTOS --- */
+.agenda-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.8rem;
+}
+
+.agenda-item {
+  display: flex;
+  gap: 1.2rem;
+  align-items: flex-start;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: background-color 0.3s;
+}
+
+.agenda-item:hover {
+  background-color: white;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+}
+
+/* Cajita de la fecha (Borde Azul) */
+.agenda-fecha-box {
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.5rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 65px;
+  background: white;
+  transition: border-color 0.3s;
+}
+
+.agenda-item:hover .agenda-fecha-box {
+  border-color: #0068B3; /* Se pinta de azul al hacer hover */
+}
+
+.agenda-fecha-box .dia {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #0068B3; /* Azul Institucional */
+  line-height: 1;
+}
+
+.agenda-fecha-box .mes {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+/* Contenido del evento */
+.agenda-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.agenda-tag {
+  background-color: #008C5A; /* Verde Institucional */
+  color: white;
+  padding: 0.2rem 0.8rem;
+  border-radius: 50px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  align-self: flex-start;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.agenda-titulo {
+  font-size: 0.95rem;
+  color: #002a4a; /* Azul muy oscuro */
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* RESPONSIVO */
+@media (max-width: 1024px) {
+  .portal-layout { grid-template-columns: 1fr; gap: 3rem; }
+  .publicaciones-grid { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+}
+

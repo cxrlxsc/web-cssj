@@ -1,0 +1,342 @@
+/* src/pages/Noticias.css */
+
+.noticias-page {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+/* Banner Superior */
+.hero-noticias {
+  background-color: #008C5A;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 2px, transparent 2px);
+  background-size: 30px 30px;
+  padding: 8rem 5% 12rem;
+  text-align: center;
+  color: white;
+}
+
+.titulo-noticias {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 900;
+  margin: 1.5rem 0 1rem;
+  letter-spacing: -1px;
+}
+
+/* Layout Principal: 2 Columnas (Noticias | Agenda) */
+.layout-noticias {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 3rem;
+  max-width: 1400px;
+  margin: -100px auto 6rem;
+  padding: 0 5%;
+  position: relative;
+  z-index: 10;
+  align-items: start;
+}
+
+/* =======================================================
+   COLUMNA IZQUIERDA: CUADRÍCULA DE NOTICIAS
+   ======================================================= */
+.grid-noticias {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+}
+
+.noticia-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 15px 35px -10px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+}
+
+.noticia-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
+}
+
+.noticia-img-wrapper {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+}
+
+.noticia-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.noticia-card:hover .noticia-img {
+  transform: scale(1.05);
+}
+
+.noticia-content {
+  padding: 1.8rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.noticia-badge {
+  background: #e0f2fe;
+  color: #0068B3;
+  padding: 0.3rem 0.8rem;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: inline-block;
+  width: max-content;
+  margin-bottom: 1rem;
+}
+
+.noticia-badge.deportes { background: #fef3c7; color: #d97706; }
+.noticia-badge.institucional { background: #dcfce7; color: #166534; }
+
+.noticia-title {
+  color: #002a4a;
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 0.8rem;
+  line-height: 1.4;
+}
+
+.noticia-excerpt {
+  color: #64748b;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.noticia-footer {
+  margin-top: auto;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 1rem;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-leer-mas {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #0068B3;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.btn-leer-mas svg {
+  transition: transform 0.2s ease;
+}
+
+.noticia-card:hover .btn-leer-mas svg {
+  transform: translateX(3px);
+}
+
+/* =======================================================
+   COLUMNA DERECHA: AGENDA PEGADO (STICKY)
+   ======================================================= */
+.sidebar-agenda {
+  background: white;
+  border-radius: 24px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.08);
+  border: 1px solid #f1f5f9;
+  border-top: 6px solid #FAB529; /* Acento dorado */
+  position: sticky;
+  top: 100px; /* Hace que flote al hacer scroll */
+}
+
+.sidebar-agenda h3 {
+  color: #002a4a;
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.evento-item {
+  display: flex;
+  gap: 1.2rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.evento-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* Hoja de Calendario */
+.evento-fecha {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  min-width: 70px;
+  height: 80px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  flex-shrink: 0;
+}
+
+.evento-mes {
+  background: #0068B3;
+  color: white;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.3rem 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.evento-dia {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #002a4a;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.evento-info h4 {
+  color: #002a4a;
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 0.4rem 0;
+  line-height: 1.3;
+}
+
+.evento-info p {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.evento-categoria {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.evento-categoria.academico { background: #f1f5f9; color: #475569; }
+.evento-categoria.importante { background: #fee2e2; color: #b91c1c; }
+
+/* Responsivo */
+@media (max-width: 1024px) {
+  .layout-noticias {
+    grid-template-columns: 1fr;
+  }
+  .sidebar-agenda {
+    position: relative;
+    top: 0;
+  }
+}
+/* =======================================================
+   ESTILOS PREMIUM PARA REACT-CALENDAR
+   ======================================================= */
+.calendario-contenedor .react-calendar {
+  width: 100%;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  background: white;
+}
+
+.react-calendar__navigation button {
+  color: #002a4a;
+  font-weight: 800;
+  font-size: 1.1rem;
+  border-radius: 8px;
+}
+
+.react-calendar__navigation button:enabled:hover,
+.react-calendar__navigation button:enabled:focus {
+  background-color: #f1f5f9;
+}
+
+.react-calendar__month-view__weekdays {
+  text-transform: uppercase;
+  font-weight: 800;
+  color: #64748b;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.react-calendar__month-view__weekdays__weekday abbr {
+  text-decoration: none; /* Quita el subrayado feo de los días */
+}
+
+/* Días normales */
+.react-calendar__tile {
+  padding: 0.8rem 0.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.react-calendar__tile:enabled:hover,
+.react-calendar__tile:enabled:focus {
+  background-color: #e0f2fe;
+  color: #0068B3;
+}
+
+/* Día actual (Hoy) */
+.react-calendar__tile--now {
+  background: #fef9c3;
+  color: #d97706;
+}
+
+/* Día seleccionado */
+.react-calendar__tile--active,
+.react-calendar__tile--active:enabled:hover,
+.react-calendar__tile--active:enabled:focus {
+  background: #008C5A !important;
+  color: white !important;
+  box-shadow: 0 4px 10px rgba(0, 140, 90, 0.3);
+}
+
+/* DÍAS CON EVENTOS (El puntito indicador) */
+.dia-con-evento {
+  position: relative;
+  font-weight: 800;
+  color: #002a4a;
+}
+
+.dia-con-evento::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  background-color: #FAB529; /* Puntito dorado */
+  border-radius: 50%;
+}
+.react-calendar__tile--active.dia-con-evento::after {
+  background-color: white; /* Si está seleccionado, el puntito se vuelve blanco */
+}

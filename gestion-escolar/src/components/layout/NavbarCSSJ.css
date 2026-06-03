@@ -1,0 +1,175 @@
+/* =======================================================
+   NAVBAR COMPLETA - ESTILOS BASE, MENÚS Y ANIMACIÓN
+   ======================================================= */
+
+/* 1. Fondo de la barra y posición pegajosa */
+.udb-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: #008C5A; /* Verde Institucional */
+  transition: box-shadow 0.3s ease;
+}
+
+.udb-header.scrolled {
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.udb-nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 5%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* 2. Logo y Texto */
+.udb-logo-wrapper { display: flex; align-items: center; gap: 1rem; text-decoration: none; }
+.udb-logo-text h1 { font-size: 1.2rem; font-weight: 800; margin: 0; color: white; line-height: 1.1; }
+.udb-logo-text p { font-size: 0.75rem; margin: 0; color: #FAB529; font-weight: 700; }
+
+/* 3. Enlaces del centro */
+.udb-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* =======================================================
+   4. LOGICA DE LOS SUB-MENÚS (MEGA MENUS)
+   ======================================================= */
+.udb-nav-item {
+  position: relative; /* Clave para que el sub-menú sepa dónde anclarse */
+  padding: 1rem 0; /* Área de contacto más grande para que el menú no desaparezca al mover el mouse */
+}
+
+.udb-nav-link {
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.udb-nav-link:hover { 
+  color: #FAB529; 
+}
+
+/* El cuadro blanco que cae */
+.udb-mega-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(15px); /* Centrado y un poco abajo */
+  background-color: #ffffff;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+  border-radius: 12px;
+  padding: 1.8rem;
+  display: flex;
+  gap: 2.5rem;
+  
+  /* Oculto por defecto */
+  opacity: 0;
+  visibility: hidden; 
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+/* MOSTRAR EL MENÚ AL HACER HOVER */
+.udb-nav-item:hover .udb-mega-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0); /* Sube suavemente y aparece */
+}
+
+/* Columnas y Enlaces dentro del cuadro blanco */
+.mega-menu-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  min-width: max-content;
+}
+
+.mega-menu-link {
+  color: #334155;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.mega-menu-link:hover { 
+  color: #008C5A; /* Verde institucional al pasar el mouse */
+  font-weight: 700; 
+}
+
+
+/* =======================================================
+   5. EL BOTÓN QUE SE DESPRENDE (MAGIA DE SCROLL)
+   ======================================================= */
+/* 2. Alineación Horizontal (Flexbox) */
+.udb-nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 4%; /* El 4% es el espacio que deja en las orillas. Si lo quieres MÁS a la orilla, ponle 2% */
+  max-width: 100%; /* <-- ¡ESTA ES LA CLAVE! Cambiamos 1400px por 100% */
+  margin: 0 auto;
+}
+
+.udb-btn-amarillo {
+  background: linear-gradient(135deg, #FAB529 0%, #d97706 100%);
+  color: #ffffff;
+  padding: 0.8rem 2rem;
+  border-radius: 50px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Rebote */
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.udb-btn-amarillo svg { transition: transform 0.3s ease; }
+
+.udb-header:not(.scrolled) .udb-btn-amarillo:hover {
+  transform: translateY(-3px);
+  background: linear-gradient(135deg, #fdd835 0%, #FAB529 100%);
+  box-shadow: 0 10px 20px rgba(250, 181, 41, 0.4);
+}
+
+.udb-header:not(.scrolled) .udb-btn-amarillo:hover svg { transform: translateX(4px); }
+
+/* Cuando bajas por la página... */
+.udb-header.scrolled .udb-btn-amarillo {
+  transform: translateY(120px); /* Se descuelga 65px */
+  box-shadow: 0 15px 30px rgba(250, 181, 41, 0.5); 
+}
+
+.udb-header.scrolled .udb-btn-amarillo:hover {
+  transform: translateY(120px) scale(1.03); 
+  background: linear-gradient(135deg, #fdd835 0%, #FAB529 100%);
+}
+
+.udb-header.scrolled .udb-btn-amarillo:hover svg { transform: translateX(4px); }
+
+/* Responsivo para móviles */
+@media (max-width: 950px) {
+  .udb-nav-links { display: none; } 
+  .udb-logo-text h1 { font-size: 1rem; }
+  .udb-btn-amarillo { padding: 0.6rem 1.2rem; font-size: 0.8rem; }
+  .udb-header.scrolled .udb-btn-amarillo { transform: translateY(0); } /* En celular no se descuelga */
+}

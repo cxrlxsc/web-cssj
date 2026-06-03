@@ -1,0 +1,204 @@
+/* src/pages/About.css */
+
+.about-container { 
+  font-family: 'Inter', system-ui, sans-serif; 
+  background-color: #ffffff; 
+}
+
+/* =======================================================
+   BANNER HERO (PATRÓN DE PUNTOS COMO EL HOME)
+   ======================================================= */
+.hero-nosotros {
+  background-color: #008C5A;
+  /* El mismo patrón de puntos sutil del Home */
+  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 2px, transparent 2px);
+  background-size: 30px 30px;
+  padding: 8rem 5% 5rem; 
+  text-align: center;
+  position: relative;
+}
+
+.titulo-hero {
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  font-weight: 900;
+  color: white;
+  margin: 1.5rem 0;
+  letter-spacing: -1px;
+}
+
+.desc-hero {
+  font-size: 1.2rem;
+  max-width: 650px;
+  margin: 0 auto;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.6;
+}
+
+/* =======================================================
+   SECCIONES Y LAYOUT
+   ======================================================= */
+.seccion-premium {
+  padding: 6rem 8%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.seccion-premium.fondo-gris {
+  background-color: #f8fafc;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.col-texto { flex: 1; max-width: 600px; }
+.col-imagen { flex: 1; max-width: 600px; }
+
+.texto-base {
+  font-size: 1.15rem;
+  line-height: 1.8;
+  color: #64748b;
+  margin-top: 1.5rem;
+}
+
+/* =======================================================
+   IMÁGENES DECORADAS (EFECTO PREMIUM)
+   ======================================================= */
+.imagen-decorada-dorada, .imagen-decorada-verde {
+  position: relative;
+}
+
+/* Cuadro de color desplazado detrás de la imagen */
+.imagen-decorada-dorada::before, .imagen-decorada-verde::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  bottom: 20px;
+  border-radius: 16px;
+  z-index: 0;
+}
+
+.imagen-decorada-dorada::before {
+  left: -20px;
+  right: 20px;
+  background-color: #FAB529; /* Dorado */
+}
+
+.imagen-decorada-verde::before {
+  left: 20px;
+  right: -20px;
+  background-color: #008C5A; /* Verde */
+}
+
+.imagen-decorada-dorada img, .imagen-decorada-verde img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: 16px;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  transition: transform 0.4s ease;
+}
+
+.imagen-decorada-dorada img:hover, .imagen-decorada-verde img:hover {
+  transform: translateY(-5px);
+}
+
+/* =======================================================
+   GRID DE IDENTIDAD (TARJETAS ESTILO HOME)
+   ======================================================= */
+.identidad-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  width: 100%;
+  max-width: 1000px;
+  margin-top: 3rem;
+}
+
+.tarjeta-identidad {
+  background: white;
+  padding: 3rem 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+  text-align: left;
+  border-top: 4px solid #008C5A;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tarjeta-identidad:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 25px 45px rgba(0,140,90,0.1);
+}
+
+.icono-tarjeta {
+  background-color: #f1f5f9;
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+/* =======================================================
+   GRID DE VALORES
+   ======================================================= */
+.lista-valores-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+}
+
+.valor-item {
+  background: #f8fafc;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border-left: 4px solid #FAB529;
+  display: flex;
+  flex-direction: column;
+}
+
+.valor-item strong {
+  color: #002a4a;
+  font-size: 1.1rem;
+  margin-bottom: 0.3rem;
+}
+
+.valor-item span {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+/* =======================================================
+   RESPONSIVO
+   ======================================================= */
+@media (max-width: 950px) {
+  .seccion-premium { 
+    flex-direction: column; 
+    padding: 4rem 5%; 
+    gap: 3rem; 
+    text-align: center;
+  }
+  
+  .imagen-decorada-dorada::before, .imagen-decorada-verde::before { 
+    display: none; /* Quitamos el cuadro de fondo en celulares para ahorrar espacio */
+  }
+  
+  .identidad-grid, .lista-valores-grid { 
+    grid-template-columns: 1fr; 
+  }
+  
+  .tarjeta-identidad {
+    text-align: center;
+  }
+  
+  .icono-tarjeta {
+    margin: 0 auto 1.5rem auto;
+  }
+}

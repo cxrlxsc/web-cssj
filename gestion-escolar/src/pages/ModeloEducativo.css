@@ -1,0 +1,114 @@
+/* src/pages/ModeloEducativo.css */
+
+.modelo-page {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #ffffff;
+}
+
+/* Hero con el mismo estilo institucional */
+.hero-modelo {
+  background-color: #008C5A;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 2px, transparent 2px);
+  background-size: 30px 30px;
+  padding: 8rem 5% 10rem;
+  text-align: center;
+  color: white;
+}
+
+/* Contenedor Principal Flotante */
+.seccion-modelo-content {
+  max-width: 1300px;
+  margin: -80px auto 6rem;
+  padding: 0 5%;
+  position: relative;
+  z-index: 10;
+}
+
+/* PILARES EDUCATIVOS (Tarjetas horizontales) */
+.pilar-card {
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+  display: flex;
+  align-items: center;
+  gap: 4rem;
+  padding: 4rem;
+  margin-bottom: 4rem;
+  border: 1px solid #f1f5f9;
+}
+
+.pilar-card:nth-child(even) {
+  flex-direction: row-reverse;
+  background-color: #f8fafc;
+}
+
+.pilar-info { flex: 1; }
+.pilar-imagen { flex: 1; }
+
+.pilar-imagen img {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+  border-radius: 20px;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+}
+
+.pilar-info h3 {
+  color: #002a4a;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+}
+
+.pilar-info p {
+  color: #64748b;
+  font-size: 1.15rem;
+  line-height: 1.8;
+  margin-bottom: 2rem;
+}
+
+/* SECCIÓN DE ESPECIALIDADES TÉCNICAS */
+.grid-especialidades {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.especialidad-item {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 20px;
+  text-align: center;
+  border-bottom: 6px solid #FAB529; /* Dorado */
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+
+.especialidad-item:hover {
+  transform: translateY(-10px);
+  background-color: #002a4a;
+}
+
+.especialidad-item:hover h4, .especialidad-item:hover p {
+  color: white;
+}
+
+.especialidad-icon {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  display: block;
+}
+
+/* Responsivo */
+@media (max-width: 950px) {
+  .pilar-card, .pilar-card:nth-child(even) {
+    flex-direction: column;
+    padding: 2.5rem;
+    text-align: center;
+    gap: 2rem;
+  }
+  .pilar-imagen img {
+    height: 250px;
+  }
+}

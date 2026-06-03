@@ -1,0 +1,139 @@
+/* src/pages/Directorio.css */
+
+.directorio-page {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #f8fafc;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hero con el patrón de puntos institucional */
+.hero-directorio {
+  background-color: #008C5A;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 2px, transparent 2px);
+  background-size: 30px 30px;
+  padding: 8rem 5% 12rem;
+  text-align: center;
+  color: white;
+}
+
+.titulo-directorio {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 900;
+  margin: 1.5rem 0 1rem;
+  letter-spacing: -1px;
+}
+
+/* Contenedor Flotante Superpuesto */
+.seccion-directorio-content {
+  max-width: 1400px;
+  width: 100%;
+  margin: -100px auto 6rem;
+  padding: 0 5%;
+  position: relative;
+  z-index: 10;
+}
+
+/* Grid de Departamentos */
+.grid-directorio {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 2.5rem;
+}
+
+/* Tarjeta de Departamento Premium */
+.directorio-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2.5rem;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  border-top: 5px solid #0068B3; /* Azul por defecto */
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.directorio-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.12);
+}
+
+/* Variaciones de color en bordes superiores para armonía visual */
+.directorio-card.verde { border-top-color: #008C5A; }
+.directorio-card.dorado { border-top-color: #FAB529; }
+
+/* Encabezado de la tarjeta */
+.directorio-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.icon-directorio-wrapper {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background-color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0068B3;
+  flex-shrink: 0;
+}
+
+.directorio-card.verde .icon-directorio-wrapper { color: #008C5A; background-color: #f0fdf4; }
+.directorio-card.dorado .icon-directorio-wrapper { color: #d97706; background-color: #fef9c3; }
+
+.directorio-card-header h3 {
+  color: #002a4a;
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.directorio-encargado {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin: 0.2rem 0 0 0;
+  font-weight: 500;
+}
+
+/* Cuerpo de información interna */
+.directorio-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 1.2rem;
+}
+
+.info-linea-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: #334155;
+  font-size: 1rem;
+}
+
+.info-linea-item svg {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.info-linea-item strong {
+  color: #002a4a;
+  font-weight: 600;
+}
+
+/* Responsivo */
+@media (max-width: 600px) {
+  .grid-directorio {
+    grid-template-columns: 1fr;
+  }
+  .directorio-card {
+    padding: 2rem;
+  }
+}

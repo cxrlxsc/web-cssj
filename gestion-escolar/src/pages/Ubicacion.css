@@ -1,0 +1,193 @@
+/* src/pages/Ubicacion.css */
+
+.ubicacion-page {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #f8fafc;
+  overflow-x: hidden;
+}
+
+/* =======================================================
+   HERO BANNER (FONDO VERDE CON ESPACIO EXTRA)
+   ======================================================= */
+.hero-ubicacion-premium {
+  background-color: #008C5A;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 2px, transparent 2px);
+  background-size: 30px 30px;
+  /* Mucho padding abajo para que la tarjeta pueda superponerse */
+  padding: 7rem 5% 12rem; 
+  text-align: center;
+  color: white;
+}
+
+.titulo-ubicacion {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 900;
+  margin: 1.5rem 0 1rem;
+  letter-spacing: -1px;
+}
+
+/* =======================================================
+   TARJETA FLOTANTE (OVERLAPPING)
+   ======================================================= */
+.seccion-superpuesta {
+  max-width: 1400px;
+  margin: -120px auto 5rem; /* El -120px tira la tarjeta hacia arriba */
+  padding: 0 5%;
+  position: relative;
+  z-index: 10;
+}
+
+.tarjeta-contacto-maestra {
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
+  display: flex;
+  overflow: hidden; /* Para que el mapa no se salga de las esquinas curvas */
+  min-height: 700px;
+}
+
+/* =======================================================
+   COLUMNA IZQUIERDA: INFO Y FORMULARIO
+   ======================================================= */
+.columna-datos {
+  flex: 1;
+  padding: 4rem;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+.bloque-info h3, .bloque-formulario h3 {
+  color: #002a4a;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  font-weight: 800;
+}
+
+/* Lista de Contacto Minimalista */
+.lista-info-premium {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.item-info {
+  display: flex;
+  gap: 1.2rem;
+  align-items: flex-start;
+}
+
+.icono-box {
+  background: #f1f5f9;
+  width: 45px;
+  height: 45px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0068B3;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.item-info:hover .icono-box {
+  background: #0068B3;
+  color: white;
+  transform: scale(1.05);
+}
+
+.item-info.dorado:hover .icono-box { background: #FAB529; color: white; }
+.item-info.verde:hover .icono-box { background: #008C5A; color: white; }
+
+.texto-info h4 {
+  margin: 0 0 0.2rem 0;
+  font-size: 1rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.texto-info p {
+  margin: 0;
+  color: #002a4a;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* Formulario Integrado */
+.formulario-contacto {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.input-premium {
+  padding: 1rem 1.2rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-family: 'Inter', sans-serif;
+  background-color: #f8fafc;
+  transition: all 0.3s ease;
+}
+
+.input-premium:focus {
+  outline: none;
+  border-color: #008C5A;
+  background-color: white;
+  box-shadow: 0 0 0 4px rgba(0, 140, 90, 0.1);
+}
+
+.btn-enviar-premium {
+  background: linear-gradient(135deg, #008C5A 0%, #006b45 100%);
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-enviar-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 140, 90, 0.3);
+}
+
+/* =======================================================
+   COLUMNA DERECHA: MAPA SIN BORDES
+   ======================================================= */
+.columna-mapa {
+  flex: 1.2;
+  position: relative;
+  background-color: #e2e8f0;
+}
+
+.columna-mapa iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* =======================================================
+   RESPONSIVO
+   ======================================================= */
+@media (max-width: 950px) {
+  .tarjeta-contacto-maestra {
+    flex-direction: column;
+  }
+  .columna-datos {
+    padding: 2.5rem;
+  }
+  .columna-mapa {
+    min-height: 400px; /* Le damos altura fija en celulares */
+  }
+  .hero-ubicacion-premium {
+    padding-bottom: 9rem;
+  }
+}
