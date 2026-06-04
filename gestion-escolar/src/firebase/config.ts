@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from 'firebase/storage';
 
 // Tu configuración web de Firebase llamando a las variables de entorno
 const firebaseConfig = {
@@ -18,3 +19,4 @@ export const app = initializeApp(firebaseConfig);
 // Exportamos la Autenticación y la Base de Datos para usarlas en otras partes del sistema
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app);

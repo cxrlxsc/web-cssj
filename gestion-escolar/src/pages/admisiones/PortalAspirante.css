@@ -1,0 +1,204 @@
+/* src/pages/admisiones/PortalAspirante.css */
+
+.portal-page {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+/* =======================================================
+   HERO BANNER
+   ======================================================= */
+.hero-portal {
+  background-color: #008C5A;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 2px, transparent 2px);
+  background-size: 30px 30px;
+  padding: 5rem 5% 12rem;
+  text-align: center;
+  color: white;
+}
+
+.titulo-portal {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 900;
+  margin: 1.5rem 0 0.5rem;
+  letter-spacing: -1px;
+}
+
+/* =======================================================
+   CONTENEDOR PRINCIPAL FLOTANTE
+   ======================================================= */
+.portal-container {
+  max-width: 1000px;
+  margin: -140px auto 6rem;
+  padding: 0 5%;
+  position: relative;
+  z-index: 10;
+}
+
+.portal-card {
+  background: white;
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: 0 20px 50px -10px rgba(0,0,0,0.1);
+  border: 1px solid #f1f5f9;
+  margin-bottom: 2rem;
+}
+
+/* =======================================================
+   ESTADOS Y BADGES (Premium)
+   ======================================================= */
+.badge-status {
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Colores de Badges */
+.bg-yellow-premium { background-color: #fef9c3; color: #b45309; border: 1px solid #fef08a; }
+.bg-green-premium { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.bg-red-premium { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+.bg-blue-premium { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+.bg-purple-premium { background-color: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+
+/* =======================================================
+   BARRA DE PROGRESO (Stepper)
+   ======================================================= */
+.stepper-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px dashed #f1f5f9;
+}
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.step-circle {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  background-color: white;
+  border: 3px solid #e2e8f0;
+  color: #94a3b8;
+  transition: all 0.3s ease;
+}
+
+.step-item.active .step-circle {
+  border-color: #008C5A;
+  background-color: #008C5A;
+  color: white;
+  box-shadow: 0 0 0 4px rgba(0, 140, 90, 0.2);
+}
+
+.step-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.step-item.active .step-label { color: #002a4a; }
+
+/* Línea conectora de los pasos */
+.stepper-line {
+  position: absolute;
+  top: 45px; /* Alineada con los círculos */
+  left: 5%;
+  right: 5%;
+  height: 3px;
+  background-color: #e2e8f0;
+  z-index: 1;
+}
+
+/* =======================================================
+   SECCIÓN DE DOCUMENTOS
+   ======================================================= */
+.document-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8fafc;
+  transition: transform 0.2s ease;
+}
+
+.document-card:hover {
+  transform: translateX(5px);
+  border-color: #cbd5e1;
+}
+
+.doc-info {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.doc-icon {
+  width: 50px;
+  height: 50px;
+  background: white;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.btn-upload {
+  background-color: #0068B3;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-upload:hover { background-color: #004d86; }
+
+/* =======================================================
+   MENSAJES Y NOTIFICACIONES
+   ======================================================= */
+.alert-box {
+  padding: 1.5rem;
+  border-radius: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.alert-box.info { background-color: #e0f2fe; border-left: 5px solid #0284c7; }
+.alert-box.warning { background-color: #fef9c3; border-left: 5px solid #d97706; }
+.alert-box.success { background-color: #dcfce7; border-left: 5px solid #16a34a; }
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .document-card { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .btn-upload { width: 100%; }
+  .step-label { display: none; } /* Oculta textos de pasos en celular para que quepa */
+}
