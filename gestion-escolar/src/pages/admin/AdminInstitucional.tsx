@@ -2,10 +2,10 @@
 import { useEffect, useState } from 'react';
 import { doc, getDoc, setDoc, collection, addDoc, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
+import { accessCodeService } from '../../services/accessCodeService'; // <-- NUEVA IMPORTACIÓN
 
 export default function AdminInstitucional() {
   // --- ESTADO PARA LAS PESTAÑAS ---
-  // Agregamos 'eventos' a las opciones posibles
   const [pestañaActiva, setPestañaActiva] = useState('identidad');
 
   // ==========================================
@@ -40,7 +40,6 @@ export default function AdminInstitucional() {
     }
   };
 
-
   // ==========================================
   // ESTADOS Y LÓGICA: CONTACTOS
   // ==========================================
@@ -74,7 +73,6 @@ export default function AdminInstitucional() {
       setGuardandoContacto(false);
     }
   };
-
 
   // ==========================================
   // ESTADOS Y LÓGICA: NOTICIAS
@@ -114,9 +112,8 @@ export default function AdminInstitucional() {
     }
   };
 
-
   // ==========================================
-  // ESTADOS Y LÓGICA: EVENTOS (NUEVO)
+  // ESTADOS Y LÓGICA: EVENTOS
   // ==========================================
   const [eventos, setEventos] = useState<any[]>([]);
   const [guardandoEvento, setGuardandoEvento] = useState(false);
@@ -126,7 +123,6 @@ export default function AdminInstitucional() {
     const querySnapshot = await getDocs(collection(db, "eventos"));
     const lista: any[] = [];
     querySnapshot.forEach((doc) => lista.push({ id: doc.id, ...doc.data() }));
-    // Ordenar eventos por fecha ascendente para el panel
     lista.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
     setEventos(lista);
   };
@@ -137,10 +133,9 @@ export default function AdminInstitucional() {
     e.preventDefault();
     setGuardandoEvento(true);
     try {
-      // Extraemos el día y el mes automáticamente de la fecha seleccionada
-      const dateObj = new Date(nuevoEvento.fecha + 'T12:00:00'); // Evita desfase horario
+      const dateObj = new Date(nuevoEvento.fecha + 'T12:00:00');
       const diaStr = String(dateObj.getDate()).padStart(2, '0');
-      const mesStr = dateObj.toLocaleString('es-ES', { month: 'short' }).substring(0, 3); // Ej. "jun"
+      const mesStr = dateObj.toLocaleString('es-ES', { month: 'short' }).substring(0, 3);
 
       const eventoFinal = {
         ...nuevoEvento,
@@ -165,7 +160,6 @@ export default function AdminInstitucional() {
       cargarEventos();
     }
   };
-
 
   // ==========================================
   // ESTADOS Y LÓGICA: AUTORIDADES
@@ -205,6 +199,38 @@ export default function AdminInstitucional() {
     }
   };
 
+  // ==========================================
+  // ESTADOS Y LÓGICA: CÓDIGOS DE PRUEBA (NUEVO)
+  // ==========================================
+  const [codigoGenerado, setCodigoGenerado] = useState('');
+  const [generandoCodigo, setGenerandoCodigo] = useState(false);
+
+  const handleGenerarCodigoPrueba = async () => {
+    setGenerandoCodigo(true);
+    try {
+      const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const nuevoCodigo = `CSSJ-${randomStr}`;
+
+      await accessCodeService.createCode({
+        code: nuevoCodigo,
+        description: 'Código de prueba generado desde admin',
+        year: 2026,
+        maxUses: 1, 
+        currentUses: 0,
+        isActive: true,
+        gradeLevel: 'all', 
+        createdBy: 'admin_test',
+        creatorName: 'Administrador',
+      } as any);
+
+      setCodigoGenerado(nuevoCodigo);
+    } catch (error) {
+      console.error(error);
+      alert('Hubo un error al generar el código en Firebase.');
+    } finally {
+      setGenerandoCodigo(false);
+    }
+  };
 
   // ==========================================
   // RENDERIZADO DE LA INTERFAZ
@@ -222,7 +248,8 @@ export default function AdminInstitucional() {
           { id: 'contactos', label: 'Información de Contacto' },
           { id: 'noticias', label: 'Gestor de Noticias' },
           { id: 'eventos', label: 'Gestor de Eventos' },
-          { id: 'autoridades', label: 'Autoridades' }
+          { id: 'autoridades', label: 'Autoridades' },
+          { id: 'codigos', label: ' Generar Códigos' } // <-- NUEVA PESTAÑA
         ].map(tab => (
           <button 
             key={tab.id}
@@ -311,7 +338,7 @@ export default function AdminInstitucional() {
         </div>
       )}
 
-      {/* PESTAÑA EVENTOS (NUEVA) */}
+      {/* PESTAÑA EVENTOS */}
       {pestañaActiva === 'eventos' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem' }}>
           <div>
@@ -321,7 +348,6 @@ export default function AdminInstitucional() {
               <input type="text" value={nuevoEvento.titulo} onChange={(e) => setNuevoEvento({...nuevoEvento, titulo: e.target.value})} required style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }} placeholder="Título del evento" />
               
               <div style={{ display: 'flex', gap: '1rem' }}>
-                {/* Usamos type="date" para que salga el calendario nativo */}
                 <input type="date" value={nuevoEvento.fecha} onChange={(e) => setNuevoEvento({...nuevoEvento, fecha: e.target.value})} required style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', flex: 1 }} />
                 
                 <select value={nuevoEvento.categoria} onChange={(e) => setNuevoEvento({...nuevoEvento, categoria: e.target.value})} style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', flex: 1 }}>
@@ -388,6 +414,33 @@ export default function AdminInstitucional() {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* PESTAÑA DE CÓDIGOS (NUEVA) */}
+      {pestañaActiva === 'codigos' && (
+        <div style={{ backgroundColor: '#f8fafc', padding: '2rem', borderRadius: '12px', border: '1px solid #e2e8f0', maxWidth: '500px' }}>
+          <h3 style={{ color: '#008C5A', marginBottom: '1rem' }}>Generador Rápido de Códigos</h3>
+          <p style={{ color: '#64748b', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+            Utiliza este botón para generar un código de acceso válido (1 solo uso) para probar el formulario de admisiones.
+          </p>
+          
+          <button 
+            onClick={handleGenerarCodigoPrueba} 
+            disabled={generandoCodigo}
+            style={{ backgroundColor: '#FAB529', color: '#002a4a', fontWeight: 'bold', padding: '1rem 2rem', border: 'none', borderRadius: '8px', cursor: generandoCodigo ? 'not-allowed' : 'pointer', width: '100%', marginBottom: '1.5rem' }}
+          >
+            {generandoCodigo ? 'Generando en Firebase...' : 'Generar Código de Prueba'}
+          </button>
+
+          {codigoGenerado && (
+            <div style={{ backgroundColor: '#e0f2fe', border: '1px dashed #bae6fd', padding: '1.5rem', borderRadius: '8px', textAlign: 'center' }}>
+              <span style={{ display: 'block', color: '#0369a1', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Tu código generado es:</span>
+              <span style={{ fontSize: '2rem', fontFamily: 'monospace', fontWeight: '900', color: '#002a4a', letterSpacing: '2px' }}>
+                {codigoGenerado}
+              </span>
+            </div>
+          )}
         </div>
       )}
 

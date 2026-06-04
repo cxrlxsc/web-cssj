@@ -1,83 +1,324 @@
 // src/pages/admisiones/AccesoAdmision.tsx
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+
+// Ajusta estas dos rutas si tus componentes Navbar y Footer están en otra carpeta
+import { Navbar } from '../../components/layout/Navbar';
+import Footer from '../../components/layout/Footer';
+
+// Tu archivo CSS (asegúrate de que se llame así en la misma carpeta)
 import './Admisiones.css';
 
-export default function AccesoAdmision() {
-  const [codigo, setCodigo] = useState('');
+import { accessCodeService } from '../../services/accessCodeService';
+import { admissionService } from '../../services/admissionService';
+import { formatPhone } from '../../utils/formatters';
+import type { AccessCode } from '../../types'; // <-- Con el 'type' para evitar el error
+import { departamentosElSalvador, getMunicipiosByDepartamento, getDistritosByMunicipio } from '../../data/elSalvadorGeo';
 
-  const handleSubmit = (e: React.FormEvent) => {
+function parseDateInput(dateInput: string): Date {
+  const [year, month, day] = dateInput.split('-').map(Number);
+  return new Date(year, month - 1, day, 12, 0, 0, 0);
+}
+
+export default function AccesoAdmision() {
+  const navigate = useNavigate();
+  const [step, setStep] = useState<'code' | 'form' | 'success'>('code');
+  const [accessCode, setAccessCode] = useState('');
+  const [validatedCode, setValidatedCode] = useState<AccessCode | null>(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [familyWarning, setFamilyWarning] = useState('');
+  const [checkingFamilyWarning, setCheckingFamilyWarning] = useState(false);
+
+  const [formData, setFormData] = useState({
+    studentFirstName: '', studentLastName: '', dateOfBirth: '', gender: '' as '' | 'M' | 'F',
+    previousSchool: '', gradeApplying: '',
+    parentFirstName: '', parentLastName: '', parentEmail: '', parentPhone: '', parentRelationship: '',
+    departamento: '', municipio: '', distrito: '', direccion: '',
+    howDidYouHear: '', comments: '',
+  });
+
+  const municipios = useMemo(() => { return formData.departamento ? getMunicipiosByDepartamento(formData.departamento) : []; }, [formData.departamento]);
+  const distritos = useMemo(() => { return formData.departamento && formData.municipio ? getDistritosByMunicipio(formData.departamento, formData.municipio) : []; }, [formData.departamento, formData.municipio]);
+
+  useEffect(() => { window.scrollTo(0, 0); }, [step]);
+
+  const handleValidateCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Aquí validaremos el código
-    console.log('Verificando código:', codigo);
+    setLoading(true); setError('');
+    try {
+      const existingAdmissions = await admissionService.getAdmissionsByAccessCode(accessCode.toUpperCase().trim());
+      if (existingAdmissions.length > 0) {
+        navigate(`/mi-solicitud?code=${accessCode.toUpperCase().trim()}`);
+        return;
+      }
+      const result = await accessCodeService.validateCode(accessCode);
+      if (result.valid && result.codeData) {
+        setValidatedCode(result.codeData);
+        setStep('form');
+      } else {
+        setError(result.message);
+      }
+    } catch (err) { setError('Error al validar el código. Intente de nuevo.'); } 
+    finally { setLoading(false); }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    if (name === 'parentEmail') setFamilyWarning('');
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const loadFamilyWarning = async (email: string) => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !normalizedEmail.includes('@')) { setFamilyWarning(''); return; }
+    setCheckingFamilyWarning(true);
+    try {
+      const familyAdmissions = await admissionService.getAdmissionsByParentEmail(normalizedEmail);
+      if (familyAdmissions.length === 0) { setFamilyWarning(''); return; }
+      const relatedStudents = familyAdmissions.slice(0, 3).map(admission => `${admission.studentFirstName} ${admission.studentLastName}`.trim()).join(', ');
+      const additionalCount = familyAdmissions.length - Math.min(familyAdmissions.length, 3);
+      setFamilyWarning(`Este correo ya aparece en ${familyAdmissions.length} solicitud(es): ${relatedStudents}${additionalCount > 0 ? ` y ${additionalCount} más` : ''}. Puede continuar si es otro hijo/a.`);
+    } catch (warningError) { setFamilyWarning(''); } 
+    finally { setCheckingFamilyWarning(false); }
+  };
+
+  const handleParentEmailBlur = async () => { await loadFamilyWarning(formData.parentEmail); };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true); setError('');
+    if (formData.gender !== 'M' && formData.gender !== 'F') {
+      setError('Por favor selecciona el género del estudiante'); setLoading(false); return;
+    }
+    try {
+      await admissionService.createAdmission({
+        ...formData, gender: formData.gender as 'M' | 'F', dateOfBirth: parseDateInput(formData.dateOfBirth),
+        status: 'pending', applicationDate: new Date(), documents: [],
+        accessCodeUsed: validatedCode?.code, enrollmentYear: validatedCode?.year,
+      });
+      if (validatedCode) {
+        await accessCodeService.useCode(validatedCode.id, {
+          name: `${formData.studentFirstName} ${formData.studentLastName}`, grade: formData.gradeApplying,
+          email: formData.parentEmail, phone: formData.parentPhone
+        });
+      }
+      setStep('success');
+    } catch (err: any) { setError(err.message || 'Error al enviar la solicitud'); } 
+    finally { setLoading(false); }
+  };
+
+  const grades = [
+    'Kinder 4', 'Kinder 5', 'Preparatoria', '1° Grado', '2° Grado', '3° Grado', '4° Grado', '5° Grado', '6° Grado',
+    '7° Grado', '8° Grado', '9° Grado', '1° Bachillerato', '2° Bachillerato',
+  ];
+
   return (
-    <div className="admision-layout">
-      
-      <div className="admision-content-wrapper">
-        
-        {/* Encabezado Institucional */}
-        <div className="admision-header">
-          <div className="admision-icon-circle">
-            <svg width="45" height="45" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
-            </svg>
-          </div>
-          <h1>Colegio Salesiano San José</h1>
-          <p>Solicitud de Admisión</p>
-        </div>
+    <div className="admission-page">
+      <Navbar />
 
-        {/* Tarjeta de Formulario Premium */}
-        <div className="admision-card">
-          <h2>Ingrese su código de acceso</h2>
-          <p className="instrucciones">
-            Para iniciar el proceso de admisión en línea, por favor ingrese el código que le fue proporcionado por la institución.
-          </p>
+      <section className="hero-admission" data-aos="fade-in">
+        <span className="badge-premium" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}>
+          Admisiones {validatedCode?.year || '2026'}
+        </span>
+        <h1 className="titulo-admission">
+          Portal de <span style={{ color: '#FAB529' }}>Aspirantes</span>
+        </h1>
+        <p style={{ maxWidth: '600px', margin: '0 auto', color: 'rgba(255,255,255,0.9)', fontSize: '1.15rem' }}>
+          Sistema seguro de registro para estudiantes de nuevo ingreso al Colegio Salesiano San José.
+        </p>
+      </section>
 
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="codigo">Código de Acceso</label>
-              <input 
-                type="text" 
-                id="codigo" 
-                placeholder="CSSJ25-XXXX" 
-                value={codigo}
-                onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-                required
-                autoComplete="off"
-              />
+      <section className="admission-container" data-aos="fade-up">
+        <div className="admission-card">
+          
+          {/* PASO 1: CÓDIGO */}
+          {step === 'code' && (
+            <div className="code-validation-box">
+              <div className="code-icon">
+                <svg width="40" height="40" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" /></svg>
+              </div>
+              <h2 style={{ color: '#002a4a', fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.5rem' }}>Código de Acceso</h2>
+              <p style={{ color: '#64748b', marginBottom: '2rem' }}>Ingrese el código (PIN) proporcionado por el departamento de Registro Académico para iniciar o retomar su solicitud.</p>
+              
+              {error && <div className="error-message">{error}</div>}
+
+              <form onSubmit={handleValidateCode}>
+                <input
+                  type="text"
+                  value={accessCode}
+                  onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                  className="input-codigo"
+                  placeholder="Ej. CSSJ-XXXX"
+                  required
+                />
+                <button type="submit" className="btn-principal" disabled={loading || !accessCode}>
+                  {loading ? 'Verificando sistema...' : 'Verificar y Continuar'}
+                </button>
+              </form>
+              
+              <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '2rem' }}>
+                ¿Aún no tiene un código? Solicítelo en Admisiones o llamando al <strong style={{ color: '#0068B3' }}>2440-0000</strong>
+              </p>
             </div>
+          )}
 
-            <button type="submit" className="btn-verificar">
-              Verificar Código
-            </button>
-          </form>
+          {/* PASO 2: FORMULARIO DE ADMISIÓN */}
+          {step === 'form' && (
+            <form onSubmit={handleSubmit}>
+              <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                <p style={{ color: '#008C5A', fontWeight: 800, background: '#f0fdf4', display: 'inline-block', padding: '0.5rem 1rem', borderRadius: '50px', fontSize: '0.9rem' }}>
+                  Código Validado: {validatedCode?.code}
+                </p>
+              </div>
 
-          {/* Información de contacto */}
-          <div className="admision-footer">
-            <p>¿Aún no tiene un código asignado?</p>
-            <div className="admision-contact">
-              <span>
-                <svg width="18" height="18" fill="none" stroke="#008C5A" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-1.514 1.892a15.84 15.84 0 01-6.502-6.502l1.892-1.514c.362-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" /></svg>
-                2486 0801
-              </span>
-              <span>|</span>
-              <span>
-                <svg width="18" height="18" fill="none" stroke="#0068B3" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
-                admisiones@salesianosanjose.edu.sv
-              </span>
+              {error && <div className="error-message">{error}</div>}
+
+              {/* Sección 1: Estudiante */}
+              <h3 className="form-section-title">
+                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                Datos del Aspirante
+              </h3>
+              <div className="form-grid">
+                <div>
+                  <label className="input-label">Nombres *</label>
+                  <input type="text" name="studentFirstName" value={formData.studentFirstName} onChange={handleChange} required className="input-field" />
+                </div>
+                <div>
+                  <label className="input-label">Apellidos *</label>
+                  <input type="text" name="studentLastName" value={formData.studentLastName} onChange={handleChange} required className="input-field" />
+                </div>
+                <div>
+                  <label className="input-label">Fecha de Nacimiento *</label>
+                  <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} required className="input-field" />
+                </div>
+                <div>
+                  <label className="input-label">Género *</label>
+                  <select name="gender" value={formData.gender} onChange={handleChange} required className="select-field">
+                    <option value="">Seleccionar...</option>
+                    <option value="M">Masculino</option>
+                    <option value="F">Femenino</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="input-label">Grado a Cursar *</label>
+                  <select name="gradeApplying" value={formData.gradeApplying} onChange={handleChange} required className="select-field">
+                    <option value="">Seleccionar grado...</option>
+                    {grades.map(grade => <option key={grade} value={grade}>{grade}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="input-label">Colegio de Procedencia</label>
+                  <input type="text" name="previousSchool" value={formData.previousSchool} onChange={handleChange} className="input-field" placeholder="Opcional" />
+                </div>
+              </div>
+
+              {/* Sección 2: Responsable */}
+              <h3 className="form-section-title" style={{ color: '#008C5A' }}>
+                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>
+                Datos del Responsable Familiar
+              </h3>
+              <div className="form-grid">
+                <div>
+                  <label className="input-label">Nombres del Responsable *</label>
+                  <input type="text" name="parentFirstName" value={formData.parentFirstName} onChange={handleChange} required className="input-field" />
+                </div>
+                <div>
+                  <label className="input-label">Apellidos del Responsable *</label>
+                  <input type="text" name="parentLastName" value={formData.parentLastName} onChange={handleChange} required className="input-field" />
+                </div>
+                <div>
+                  <label className="input-label">Correo Electrónico *</label>
+                  <input type="email" name="parentEmail" value={formData.parentEmail} onChange={handleChange} onBlur={handleParentEmailBlur} required className="input-field" />
+                  {familyWarning && <p style={{ color: '#d97706', fontSize: '0.8rem', marginTop: '0.5rem' }}>{familyWarning}</p>}
+                </div>
+                <div>
+                  <label className="input-label">Teléfono Móvil *</label>
+                  <input type="tel" name="parentPhone" value={formData.parentPhone} onChange={(e) => handleChange({ ...e, target: { ...e.target, name: 'parentPhone', value: formatPhone(e.target.value) } } as React.ChangeEvent<HTMLInputElement>)} required className="input-field" placeholder="0000-0000" />
+                </div>
+                <div>
+                  <label className="input-label">Parentesco *</label>
+                  <select name="parentRelationship" value={formData.parentRelationship} onChange={handleChange} required className="select-field">
+                    <option value="">Seleccionar...</option>
+                    <option value="padre">Padre</option>
+                    <option value="madre">Madre</option>
+                    <option value="tutor">Tutor Legal</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Sección 3: Residencia */}
+              <h3 className="form-section-title" style={{ color: '#FAB529' }}>
+                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
+                Dirección de Residencia
+              </h3>
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+                <div>
+                  <label className="input-label">Departamento *</label>
+                  <select name="departamento" value={formData.departamento} onChange={(e) => setFormData(p => ({...p, departamento: e.target.value, municipio: '', distrito: ''}))} required className="select-field">
+                    <option value="">Seleccionar...</option>
+                    {departamentosElSalvador.map(d => <option key={d.nombre} value={d.nombre}>{d.nombre}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="input-label">Municipio *</label>
+                  <select name="municipio" value={formData.municipio} onChange={(e) => setFormData(p => ({...p, municipio: e.target.value, distrito: ''}))} required disabled={!formData.departamento} className="select-field">
+                    <option value="">Seleccionar...</option>
+                    {municipios.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="input-label">Distrito *</label>
+                  <select name="distrito" value={formData.distrito} onChange={handleChange} required disabled={!formData.municipio} className="select-field">
+                    <option value="">Seleccionar...</option>
+                    {distritos.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label className="input-label">Dirección Específica (Pasaje, N° Casa) *</label>
+                  <input type="text" name="direccion" value={formData.direccion} onChange={handleChange} required className="input-field" />
+                </div>
+              </div>
+
+              {/* Botones */}
+              <div className="form-actions">
+                <button type="button" onClick={() => setStep('code')} className="btn-secundario">← Volver al Código</button>
+                <button type="submit" disabled={loading} className="btn-enviar-solicitud">
+                  {loading ? 'Procesando...' : 'Enviar Solicitud al Colegio'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* PASO 3: ÉXITO */}
+          {step === 'success' && (
+            <div className="success-box">
+              <div className="success-icon">
+                <svg width="80" height="80" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ margin: '0 auto' }}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </div>
+              <h2 style={{ color: '#002a4a', fontSize: '2rem', fontWeight: 800, marginBottom: '1rem' }}>¡Solicitud Registrada!</h2>
+              <p style={{ color: '#64748b', fontSize: '1.1rem' }}>El expediente inicial del estudiante ha sido creado exitosamente en el sistema.</p>
+              
+              <div className="resumen-datos">
+                <p><strong>Aspirante:</strong> {formData.studentFirstName} {formData.studentLastName}</p>
+                <p><strong>Nivel a cursar:</strong> {formData.gradeApplying}</p>
+                <p><strong>Código Asignado:</strong> <span style={{ color: '#008C5A', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '1.1rem' }}>{validatedCode?.code}</span></p>
+              </div>
+
+              <div style={{ background: '#e0f2fe', padding: '1.5rem', borderRadius: '12px', color: '#0068B3', marginBottom: '2rem' }}>
+                <p style={{ margin: 0, fontWeight: 600 }}>El siguiente paso es acceder al Portal de Aspirantes utilizando su código para cargar los documentos en formato digital (Notas, Partida de Nacimiento, DUI).</p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                <Link to={`/mi-solicitud?code=${validatedCode?.code}`} className="btn-enviar-solicitud" style={{ textDecoration: 'none' }}>
+                  Ir al Portal y Cargar Documentos
+                </Link>
+              </div>
             </div>
-          </div>
+          )}
         </div>
-
-        {/* Link para regresar */}
-        <Link to="/" className="link-volver">
-          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
-          Volver al inicio
-        </Link>
-
-      </div>
+      </section>
+      <Footer />
     </div>
   );
 }
