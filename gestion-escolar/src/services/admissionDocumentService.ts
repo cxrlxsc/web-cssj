@@ -20,6 +20,7 @@ import type {
 } from '../types';
 
 // Documentos requeridos para el proceso de admisión
+// Configuración de todos los documentos posibles
 export const REQUIRED_DOCUMENTS: RequiredDocument[] = [
   {
     type: 'birth_certificate',
@@ -32,7 +33,23 @@ export const REQUIRED_DOCUMENTS: RequiredDocument[] = [
   {
     type: 'previous_grades',
     name: 'Notas del Año Anterior',
-    description: 'Certificado de notas del último año cursado (opcional para Parvularia y 1° Grado)',
+    description: 'Certificado de notas del último año cursado',
+    isRequired: false,
+    acceptedFormats: ['pdf', 'jpg', 'jpeg', 'png'],
+    maxSizeMB: 10
+  },
+  {
+    type: 'financial_solvency',
+    name: 'Solvencia Económica',
+    description: 'Constancia de estar solvente con los pagos en el colegio de procedencia',
+    isRequired: false,
+    acceptedFormats: ['pdf', 'jpg', 'jpeg', 'png'],
+    maxSizeMB: 10
+  },
+  {
+    type: 'grade_certificate',
+    name: 'Certificado de Grado',
+    description: 'Certificado que hace constar la promoción al grado solicitado',
     isRequired: false,
     acceptedFormats: ['pdf', 'jpg', 'jpeg', 'png'],
     maxSizeMB: 10
@@ -56,8 +73,8 @@ export const REQUIRED_DOCUMENTS: RequiredDocument[] = [
   {
     type: 'other',
     name: 'Constancia de Conducta',
-    description: 'Constancia de conducta del colegio anterior (obligatoria desde 2° Grado)',
-    isRequired: false, // Se ajusta dinámicamente según el grado
+    description: 'Constancia de conducta del colegio anterior',
+    isRequired: false,
     acceptedFormats: ['pdf', 'jpg', 'jpeg', 'png'],
     maxSizeMB: 10
   }
@@ -69,7 +86,6 @@ export function getRequiredDocumentsForGrade(gradeApplying: string): RequiredDoc
   const isParvulariaOrFirst = parvulariaAndFirstGrade.includes(gradeApplying);
 
   return REQUIRED_DOCUMENTS.map(doc => {
-    // Constancia de conducta: opcional para parvularia y 1° grado, obligatoria para el resto
     if (doc.type === 'other') {
       return {
         ...doc,
@@ -80,7 +96,6 @@ export function getRequiredDocumentsForGrade(gradeApplying: string): RequiredDoc
       };
     }
     
-    // Notas anteriores: opcional para parvularia y 1° grado, obligatoria para el resto
     if (doc.type === 'previous_grades') {
       return {
         ...doc,
@@ -88,6 +103,26 @@ export function getRequiredDocumentsForGrade(gradeApplying: string): RequiredDoc
         description: isParvulariaOrFirst
           ? 'Certificado de notas del último año cursado (opcional)'
           : 'Certificado de notas del último año cursado (obligatorio)'
+      };
+    }
+
+    if (doc.type === 'financial_solvency') {
+      return {
+        ...doc,
+        isRequired: !isParvulariaOrFirst,
+        description: isParvulariaOrFirst
+          ? 'Constancia de solvencia económica (opcional si es su primer colegio)'
+          : 'Constancia de solvencia del colegio de procedencia (obligatoria)'
+      };
+    }
+
+    if (doc.type === 'grade_certificate') {
+      return {
+        ...doc,
+        isRequired: !isParvulariaOrFirst,
+        description: isParvulariaOrFirst
+          ? 'Certificado de promoción (opcional)'
+          : 'Certificado que avala la promoción al grado solicitado (obligatorio)'
       };
     }
     

@@ -202,3 +202,70 @@
   .btn-upload { width: 100%; }
   .step-label { display: none; } /* Oculta textos de pasos en celular para que quepa */
 }
+/* Ocultar el botón de cámara en pantallas grandes (computadoras) */
+@media (min-width: 769px) {
+  .btn-camera {
+    display: none !important;
+  }
+}
+/* =======================================================
+   BOTONES DE ACCIÓN (Documentos)
+   ======================================================= */
+.doc-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btn-upload, .btn-camera {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+  border: none;
+}
+
+.btn-upload {
+  color: white;
+}
+
+.btn-camera {
+  background-color: white;
+}
+
+.btn-camera:hover {
+  background-color: #f1f5f9;
+}
+
+/* En PC: Ocultar botón cámara y empujar acciones a la derecha */
+@media (min-width: 769px) {
+  .btn-camera {
+    display: none !important;
+  }
+  .doc-actions {
+    margin-left: auto;
+  }
+}
+
+/* En Celular: Apilar botones y hacerlos 100% anchos */
+@media (max-width: 768px) {
+  .document-card { 
+    flex-direction: column; 
+    align-items: stretch; 
+    gap: 1rem; 
+  }
+  .doc-actions {
+    flex-direction: column;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+  .btn-upload, .btn-camera { 
+    width: 100%; 
+  }
+}

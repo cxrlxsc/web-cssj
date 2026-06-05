@@ -465,7 +465,9 @@ export type AdmissionDocumentType =
   | 'recent_photo'         // Foto reciente
   | 'vaccination_card'     // Carné de vacunas (opcional)
   | 'identification'       // DUI del padre/madre
-  | 'other';               // Otros documentos
+  | 'other'               // Otros documentos
+  | 'financial_solvency'
+  | 'grade_certificate';
 
 // Estado de un documento individual
 export type DocumentReviewStatus = 

@@ -21,6 +21,8 @@ import Directorio from './pages/Directorio';
 import Noticias from './pages/Noticias';
 import ProcesoInscripcion from './pages/ProcesoInscripcion';
 import CalendarioAcademico from './pages/CalendarioAcademico';
+import PortalAspirante from './pages/admisiones/PortalAspirante';
+import AdminAdmisiones from './pages/admin/AdminAdmisiones';
 
 function App() {
   
@@ -47,6 +49,7 @@ function App() {
       <Route path="/admin/login" element={<Login />} />
       {/*RUTA PARA PROCESO DE INSCRIPCION */}
       <Route path="/proceso-inscripcion" element={<ProcesoInscripcion />} />
+      <Route path="/mi-solicitud" element={<PortalAspirante />} />
 
       {/* RUTA PROTEGIDA DEL PANEL (Envuelves el panel con ProtectedRoute) */}
       <Route 
@@ -57,6 +60,11 @@ function App() {
           </ProtectedRoute>
         } 
       />
+      <Route path="/admin/solicitudes" element={
+      <ProtectedRoute>
+    <AdminAdmisiones />
+    </ProtectedRoute>
+    } />
 
     </Routes>
   );

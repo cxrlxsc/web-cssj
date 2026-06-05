@@ -1,6 +1,6 @@
 // src/pages/Noticias.tsx
 import { useEffect, useState } from 'react';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config'; // Asegúrate de que esta ruta sea correcta
 
 import { Navbar } from '../components/layout/Navbar';
