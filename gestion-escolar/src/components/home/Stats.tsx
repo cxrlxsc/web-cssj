@@ -4,7 +4,7 @@ export const Stats = () => {
     <section className="seccion-stats-udb">
       <div className="stats-grid-udb">
         <div className="stat-item-udb">
-          <h3>50+</h3>
+          <h3>100+</h3>
           <p>Años de Experiencia</p>
         </div>
         <div className="stat-item-udb">

@@ -28,7 +28,7 @@ export default function AccesoAdmision() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [familyWarning, setFamilyWarning] = useState('');
-  const [checkingFamilyWarning, setCheckingFamilyWarning] = useState(false);
+  const [, setCheckingFamilyWarning] = useState(false);
 
   const [formData, setFormData] = useState({
     studentFirstName: '', studentLastName: '', dateOfBirth: '', gender: '' as '' | 'M' | 'F',

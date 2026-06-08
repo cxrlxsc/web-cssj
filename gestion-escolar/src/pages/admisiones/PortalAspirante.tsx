@@ -19,8 +19,7 @@ import type {
   Admission, 
   AdmissionDocumentType,
   AdmissionDocumentsStatus,
-  AdmissionEvaluation,
-  EnrollmentData
+  AdmissionEvaluation
 } from '../../types';
 
 // ============================================
@@ -387,7 +386,7 @@ export default function PortalAspirante() {
         <div className="alert-box success" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
           <div style={{ color: '#16a34a', marginTop: '0.2rem' }}><Icons.Phone /></div>
           <p style={{ margin: 0, color: '#166534', fontSize: '0.95rem' }}>
-            ¿Necesitas ayuda? Llámanos al <strong>2440-0000</strong> o escríbenos a <strong>admisiones@salesianosanjose.edu.sv</strong>
+            ¿Necesitas ayuda? Llámanos al <strong>2486 0800</strong> o escríbenos a <strong>admisiones@salesianosanjose.edu.sv</strong>
           </p>
         </div>
 

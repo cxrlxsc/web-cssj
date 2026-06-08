@@ -1,8 +1,10 @@
 // src/components/home/CallToAction.tsx
 import { Link } from 'react-router-dom';
+import Img2 from '../../../public/img2.jpeg'; 
+
 
 export const CallToAction = () => {
-  const imagenEjemplo = "https://images.pexels.com/photos/5212345/pexels-photo-5212345.jpeg?auto=compress&cs=tinysrgb&w=800";
+  const imagenEjemplo = Img2;
 
   return (
     <div className="seccion-inscripcion-premium">

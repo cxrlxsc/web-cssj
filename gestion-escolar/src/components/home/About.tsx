@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
+import Img1 from '../../../public/img1.jpeg'; 
+
 
 import { Navbar } from '../layout/Navbar';
 import Footer from '../layout/Footer';
@@ -66,7 +68,7 @@ export default function About() {
         </div>
         <div className="col-imagen" data-aos="fade-left">
           <div className="imagen-decorada-dorada">
-            <img src="https://images.pexels.com/photos/37565041/pexels-photo-37565041.jpeg" alt="Estudiantes Salesianos" />
+            <img src={Img1} alt="Estudiantes Salesianos" />
           </div>
         </div>
       </section>

@@ -1,14 +1,13 @@
 /* =======================================================
-   NAVBAR COMPLETA - ESTILOS BASE, MENÚS Y ANIMACIÓN
+   1. NAVBAR COMPLETA - ESTILOS BASE Y CONFIGURACIÓN
    ======================================================= */
 
-/* 1. Fondo de la barra y posición pegajosa */
 .udb-header {
   position: sticky;
   top: 0;
   z-index: 1000;
   background-color: #008C5A; /* Verde Institucional */
-  transition: box-shadow 0.3s ease;
+  transition: box-shadow 0.3s ease, background-color 0.3s ease;
 }
 
 .udb-header.scrolled {
@@ -19,17 +18,44 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.8rem 5%;
-  max-width: 1400px;
+  padding: 0.8rem 4%;
+  width: 100%; /* Asegura que tome el 100% */
+  max-width: 100%;
   margin: 0 auto;
+  position: relative;
+  box-sizing: border-box;
 }
 
-/* 2. Logo y Texto */
-.udb-logo-wrapper { display: flex; align-items: center; gap: 1rem; text-decoration: none; }
-.udb-logo-text h1 { font-size: 1.2rem; font-weight: 800; margin: 0; color: white; line-height: 1.1; }
-.udb-logo-text p { font-size: 0.75rem; margin: 0; color: #FAB529; font-weight: 700; }
+/* =======================================================
+   2. LOGO Y TIPOGRAFÍA
+   ======================================================= */
 
-/* 3. Enlaces del centro */
+.udb-logo-wrapper { 
+  display: flex; 
+  align-items: center; 
+  gap: 1rem; 
+  text-decoration: none; 
+}
+
+.udb-logo-text h1 { 
+  font-size: 1.2rem; 
+  font-weight: 800; 
+  margin: 0; 
+  color: white; 
+  line-height: 1.1; 
+}
+
+.udb-logo-text p { 
+  font-size: 0.75rem; 
+  margin: 0; 
+  color: #FAB529; /* Amarillo Institucional */
+  font-weight: 700; 
+}
+
+/* =======================================================
+   3. ENLACES DE NAVEGACIÓN (ESCRITORIO)
+   ======================================================= */
+
 .udb-nav-links {
   display: flex;
   align-items: center;
@@ -39,12 +65,9 @@
   padding: 0;
 }
 
-/* =======================================================
-   4. LOGICA DE LOS SUB-MENÚS (MEGA MENUS)
-   ======================================================= */
 .udb-nav-item {
-  position: relative; /* Clave para que el sub-menú sepa dónde anclarse */
-  padding: 1rem 0; /* Área de contacto más grande para que el menú no desaparezca al mover el mouse */
+  position: relative; /* Anclaje para los Mega Menús */
+  padding: 1rem 0; /* Zona de contacto para evitar cierres accidentales */
 }
 
 .udb-nav-link {
@@ -52,23 +75,26 @@
   text-decoration: none;
   font-weight: 600;
   font-size: 0.95rem;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.4rem;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color 0.2s ease;
 }
 
 .udb-nav-link:hover { 
   color: #FAB529; 
 }
 
-/* El cuadro blanco que cae */
+/* =======================================================
+   4. LÓGICA DE SUB-MENÚS (MEGA MENUS ESCRITORIO)
+   ======================================================= */
+
 .udb-mega-menu {
   position: absolute;
   top: 100%;
   left: 50%;
-  transform: translateX(-50%) translateY(15px); /* Centrado y un poco abajo */
+  transform: translateX(-50%) translateY(15px);
   background-color: #ffffff;
   box-shadow: 0 15px 35px rgba(0,0,0,0.15);
   border-radius: 12px;
@@ -76,21 +102,20 @@
   display: flex;
   gap: 2.5rem;
   
-  /* Oculto por defecto */
+  /* Oculto por defecto con transiciones suaves */
   opacity: 0;
   visibility: hidden; 
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
   z-index: 100;
 }
 
-/* MOSTRAR EL MENÚ AL HACER HOVER */
+/* Mostrar Mega Menú al pasar el cursor */
 .udb-nav-item:hover .udb-mega-menu {
   opacity: 1;
   visibility: visible;
-  transform: translateX(-50%) translateY(0); /* Sube suavemente y aparece */
+  transform: translateX(-50%) translateY(0);
 }
 
-/* Columnas y Enlaces dentro del cuadro blanco */
 .mega-menu-column {
   display: flex;
   flex-direction: column;
@@ -103,27 +128,18 @@
   text-decoration: none;
   font-size: 0.95rem;
   font-weight: 500;
-  transition: color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .mega-menu-link:hover { 
-  color: #008C5A; /* Verde institucional al pasar el mouse */
+  color: #008C5A;
   font-weight: 700; 
+  padding-left: 2px; /* Efecto sutil de desplazamiento */
 }
-
 
 /* =======================================================
-   5. EL BOTÓN QUE SE DESPRENDE (MAGIA DE SCROLL)
+   5. BOTÓN DE ACCIÓN PRINCIPAL (ANIMACIÓN DE SCROLL)
    ======================================================= */
-/* 2. Alineación Horizontal (Flexbox) */
-.udb-nav-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.8rem 4%; /* El 4% es el espacio que deja en las orillas. Si lo quieres MÁS a la orilla, ponle 2% */
-  max-width: 100%; /* <-- ¡ESTA ES LA CLAVE! Cambiamos 1400px por 100% */
-  margin: 0 auto;
-}
 
 .udb-btn-amarillo {
   background: linear-gradient(135deg, #FAB529 0%, #d97706 100%);
@@ -138,24 +154,29 @@
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Rebote */
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   white-space: nowrap;
   box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
-.udb-btn-amarillo svg { transition: transform 0.3s ease; }
+.udb-btn-amarillo svg { 
+  transition: transform 0.3s ease; 
+}
 
+/* Comportamiento cuando la barra está arriba */
 .udb-header:not(.scrolled) .udb-btn-amarillo:hover {
   transform: translateY(-3px);
   background: linear-gradient(135deg, #fdd835 0%, #FAB529 100%);
   box-shadow: 0 10px 20px rgba(250, 181, 41, 0.4);
 }
 
-.udb-header:not(.scrolled) .udb-btn-amarillo:hover svg { transform: translateX(4px); }
+.udb-header:not(.scrolled) .udb-btn-amarillo:hover svg { 
+  transform: translateX(4px); 
+}
 
-/* Cuando bajas por la página... */
+/* Animación de descolgado cuando se hace scroll */
 .udb-header.scrolled .udb-btn-amarillo {
-  transform: translateY(120px); /* Se descuelga 65px */
+  transform: translateY(120px);
   box-shadow: 0 15px 30px rgba(250, 181, 41, 0.5); 
 }
 
@@ -164,12 +185,239 @@
   background: linear-gradient(135deg, #fdd835 0%, #FAB529 100%);
 }
 
-.udb-header.scrolled .udb-btn-amarillo:hover svg { transform: translateX(4px); }
+.udb-header.scrolled .udb-btn-amarillo:hover svg { 
+  transform: translateX(4px); 
+}
 
-/* Responsivo para móviles */
-@media (max-width: 950px) {
-  .udb-nav-links { display: none; } 
+/* =======================================================
+   6. BOTÓN HAMBURGUESA Y DISEÑO RESPONSIVO MÓVIL
+   ======================================================= */
+
+.udb-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+}
+
+@media (max-width: 992px) {
+  /* Ajustes globales de elementos en móvil */
   .udb-logo-text h1 { font-size: 1rem; }
   .udb-btn-amarillo { padding: 0.6rem 1.2rem; font-size: 0.8rem; }
-  .udb-header.scrolled .udb-btn-amarillo { transform: translateY(0); } /* En celular no se descuelga */
+  
+  /* En móviles se desactiva el descolgado del botón amarillo para cuidar espacio */
+  .udb-header.scrolled .udb-btn-amarillo { transform: translateY(0); }
+  .udb-header.scrolled .udb-btn-amarillo:hover { transform: scale(1.03); }
+
+  /* Mostrar botón hamburguesa */
+  .udb-hamburger {
+    display: block;
+  }
+
+  /* Transformar menú horizontal en bandeja vertical desplegable */
+  .udb-nav-links {
+    display: none; 
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: #008C5A;
+    flex-direction: column;
+    align-items: stretch; /* NUEVO: Obliga a que tome todo el ancho */
+    padding: 0;
+    margin: 0;
+    box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+    max-height: 85vh;
+    overflow-y: auto;
+    gap: 0;
+  }
+
+  /* Clase activada por React para abrir el menú */
+  .udb-nav-links.mobile-open {
+    display: flex;
+    animation: slideMenuDown 0.3s ease-out forwards;
+  }
+
+  /* Items de menú móvil ocupando todo el ancho */
+  .udb-nav-item {
+    width: 100%;
+    padding: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .udb-nav-link {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 1.2rem 2rem;
+    box-sizing: border-box;
+  }
+
+  /* =======================================================
+     AQUÍ ESTÁ LA MAGIA QUE ARREGLA TU ERROR VISUAL
+     ======================================================= */
+  .udb-mega-menu {
+    position: static;
+    visibility: visible;
+    opacity: 1;
+    transform: none !important; /* Obligamos a que NO se mueva a la izquierda */
+    box-shadow: none;
+    background-color: rgba(0, 0, 0, 0.15); 
+    flex-direction: column;
+    width: 100%;
+    border-radius: 0;
+    padding: 0;
+    gap: 0;
+    display: none; 
+  }
+
+  /* Apertura del sub-menú en móvil */
+  .udb-nav-item:hover .udb-mega-menu {
+    display: flex;
+    transform: none !important; /* Cancelamos el -50% del hover de PC */
+  }
+
+  .mega-menu-column {
+    width: 100%;
+    min-width: 100%; /* Reinicia el ancho de las columnas */
+    padding: 0;
+    gap: 0;
+  }
+
+  .mega-menu-link {
+    display: block;
+    padding: 1rem 2rem; /* Ajustado para que el texto no se salga */
+    color: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    box-sizing: border-box;
+    text-align: left; /* Asegura que el texto se lea de izquierda a derecha */
+  }
+  
+  .mega-menu-link:hover {
+    color: #FAB529;
+    background-color: rgba(255, 255, 255, 0.05);
+    padding-left: 2.5rem;
+  }
+}@media (max-width: 992px) {
+  /* Ajustes globales de elementos en móvil */
+  .udb-logo-text h1 { font-size: 1rem; }
+  .udb-btn-amarillo { padding: 0.6rem 1.2rem; font-size: 0.8rem; }
+  
+  /* En móviles se desactiva el descolgado del botón amarillo para cuidar espacio */
+  .udb-header.scrolled .udb-btn-amarillo { transform: translateY(0); }
+  .udb-header.scrolled .udb-btn-amarillo:hover { transform: scale(1.03); }
+
+  /* Mostrar botón hamburguesa */
+  .udb-hamburger {
+    display: block;
+  }
+
+  /* Transformar menú horizontal en bandeja vertical desplegable */
+  .udb-nav-links {
+    display: none; 
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: #008C5A;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
+    box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+    max-height: 85vh;
+    overflow-y: auto;
+    gap: 0;
+  }
+
+  /* Clase activada por React para abrir el menú */
+  .udb-nav-links.mobile-open {
+    display: flex;
+    animation: slideMenuDown 0.3s ease-out forwards;
+  }
+
+  /* Items de menú móvil ocupando todo el ancho */
+  .udb-nav-item {
+    width: 100%;
+    padding: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .udb-nav-link {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 1.2rem 2rem;
+    box-sizing: border-box;
+  }
+
+  /* Transformación de los Mega Menús adaptados a pantallas táctiles */
+  .udb-mega-menu {
+    position: static;
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    box-shadow: none;
+    background-color: rgba(0, 0, 0, 0.15); /* Fondo contrastado para submenús */
+    flex-direction: column;
+    width: 100%;
+    border-radius: 0;
+    padding: 0;
+    gap: 0;
+    display: none; /* Oculto por defecto */
+  }
+
+  /* Apertura del sub-menú mediante interacción en móvil */
+  .udb-nav-item:hover .udb-mega-menu {
+    display: flex;
+  }
+
+  .mega-menu-column {
+    width: 100%;
+    padding: 0;
+    gap: 0;
+  }
+
+  .mega-menu-link {
+    display: block;
+    padding: 1rem 3rem;
+    color: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    box-sizing: border-box;
+  }
+  
+  .mega-menu-link:hover {
+    color: #FAB529;
+    background-color: rgba(255, 255, 255, 0.05);
+    padding-left: 3rem;
+  }
+}
+
+/* Optimización extra para pantallas muy pequeñas (celulares verticales) */
+@media (max-width: 480px) {
+  .udb-btn-amarillo span {
+    display: none; /* Esconde el texto "Aplicar Ahora" si el espacio es crítico */
+  }
+  .udb-btn-amarillo {
+    padding: 0.6rem;
+    border-radius: 50%; /* Lo convierte en un botón circular de acción flotante */
+  }
+  .udb-btn-amarillo svg {
+    margin: 0;
+  }
+}
+
+/* =======================================================
+   7. ANIMACIONES
+   ======================================================= */
+@keyframes slideMenuDown {
+  from { 
+    opacity: 0; 
+    transform: translateY(-10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
 }

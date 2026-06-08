@@ -18,14 +18,13 @@ export default function Footer() {
           
           <div className="footer-info">
             <p>
-              Calle, Santa Ana.<br />
-              Se encuentra en: Universidad Católica de El Salvador (UNICAES).
+              Final 17 Av. Sur, Calle Salesiano San José, Cantón Loma Alta, Santa Ana El Salvador.
             </p>
             <p>
               Email: admisiones@salesianosanjose.edu.sv
             </p>
             <p>
-              Teléfono: (+503) 2486 0801
+              Teléfono: (+503) 2486 0800
             </p>
           </div>
         </div>

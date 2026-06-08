@@ -17,7 +17,21 @@
   box-sizing: border-box;
   font-family: 'Inter', sans-serif;
 }
+/* =======================================================
+   RESETEO GLOBAL Y PREVENCIÓN DE DESBORDAMIENTO
+   ======================================================= */
+html, body {
+  overflow-x: hidden !important; /* Corta cualquier cosa que se salga a los lados */
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
+/* Hace que los márgenes internos (padding) no aumenten el tamaño de las cajas */
+*, *::before, *::after {
+  box-sizing: inherit;
+}
 body {
   background-color: var(--fondo-gris);
   color: var(--color-negro);
@@ -787,6 +801,29 @@ background: transparent; /* ¡MAGIA! Se funde con el fondo del carrusel */  over
   z-index: 20;
 }
 
+/* ======================================
+   ESTILOS PARA EL VIDEO DE FONDO
+   ====================================== */
+.hero-video-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  min-width: 100%;
+  min-height: 100%;
+  transform: translate(-50%, -50%);
+  object-fit: cover; /* Clave para que no se deforme */
+  z-index: 0; /* Lo manda al fondo absoluto */
+}
+
+.hero-video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #008c5b73; /* Azul oscuro semitransparente. Cambia el 0.65 si lo quieres más claro o más oscuro */
+  z-index: 1; /* Se coloca sobre el video pero debajo de las letras */
+}
 /* =======================================================
    FOOTER PREMIUM: ESTRUCTURA Y ESTILOS
    ======================================================= */
@@ -1128,4 +1165,3 @@ footer {
   .portal-layout { grid-template-columns: 1fr; gap: 3rem; }
   .publicaciones-grid { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
 }
-
