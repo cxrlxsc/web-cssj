@@ -1,24 +1,30 @@
 // src/pages/admin/AdminAdmisiones.tsx
 import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { admissionService } from '../../services/admissionService';
 import { admissionDocumentService } from '../../services/admissionDocumentService';
 import { evaluationService } from '../../services/evaluationService';
+import logoImg from '../../assets/logo.png';
 import type { Admission, AdmissionDocument } from '../../types';
+import './adminStyles/AdminAdmisiones.css';
 
 export default function AdminAdmisiones() {
+  const navigate = useNavigate();
   const [admissions, setAdmissions] = useState<Admission[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Estado para el modal de detalles
   const [selectedAdmission, setSelectedAdmission] = useState<Admission | null>(null);
   const [documents, setDocuments] = useState<AdmissionDocument[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
   
-  // Estado para rechazar documentos
   const [rejectingDocId, setRejectingDocId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
-  // 1. Cargar todas las solicitudes
+  const handleLogout = () => {
+    localStorage.removeItem('adminSession'); 
+    navigate('/admin/login');
+  };
+
   const loadAdmissions = async () => {
     setLoading(true);
     try {
@@ -35,7 +41,6 @@ export default function AdminAdmisiones() {
     loadAdmissions();
   }, []);
 
-  // 2. Abrir detalles de un aspirante y cargar sus documentos
   const handleOpenDetails = async (admission: Admission) => {
     setSelectedAdmission(admission);
     setLoadingDocs(true);
@@ -49,18 +54,15 @@ export default function AdminAdmisiones() {
     }
   };
 
-  // 3. Aprobar Documento
   const handleApproveDoc = async (docId: string) => {
     try {
       await admissionDocumentService.approveDocument(docId, 'Admin_Registro');
-      // Actualizar la lista local
       setDocuments(docs => docs.map(d => d.id === docId ? { ...d, status: 'approved' } : d));
     } catch (error) {
       alert("Error al aprobar documento");
     }
   };
 
-  // 4. Rechazar Documento
   const handleRejectDoc = async (docId: string) => {
     if (!rejectReason.trim()) {
       alert("Debes escribir un motivo para el rechazo");
@@ -70,14 +72,12 @@ export default function AdminAdmisiones() {
       await admissionDocumentService.rejectDocument(docId, 'Admin_Registro', rejectReason);
       setRejectingDocId(null);
       setRejectReason('');
-      // Actualizar la lista local
       setDocuments(docs => docs.map(d => d.id === docId ? { ...d, status: 'rejected', rejectionReason: rejectReason } : d));
     } catch (error) {
       alert("Error al rechazar documento");
     }
   };
 
-  // 5. Habilitar Evaluaciones (Avanzar a Fase 3)
   const handleHabilitarExamenes = async () => {
     if (!selectedAdmission) return;
     const confirm = window.confirm("¿Estás seguro de habilitar los exámenes para este aspirante? Esto le notificará que puede iniciar sus pruebas.");
@@ -88,181 +88,220 @@ export default function AdminAdmisiones() {
         selectedAdmission.id, 
         `${selectedAdmission.studentFirstName} ${selectedAdmission.studentLastName}`
       );
-      alert("¡Exámenes habilitados con éxito!");
-      loadAdmissions(); // Recargar lista
-      setSelectedAdmission(null); // Cerrar modal
+      alert("Exámenes habilitados con éxito.");
+      loadAdmissions(); 
+      setSelectedAdmission(null); 
     } catch (error) {
       alert("Error al habilitar exámenes.");
     }
   };
 
-  // Calcular si todos los documentos subidos están aprobados
   const todosAprobados = documents.length > 0 && documents.every(d => d.status === 'approved');
 
   return (
-    <div style={{ padding: '3rem', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Inter, sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
+    <div className="admin-admisiones-layout">
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div>
-          <h1 style={{ color: '#002a4a', fontSize: '2rem', margin: '0 0 0.5rem 0' }}>Bandeja de Admisiones</h1>
-          <p style={{ color: '#64748b', margin: 0 }}>Gestiona las solicitudes, revisa documentos y habilita exámenes.</p>
+      {/* NAVBAR OFICIAL VERDE */}
+      <nav className="admin-navbar">
+        <div className="navbar-brand">
+          <img src={logoImg} alt="Logotipo Institucional" className="navbar-logo" />
+          <span className="navbar-title">Colegio Salesiano San José</span>
         </div>
-        <button onClick={loadAdmissions} style={{ padding: '0.8rem 1.5rem', backgroundColor: '#0068B3', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
-          🔄 Actualizar Lista
-        </button>
-      </div>
+        <button onClick={handleLogout} className="btn-logout">Cerrar Sesión</button>
+      </nav>
 
-      {/* TABLA DE SOLICITUDES */}
-      <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-        {loading ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>Cargando solicitudes...</div>
-        ) : admissions.length === 0 ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>No hay solicitudes de admisión todavía.</div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f1f5f9', color: '#475569', fontSize: '0.9rem', textTransform: 'uppercase' }}>
-                <th style={{ padding: '1.2rem', fontWeight: 600 }}>Aspirante</th>
-                <th style={{ padding: '1.2rem', fontWeight: 600 }}>Grado a Cursar</th>
-                <th style={{ padding: '1.2rem', fontWeight: 600 }}>Fecha Solicitud</th>
-                <th style={{ padding: '1.2rem', fontWeight: 600 }}>Estado</th>
-                <th style={{ padding: '1.2rem', fontWeight: 600, textAlign: 'center' }}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {admissions.map(adm => (
-                <tr key={adm.id} style={{ borderBottom: '1px solid #e2e8f0', transition: 'background-color 0.2s' }}>
-                  <td style={{ padding: '1.2rem' }}>
-                    <div style={{ fontWeight: 'bold', color: '#002a4a' }}>{adm.studentFirstName} {adm.studentLastName}</div>
-                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Resp: {adm.parentFirstName}</div>
-                  </td>
-                  <td style={{ padding: '1.2rem', color: '#0068B3', fontWeight: 600 }}>{adm.gradeApplying}</td>
-                  <td style={{ padding: '1.2rem', color: '#64748b' }}>{new Date(adm.applicationDate).toLocaleDateString()}</td>
-                  <td style={{ padding: '1.2rem' }}>
-                    <span style={{ 
-                      padding: '0.4rem 0.8rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 'bold',
-                      backgroundColor: adm.status === 'pending' ? '#fef9c3' : adm.status === 'approved' ? '#dcfce7' : '#e0f2fe',
-                      color: adm.status === 'pending' ? '#b45309' : adm.status === 'approved' ? '#166534' : '#0369a1'
-                    }}>
-                      {adm.status === 'pending' ? 'En Revisión' : adm.status === 'approved' ? 'Admitido' : 'En Proceso'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '1.2rem', textAlign: 'center' }}>
-                    <button 
-                      onClick={() => handleOpenDetails(adm)}
-                      style={{ padding: '0.5rem 1rem', backgroundColor: '#f1f5f9', color: '#002a4a', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
-                    >
-                      Revisar Expediente
-                    </button>
-                  </td>
+      <main className="admisiones-main">
+        
+        {/* ENCABEZADO Y CONTROLES */}
+        <div className="header-top">
+          <Link to="/admin/recursos" className="btn-back">
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            Volver a Recursos Internos
+          </Link>
+        </div>
+
+        <header className="admisiones-header">
+          <div className="header-titles">
+            <h1>Bandeja de Admisiones</h1>
+            <p>Gestiona las solicitudes, revisa documentos y habilita exámenes de nuevo ingreso.</p>
+          </div>
+          <button onClick={loadAdmissions} className="btn-refresh">
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            Actualizar Lista
+          </button>
+        </header>
+
+        {/* TABLA PRINCIPAL */}
+        <div className="table-container">
+          {loading ? (
+            <div className="empty-state">Cargando solicitudes...</div>
+          ) : admissions.length === 0 ? (
+            <div className="empty-state">No hay solicitudes de admisión todavía.</div>
+          ) : (
+            <table className="admisiones-table">
+              <thead>
+                <tr>
+                  <th>Aspirante</th>
+                  <th>Grado a Cursar</th>
+                  <th>Fecha Solicitud</th>
+                  <th>Estado</th>
+                  <th style={{ textAlign: 'right' }}>Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+              </thead>
+              <tbody>
+                {admissions.map(adm => (
+                  <tr key={adm.id}>
+                    <td>
+                      <div className="student-name">{adm.studentFirstName} {adm.studentLastName}</div>
+                      <div className="parent-name">Resp: {adm.parentFirstName}</div>
+                    </td>
+                    <td>
+                      <span className="grade-badge">{adm.gradeApplying}</span>
+                    </td>
+                    <td style={{ color: '#64748b' }}>
+                      {new Date(adm.applicationDate).toLocaleDateString()}
+                    </td>
+                    <td>
+                      <span className={`status-badge ${adm.status === 'pending' ? 'status-pending' : adm.status === 'approved' ? 'status-approved' : 'status-process'}`}>
+                        {adm.status === 'pending' ? 'En Revisión' : adm.status === 'approved' ? 'Admitido' : 'En Proceso'}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button onClick={() => handleOpenDetails(adm)} className="btn-action-table">
+                        Revisar Expediente
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
 
-      {/* MODAL DE DETALLES Y REVISIÓN DE DOCUMENTOS */}
-      {selectedAdmission && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,42,74,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
-          <div style={{ backgroundColor: 'white', borderRadius: '16px', width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-            
-            {/* Header del Modal */}
-            <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#002a4a', color: 'white', borderTopLeftRadius: '16px', borderTopRightRadius: '16px' }}>
-              <div>
-                <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Expediente de {selectedAdmission.studentFirstName}</h2>
-                <p style={{ margin: '0.2rem 0 0 0', color: '#cbd5e1', fontSize: '0.9rem' }}>Grado: {selectedAdmission.gradeApplying}</p>
-              </div>
-              <button onClick={() => setSelectedAdmission(null)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer' }}>✖</button>
-            </div>
-
-            {/* Cuerpo del Modal */}
-            <div style={{ padding: '2rem' }}>
-              <h3 style={{ color: '#008C5A', margin: '0 0 1rem 0' }}>Documentos Subidos por la Familia</h3>
+        {/* MODAL ANIMADO DE REVISIÓN */}
+        {selectedAdmission && (
+          <div className="modal-overlay">
+            <div className="modal-content">
               
-              {loadingDocs ? (
-                <p>Cargando documentos...</p>
-              ) : documents.length === 0 ? (
-                <div style={{ padding: '2rem', backgroundColor: '#f8fafc', borderRadius: '8px', textAlign: 'center', border: '1px dashed #cbd5e1' }}>
-                  <p style={{ color: '#64748b', margin: 0 }}>La familia aún no ha subido ningún documento.</p>
+              <div className="modal-header">
+                <div>
+                  <h2>Expediente de {selectedAdmission.studentFirstName}</h2>
+                  <p>Grado Solicitado: {selectedAdmission.gradeApplying}</p>
                 </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {documents.map(doc => (
-                    <div key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: doc.status === 'approved' ? '#f0fdf4' : doc.status === 'rejected' ? '#fef2f2' : 'white' }}>
-                      
-                      <div style={{ flex: 1 }}>
-                        <h4 style={{ margin: '0 0 0.3rem 0', color: '#002a4a' }}>{doc.fileName}</h4>
-                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 'bold' }}>Tipo: {doc.type}</span>
-                          <span style={{ fontSize: '0.85rem', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold', backgroundColor: doc.status === 'pending' || doc.status === 'resubmitted' ? '#fef9c3' : doc.status === 'approved' ? '#dcfce7' : '#fee2e2', color: doc.status === 'pending' || doc.status === 'resubmitted' ? '#b45309' : doc.status === 'approved' ? '#166534' : '#b91c1c' }}>
-                            {doc.status === 'pending' ? 'Pendiente' : doc.status === 'resubmitted' ? 'Re-subido' : doc.status === 'approved' ? 'Aprobado' : 'Rechazado'}
-                          </span>
-                        </div>
-                        {doc.status === 'rejected' && doc.rejectionReason && (
-                          <p style={{ fontSize: '0.85rem', color: '#b91c1c', margin: '0.5rem 0 0 0' }}>Motivo: {doc.rejectionReason}</p>
-                        )}
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                        <a href={doc.fileUrl} target="_blank" rel="noreferrer" style={{ padding: '0.5rem 1rem', backgroundColor: '#f1f5f9', color: '#0369a1', textDecoration: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.9rem' }}>👁️ Ver Archivo</a>
-                        
-                        {(doc.status === 'pending' || doc.status === 'resubmitted') && (
-                          <>
-                            <button onClick={() => handleApproveDoc(doc.id)} style={{ padding: '0.5rem', backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }} title="Aprobar">✅</button>
-                            <button onClick={() => setRejectingDocId(doc.id)} style={{ padding: '0.5rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }} title="Rechazar">❌</button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Cuadro de rechazo emergente */}
-                  {rejectingDocId && (
-                    <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#fee2e2', borderRadius: '8px', border: '1px solid #fca5a5' }}>
-                      <label style={{ display: 'block', fontWeight: 'bold', color: '#b91c1c', marginBottom: '0.5rem' }}>Motivo del rechazo:</label>
-                      <input 
-                        type="text" 
-                        value={rejectReason} 
-                        onChange={(e) => setRejectReason(e.target.value)} 
-                        placeholder="Ej: La imagen está borrosa, suba un PDF legible"
-                        style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #fca5a5', marginBottom: '1rem' }}
-                      />
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button onClick={() => handleRejectDoc(rejectingDocId)} style={{ padding: '0.5rem 1rem', backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Confirmar Rechazo</button>
-                        <button onClick={() => { setRejectingDocId(null); setRejectReason(''); }} style={{ padding: '0.5rem 1rem', backgroundColor: 'white', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer' }}>Cancelar</button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Botón de Acción Principal */}
-              <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '2px dashed #e2e8f0', textAlign: 'center' }}>
-                <h3 style={{ color: '#002a4a', marginBottom: '1rem' }}>Paso Siguiente: Evaluaciones</h3>
-                <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-                  Si los documentos están correctos, puedes habilitarle a este aspirante el acceso a sus exámenes (Psicológico, Académico, etc.)
-                </p>
-                
-                <button 
-                  onClick={handleHabilitarExamenes}
-                  disabled={!todosAprobados}
-                  style={{ 
-                    padding: '1rem 2rem', fontSize: '1.1rem', fontWeight: 800, border: 'none', borderRadius: '8px', width: '100%',
-                    backgroundColor: todosAprobados ? '#FAB529' : '#e2e8f0', 
-                    color: todosAprobados ? '#002a4a' : '#94a3b8',
-                    cursor: todosAprobados ? 'pointer' : 'not-allowed',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {todosAprobados ? '🚀 Habilitar Exámenes de Admisión' : '⚠️ Faltan documentos por aprobar'}
+                <button onClick={() => setSelectedAdmission(null)} className="btn-close-modal">
+                  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
 
+              <div className="modal-body">
+                <h3 className="modal-section-title">Documentos Subidos por la Familia</h3>
+                
+                {loadingDocs ? (
+                  <p>Cargando documentos...</p>
+                ) : documents.length === 0 ? (
+                  <div className="empty-state" style={{ border: '2px dashed #e2e8f0', borderRadius: '12px', padding: '3rem', backgroundColor: '#f8fafc' }}>
+                    <svg width="48" height="48" fill="none" stroke="#94a3b8" strokeWidth="1.5" viewBox="0 0 24 24" style={{ margin: '0 auto 1rem auto', display: 'block' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                    <p style={{ margin: 0, fontWeight: 600 }}>La familia aún no ha subido ningún documento.</p>
+                  </div>
+                ) : (
+                  <div className="docs-list">
+                    {documents.map(doc => (
+                      <div key={doc.id} className={`doc-item ${doc.status === 'approved' ? 'doc-approved' : doc.status === 'rejected' ? 'doc-rejected' : ''}`}>
+                        
+                        <div className="doc-info">
+                          <h4>{doc.fileName}</h4>
+                          <div className="doc-meta">
+                            <span className="doc-type">{doc.type}</span>
+                            <span className={`status-badge ${doc.status === 'pending' || doc.status === 'resubmitted' ? 'status-pending' : doc.status === 'approved' ? 'status-approved' : 'status-rejected'}`} style={{ backgroundColor: doc.status === 'rejected' ? '#fee2e2' : undefined, color: doc.status === 'rejected' ? '#b91c1c' : undefined, border: doc.status === 'rejected' ? '1px solid #fca5a5' : undefined }}>
+                              {doc.status === 'pending' ? 'Pendiente' : doc.status === 'resubmitted' ? 'Re-subido' : doc.status === 'approved' ? 'Aprobado' : 'Rechazado'}
+                            </span>
+                          </div>
+                          {doc.status === 'rejected' && doc.rejectionReason && (
+                            <p className="doc-reason">Motivo de rechazo: {doc.rejectionReason}</p>
+                          )}
+                        </div>
+
+                        <div className="doc-actions">
+                          <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="btn-doc-view">
+                            Ver Archivo
+                          </a>
+                          
+                          {(doc.status === 'pending' || doc.status === 'resubmitted') && (
+                            <>
+                              <button onClick={() => handleApproveDoc(doc.id)} className="btn-icon-action btn-approve" title="Aprobar Documento">
+                                <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                              </button>
+                              <button onClick={() => setRejectingDocId(doc.id)} className="btn-icon-action btn-reject" title="Rechazar Documento">
+                                <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Caja de Rechazo */}
+                    {rejectingDocId && (
+                      <div className="reject-box">
+                        <label>Indique el motivo del rechazo:</label>
+                        <input 
+                          type="text" 
+                          className="reject-input"
+                          value={rejectReason} 
+                          onChange={(e) => setRejectReason(e.target.value)} 
+                          placeholder="Ej: El documento está borroso, por favor suba un PDF legible."
+                        />
+                        <div className="doc-actions">
+                          <button onClick={() => handleRejectDoc(rejectingDocId)} className="btn-icon-action btn-reject" style={{ width: 'auto', padding: '0 1.5rem', fontWeight: '800' }}>
+                            Confirmar Rechazo
+                          </button>
+                          <button onClick={() => { setRejectingDocId(null); setRejectReason(''); }} className="btn-back" style={{ border: 'none', background: 'transparent' }}>
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Acción Final */}
+                <div className="modal-footer-action">
+                  <h3>Paso Siguiente: Evaluaciones de Admisión</h3>
+                  <p>Si el expediente documental está completo y aprobado, habilita el acceso a las pruebas.</p>
+                  
+                  <button 
+                    onClick={handleHabilitarExamenes}
+                    disabled={!todosAprobados}
+                    className={`btn-primary-action ${todosAprobados ? 'active' : 'disabled'}`}
+                  >
+                    {todosAprobados ? (
+                      <>
+                        Habilitar Exámenes de Ingreso
+                        <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+                      </>
+                    ) : (
+                      <>
+                        <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                        Faltan documentos por aprobar
+                      </>
+                    )}
+                  </button>
+                </div>
+
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+      </main>
     </div>
   );
 }

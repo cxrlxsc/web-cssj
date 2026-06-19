@@ -1,0 +1,230 @@
+/* src/pages/admin/AdminCodigos.css */
+
+.admin-codigos-layout {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* NAVBAR VERDE OFICIAL */
+.admin-navbar {
+  background-color: #008C5A;
+  color: #FFFFFF;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 2.5rem;
+  border-bottom: 4px solid #FAB529;
+  box-shadow: 0 4px 12px rgba(0, 140, 90, 0.2);
+}
+
+.navbar-brand { display: flex; align-items: center; gap: 1.25rem; }
+.navbar-logo { height: 48px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); }
+.navbar-title { font-size: 1.35rem; font-weight: 700; margin: 0; }
+
+.btn-logout {
+  background-color: transparent; color: #FFFFFF; border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.6rem 1.3rem; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.btn-logout:hover { background-color: #030405; border-color: #030405; }
+
+/* CONTENEDOR PRINCIPAL */
+.codigos-main-wrapper {
+  flex: 1;
+  padding: 3.5rem 2rem;
+}
+
+.codigos-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Cabecera y Botón de Volver (Estándar del Sistema) */
+.codigos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.header-titles h1 {
+  color: #030405; /* Negro Oficial */
+  font-size: 2.25rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.5px;
+}
+
+.header-titles p {
+  color: #64748b;
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #f1f5f9;
+  color: #475569;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.btn-back:hover {
+  background-color: #e2e8f0;
+  color: #030405;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Tarjeta Principal del Módulo */
+.codigos-card {
+  background-color: #FFFFFF;
+  padding: 4rem 3rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  border-top: 6px solid #FAB529; /* Borde Dorado Oficial */
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Wrapper del Icono Dorado */
+.icon-wrapper-large-gold {
+  background-color: rgba(250, 181, 41, 0.15); /* 15% opacidad */
+  color: #FAB529;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.codigos-card h2 {
+  color: #030405;
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0 0 1rem 0;
+}
+
+.codigos-card > p {
+  color: #64748b;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  max-width: 500px;
+  margin: 0 auto 2.5rem auto;
+}
+
+/* Botón de Acción Principal (Dorado) */
+.btn-primary-gold {
+  background-color: #FAB529;
+  color: #030405; /* Texto Negro para contraste */
+  font-weight: 800;
+  padding: 1rem 2.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px rgba(250, 181, 41, 0.25);
+}
+
+.btn-primary-gold:hover:not(:disabled) {
+  background-color: #f5a623;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 10px rgba(250, 181, 41, 0.3);
+}
+
+.btn-primary-gold:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn-primary-gold:disabled {
+  background-color: #e2e8f0;
+  color: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Caja de Éxito (Aparición Animada) */
+.success-code-box {
+  background-color: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  padding: 2.5rem;
+  border-radius: 12px;
+  margin-top: 3rem;
+  width: 100%;
+  animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.success-label {
+  display: block;
+  color: #475569;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.success-code {
+  display: inline-block;
+  font-size: 3.5rem;
+  font-family: monospace;
+  font-weight: 900;
+  color: #0068B3; /* Azul Oficial para destacar el código */
+  letter-spacing: 4px;
+  background-color: #FFFFFF;
+  padding: 1.5rem 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.success-note {
+  margin: 1.5rem 0 0 0;
+  font-size: 0.95rem;
+  color: #64748b;
+}
+
+/* Responsividad */
+@media (max-width: 640px) {
+  .admin-navbar {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem;
+  }
+  .codigos-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .btn-back {
+    width: 100%;
+    justify-content: center;
+  }
+  .codigos-card {
+    padding: 2.5rem 1.5rem;
+  }
+  .success-code {
+    font-size: 2rem;
+    padding: 1rem 1.5rem;
+  }
+}

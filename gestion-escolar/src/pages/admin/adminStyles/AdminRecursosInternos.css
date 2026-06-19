@@ -1,0 +1,281 @@
+/* src/pages/admin/AdminRecursosInternos.css */
+
+.admin-recursos-layout {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Barra de Navegación Institucional (Verde Oficial) */
+.admin-navbar {
+  background-color: #008C5A;
+  color: #FFFFFF;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 2.5rem;
+  border-bottom: 4px solid #FAB529;
+  box-shadow: 0 4px 12px rgba(0, 140, 90, 0.2);
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.navbar-logo {
+  height: 48px;
+  width: auto;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+}
+
+.navbar-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.btn-logout {
+  background-color: transparent;
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.6rem 1.3rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-logout:hover {
+  background-color: #030405; /* Negro Oficial */
+  border-color: #030405;
+  box-shadow: 0 4px 6px -1px rgba(3, 4, 5, 0.2);
+}
+
+/* Contenedor Principal */
+.recursos-main {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 3.5rem 2rem;
+}
+
+/* Cabecera Moderna con Botón Integrado */
+.recursos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.header-titles h1 {
+  color: #030405; /* Negro Oficial */
+  font-size: 2.25rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.5px;
+}
+
+.header-titles p {
+  color: #64748b;
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+/* El nuevo diseño para el Botón de Volver */
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #f1f5f9;
+  color: #475569;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.btn-back:hover {
+  background-color: #e2e8f0;
+  color: #030405; /* Negro oficial */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Cuadrícula de Tarjetas Operativas */
+.recursos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+}
+
+/* Diseño de Tarjetas (Cards) */
+.recurso-card {
+  background-color: #FFFFFF;
+  padding: 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.recurso-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+  border-color: #cbd5e1;
+}
+
+/* Bordes superiores para identidad visual */
+.card-admisiones { border-top: 6px solid #0068B3; } /* Azul */
+.card-colecturia { border-top: 6px solid #008C5A; } /* Verde */
+.card-codigos { border-top: 6px solid #FAB529; }    /* Dorado */
+
+.card-top {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-grow: 1; /* Permite que el botón siempre quede pegado al fondo */
+}
+
+/* Íconos */
+.recurso-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.icon-blue { background-color: rgba(0, 104, 179, 0.12); color: #0068B3; }
+.icon-green { background-color: rgba(0, 140, 90, 0.12); color: #008C5A; }
+.icon-gold { background-color: rgba(250, 181, 41, 0.15); color: #FAB529; }
+
+.recurso-text h3 {
+  margin: 0 0 0.75rem 0;
+  color: #030405; /* Negro Oficial */
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.recurso-text p {
+  margin: 0 0 2rem 0;
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Botones Dinámicos alineados al fondo */
+.btn-recurso {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+/* Botón Azul */
+.btn-blue {
+  background-color: transparent;
+  color: #0068B3;
+  border: 2px solid #0068B3;
+}
+.btn-blue:hover {
+  background-color: #0068B3;
+  color: #FFFFFF;
+}
+
+/* Botón Verde */
+.btn-green {
+  background-color: transparent;
+  color: #008C5A;
+  border: 2px solid #008C5A;
+}
+.btn-green:hover {
+  background-color: #008C5A;
+  color: #FFFFFF;
+}
+
+/* Botón Dorado (Texto negro oficial) */
+.btn-gold {
+  background-color: transparent;
+  color: #030405;
+  border: 2px solid #FAB529;
+}
+.btn-gold:hover {
+  background-color: #FAB529;
+  color: #030405;
+}
+
+/* Animación de la flecha al hacer hover */
+.arrow-icon {
+  transition: transform 0.2s ease;
+}
+
+.btn-recurso:hover .arrow-icon {
+  transform: translateX(4px);
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .admin-navbar {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem;
+  }
+  .recursos-header {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+  .btn-back {
+    width: 100%;
+    justify-content: center;
+  }
+}
+/* --- ESTILOS PARA LA TARJETA 4 (AZUL PROFUNDO LEGAL) --- */
+.card-contratos {
+  border-top: 6px solid #002a4a !important;
+}
+
+.icon-navy {
+  background-color: rgba(0, 42, 74, 0.1) !important; /* Fondo azul oscuro transparente */
+  color: #002a4a !important;
+}
+
+.btn-navy {
+  color: #002a4a !important;
+  border: 1px solid #002a4a !important;
+}
+
+.btn-navy:hover {
+  background-color: #002a4a !important;
+  color: #FFFFFF !important;
+}
+
+/* Para que la flechita del botón también cambie de color al pasar el mouse */
+.btn-navy:hover .arrow-icon {
+  stroke: #FFFFFF !important;
+}

@@ -1,0 +1,242 @@
+/* src/pages/admin/AdminLogin.css */
+
+.admin-login-container {
+  display: flex;
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #f8fafc;
+}
+
+/* Panel Izquierdo con el gradiente (Azul y Verde) */
+.admin-login-brand {
+  flex: 1;
+  background: linear-gradient(135deg, #002a4a 0%, #0068B3 50%, #008C5A 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Patrón de fondo sutil */
+.admin-login-brand::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0);
+  background-size: 32px 32px;
+  pointer-events: none;
+}
+
+.brand-content {
+  position: relative;
+  z-index: 1;
+  max-width: 450px;
+}
+
+.brand-logo {
+  width: 140px;
+  margin-bottom: 2.5rem;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+}
+
+.brand-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0 0 1.5rem 0;
+  letter-spacing: -0.5px;
+}
+
+.brand-subtitle {
+  font-size: 1.15rem;
+  color: #e0f2fe;
+  line-height: 1.6;
+  margin: 0;
+  font-weight: 400;
+}
+
+/* INTEGRACIÓN DORADA 1: Línea divisoria más prominente y con brillo */
+.brand-divider {
+  width: 60px;
+  height: 4px;
+  background-color: #FAB529;
+  margin: 2rem 0;
+  border-radius: 2px;
+  box-shadow: 0 0 12px rgba(250, 181, 41, 0.6);
+}
+
+.brand-footer {
+  font-size: 0.9rem;
+  color: #bbf7d0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+/* Panel Derecho */
+.admin-login-form-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+/* INTEGRACIÓN DORADA 2: Tarjeta con borde superior */
+.admin-login-card {
+  width: 100%;
+  max-width: 440px;
+  background: white;
+  padding: 3.5rem;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+  border: 1px solid #f1f5f9;
+  border-top: 6px solid #FAB529; 
+}
+
+.form-header {
+  margin-bottom: 2.5rem;
+}
+
+.form-header h2 {
+  color: #0f172a;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.5px;
+}
+
+.form-header p {
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.error-message {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid #fecaca;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.input-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.input-group input {
+  padding: 0.875rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 1rem;
+  color: #0f172a;
+  transition: all 0.2s;
+  background-color: #f8fafc;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #0068B3;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(0, 104, 179, 0.1);
+}
+
+.input-group input::placeholder {
+  color: #94a3b8;
+}
+
+/* INTEGRACIÓN DORADA 3: Botón de acción principal */
+.btn-submit {
+  margin-top: 1rem;
+  background-color: #FAB529;
+  color: #002a4a; /* Texto azul oscuro para contraste perfecto */
+  padding: 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px rgba(250, 181, 41, 0.25);
+}
+
+.btn-submit:hover:not(.loading) {
+  background-color: #f5a623; /* Un dorado un poco más fuerte */
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px rgba(250, 181, 41, 0.3);
+}
+
+.btn-submit:active:not(.loading) {
+  transform: translateY(1px);
+}
+
+.btn-submit.loading {
+  background-color: #e2e8f0;
+  color: #94a3b8;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.form-footer {
+  margin-top: 2.5rem;
+  text-align: center;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 1.5rem;
+}
+
+.form-footer p {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Responsividad */
+@media (max-width: 900px) {
+  .admin-login-container {
+    flex-direction: column;
+  }
+  .admin-login-brand {
+    padding: 3rem 1.5rem;
+    text-align: center;
+  }
+  .brand-logo {
+    width: 100px;
+    margin: 0 auto 1.5rem auto;
+    display: block;
+  }
+  .brand-title {
+    font-size: 2rem;
+  }
+  .brand-divider {
+    margin: 1.5rem auto;
+  }
+  .admin-login-card {
+    padding: 2.5rem 1.5rem;
+  }
+}

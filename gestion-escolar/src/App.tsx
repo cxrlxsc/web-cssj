@@ -8,10 +8,20 @@ import About from './components/home/About';
 import AccesoAdmision from './pages/admisiones/AccesoAdmision'; 
 import ProcesoAdmision from './pages/admisiones/ProcesoAdmision';
 
-// Nuevas importaciones para el sistema de Admin
+// Importaciones para el sistema de Admin
 import Login from './pages/admin/Login';
+import AdminDashboard from './pages/admin/AdminDashboard'; 
 import AdminInstitucional from './pages/admin/AdminInstitucional';
+import AdminRecursosInternos from './pages/admin/AdminRecursosInternos'; 
+import AdminAdmisiones from './pages/admin/AdminAdmisiones';
+import { AdminPagosReingreso } from './pages/admin/AdminPagosReingreso';
+import AdminCodigos from './pages/admin/AdminCodigos'; 
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
+import ContratoImpresion from './pages/shared/ContratoImpresion';
+import AdminContrato from './pages/admin/AdminContrato';
+import AdminContratosFirmados from './pages/admin/AdminContratosFirmados';
+
+// Páginas Públicas Adicionales
 import Historia from './pages/Historia';
 import Ubicacion from './pages/Ubicacion';
 import Autoridades from './pages/Autoridades';
@@ -21,8 +31,13 @@ import Directorio from './pages/Directorio';
 import Noticias from './pages/Noticias';
 import ProcesoInscripcion from './pages/ProcesoInscripcion';
 import CalendarioAcademico from './pages/CalendarioAcademico';
+
+// Módulo de Reingreso Estudiantes
 import PortalAspirante from './pages/admisiones/PortalAspirante';
-import AdminAdmisiones from './pages/admin/AdminAdmisiones';
+import { LoginReingreso } from './pages/reingreso/LoginReingreso';
+import { FormularioReingreso } from './pages/reingreso/FormularioReingreso';
+import { PasosReingreso } from './pages/reingreso/PasosReingreso';
+import { TalonarioPrint } from './pages/reingreso/TalonarioPrint';
 
 function App() {
   
@@ -32,6 +47,7 @@ function App() {
 
   return (
     <Routes>
+      {/* PÁGINAS PÚBLICAS */}
       <Route path="/" element={<Home />} />
       <Route path="/nosotros" element={<About />} />
       <Route path="/historia" element={<Historia />} />
@@ -44,27 +60,71 @@ function App() {
       <Route path="/solicitud-admision" element={<AccesoAdmision />} />
       <Route path="/solicitud-admision/dashboard" element={<ProcesoAdmision />} />
       <Route path="/calendario-academico" element={<CalendarioAcademico />} />
-
-      {/* RUTA PÚBLICA DEL LOGIN */}
-      <Route path="/admin/login" element={<Login />} />
-      {/*RUTA PARA PROCESO DE INSCRIPCION */}
       <Route path="/proceso-inscripcion" element={<ProcesoInscripcion />} />
       <Route path="/mi-solicitud" element={<PortalAspirante />} />
 
-      {/* RUTA PROTEGIDA DEL PANEL (Envuelves el panel con ProtectedRoute) */}
-      <Route 
-        path="/admin/institucional" 
-        element={
-          <ProtectedRoute>
-            <AdminInstitucional />
-          </ProtectedRoute>
-        } 
-      />
+      {/* RUTAS DE REINGRESO (ANTIGUOS ALUMNOS) */}
+      <Route path="/reingreso/login" element={<LoginReingreso />} />
+      <Route path="/reingreso/formulario" element={<FormularioReingreso />} />
+      <Route path="/reingreso/pasos" element={<PasosReingreso />} />
+      <Route path="/reingreso/talonario" element={<TalonarioPrint />} />
+      <Route path="/imprimir-contrato" element={<ContratoImpresion />} />
+      
+      {/* ============================================
+          SISTEMA ADMINISTRATIVO (PROTEGIDO)
+         ============================================ */}
+      <Route path="/admin/login" element={<Login />} />
+
+      {/* PORTAL CENTRAL DE SELECCIÓN */}
+      <Route path="/admin/dashboard" element={
+        <ProtectedRoute>
+          <AdminDashboard />
+        </ProtectedRoute>
+      } />
+
+      {/* MODIFICAR PAGINA WEB (INSTITUCIONAL) */}
+      <Route path="/admin/institucional" element={
+        <ProtectedRoute>
+          <AdminInstitucional />
+        </ProtectedRoute>
+      } />
+
+      {/* RECURSOS INTERNOS ACADÉMICOS Y SUS 4 OPCIONES */}
+      <Route path="/admin/recursos" element={
+        <ProtectedRoute>
+          <AdminRecursosInternos />
+        </ProtectedRoute>
+      } />
+      
       <Route path="/admin/solicitudes" element={
-      <ProtectedRoute>
-    <AdminAdmisiones />
-    </ProtectedRoute>
-    } />
+        <ProtectedRoute>
+          <AdminAdmisiones />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/admin/colecturia" element={
+        <ProtectedRoute>
+          <AdminPagosReingreso />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/admin/codigos" element={
+        <ProtectedRoute>
+          <AdminCodigos />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/admin/contratos" element={
+        <ProtectedRoute>
+          <AdminContrato />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/admin/contratos-firmados" element={
+        <ProtectedRoute>
+          <AdminContratosFirmados />
+        </ProtectedRoute>
+      } />
 
     </Routes>
   );

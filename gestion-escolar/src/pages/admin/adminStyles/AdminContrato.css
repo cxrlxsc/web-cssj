@@ -1,0 +1,146 @@
+/* src/pages/admin/AdminContrato.css */
+
+.admin-contrato-layout {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* NAVBAR VERDE OFICIAL */
+.admin-navbar {
+  background-color: #008C5A;
+  color: #FFFFFF;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 2.5rem;
+  border-bottom: 4px solid #FAB529;
+  box-shadow: 0 4px 12px rgba(0, 140, 90, 0.2);
+}
+
+.navbar-brand { display: flex; align-items: center; gap: 1.25rem; }
+.navbar-logo { height: 48px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); }
+.navbar-title { font-size: 1.35rem; font-weight: 700; margin: 0; }
+
+.btn-logout {
+  background-color: transparent; color: #FFFFFF; border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.6rem 1.3rem; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.btn-logout:hover { background-color: #030405; border-color: #030405; }
+
+/* CONTENEDOR PRINCIPAL */
+.contrato-main {
+  flex: 1;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.contrato-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.header-titles h1 { color: #030405; font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem 0; }
+.header-titles p { color: #64748b; font-size: 1rem; margin: 0; }
+
+.btn-back {
+  display: inline-flex; align-items: center; gap: 0.5rem; background-color: #f1f5f9; color: #475569;
+  padding: 0.75rem 1.25rem; border-radius: 8px; font-weight: 600; text-decoration: none; border: 1px solid #e2e8f0; transition: all 0.2s ease;
+}
+.btn-back:hover { background-color: #e2e8f0; color: #030405; }
+
+/* SISTEMA DE PESTAÑAS */
+.tabs-container {
+  display: flex; gap: 0.5rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 1rem; margin-bottom: 2rem;
+}
+.tab-button {
+  padding: 0.8rem 1.5rem; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: all 0.2s;
+  background-color: #f1f5f9; color: #475569; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;
+}
+.tab-button.active { background-color: #0068B3; color: #FFFFFF; box-shadow: 0 4px 6px rgba(0, 104, 179, 0.2); }
+.tab-button:hover:not(.active) { background-color: #e2e8f0; color: #030405; }
+
+/* DISEÑO DIVIDIDO (Formulario vs Previsualización) */
+.contrato-grid {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* Panel Izquierdo: Controles y Variables */
+.controls-panel {
+  background: #FFFFFF; padding: 2rem; border-radius: 16px; border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); border-top: 6px solid #FAB529;
+}
+
+.controls-panel h3 { color: #0068B3; margin: 0 0 1.5rem 0; font-size: 1.2rem; font-weight: 800; }
+
+.form-group { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+.form-group label { font-weight: 700; color: #030405; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;}
+.form-group input, .form-group select {
+  padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 0.95rem; background-color: #f8fafc;
+}
+.form-group input:focus { border-color: #008C5A; background-color: #FFFFFF; outline: none; box-shadow: 0 0 0 3px rgba(0, 140, 90, 0.1); }
+
+.help-text { font-size: 0.8rem; color: #64748b; margin-top: -0.25rem; margin-bottom: 1rem; }
+
+.btn-primary {
+  width: 100%; background-color: #008C5A; color: #FFFFFF; font-weight: 800; padding: 1rem; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1rem;
+}
+.btn-primary:hover:not(:disabled) { background-color: #006e46; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,140,90,0.2); }
+.btn-primary:disabled { background-color: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+
+/* Editor de Plantilla Textarea */
+.template-editor {
+  width: 100%; height: 600px; padding: 1.5rem; border-radius: 8px; border: 2px solid #e2e8f0;
+  font-family: monospace; font-size: 0.9rem; line-height: 1.6; resize: vertical; background-color: #f8fafc;
+}
+.template-editor:focus { outline: none; border-color: #0068B3; background-color: #FFFFFF; }
+
+/* Panel Derecho: Previsualización tipo Hoja A4 */
+.preview-panel {
+  display: flex; justify-content: center; padding: 1rem; background-color: #e2e8f0; border-radius: 12px;
+}
+
+.a4-sheet {
+  background: white;
+  width: 100%;
+  max-width: 210mm; /* Ancho estándar A4 */
+  min-height: 297mm; /* Alto estándar A4 */
+  padding: 25mm 20mm;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  font-family: 'Times New Roman', serif; /* Tipografía legal clásica */
+  font-size: 11pt;
+  line-height: 1.5;
+  color: #000000;
+  white-space: pre-wrap;
+  text-align: justify;
+}
+
+.btn-print {
+  background-color: #FAB529; color: #030405; font-weight: 800; padding: 0.8rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; box-shadow: 0 4px 6px rgba(250, 181, 41, 0.2);
+}
+.btn-print:hover { background-color: #f5a623; transform: translateY(-2px); }
+
+/* Etiquetas de Variables en la interfaz */
+.tag-badge {
+  display: inline-block; background-color: #e0f2fe; color: #0369a1; padding: 0.2rem 0.5rem; border-radius: 4px; font-family: monospace; font-size: 0.75rem; margin: 0.2rem; border: 1px solid #bae6fd;
+}
+
+@media (max-width: 1024px) {
+  .contrato-grid { grid-template-columns: 1fr; }
+  .controls-panel { order: 2; }
+  .preview-panel { order: 1; overflow-x: auto;}
+}
+@media print {
+  body * { visibility: hidden; }
+  .a4-sheet, .a4-sheet * { visibility: visible; }
+  .a4-sheet { position: absolute; left: 0; top: 0; margin: 0; padding: 15mm; box-shadow: none; width: 100%; }
+}

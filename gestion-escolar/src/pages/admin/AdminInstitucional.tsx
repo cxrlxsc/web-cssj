@@ -2,15 +2,20 @@
 import { useEffect, useState } from 'react';
 import { doc, getDoc, setDoc, collection, addDoc, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { accessCodeService } from '../../services/accessCodeService'; // <-- NUEVA IMPORTACIÓN
+import { Link, useNavigate } from 'react-router-dom';
+import logoImg from '../../assets/logo.png';
+import './adminStyles/AdminInstitucional.css'; 
 
 export default function AdminInstitucional() {
-  // --- ESTADO PARA LAS PESTAÑAS ---
+  const navigate = useNavigate();
   const [pestañaActiva, setPestañaActiva] = useState('identidad');
 
-  // ==========================================
+  const handleLogout = () => {
+    localStorage.removeItem('adminSession'); 
+    navigate('/admin/login');
+  };
+
   // ESTADOS Y LÓGICA: IDENTIDAD
-  // ==========================================
   const [mision, setMision] = useState('');
   const [vision, setVision] = useState('');
   const [guardandoIdentidad, setGuardandoIdentidad] = useState(false);
@@ -33,16 +38,13 @@ export default function AdminInstitucional() {
       await setDoc(doc(db, 'institucional', 'info_general'), { mision, vision }, { merge: true });
       alert('¡Identidad actualizada con éxito!');
     } catch (error) {
-      console.error(error);
       alert('Hubo un error al guardar.');
     } finally {
       setGuardandoIdentidad(false);
     }
   };
 
-  // ==========================================
   // ESTADOS Y LÓGICA: CONTACTOS
-  // ==========================================
   const [telefono, setTelefono] = useState('');
   const [email, setEmail] = useState('');
   const [direccion, setDireccion] = useState('');
@@ -67,16 +69,13 @@ export default function AdminInstitucional() {
       await setDoc(doc(db, 'institucional', 'contactos'), { telefono, email, direccion }, { merge: true });
       alert('¡Datos de contacto actualizados!');
     } catch (error) {
-      console.error(error);
       alert('Hubo un error al guardar los contactos.');
     } finally {
       setGuardandoContacto(false);
     }
   };
 
-  // ==========================================
   // ESTADOS Y LÓGICA: NOTICIAS
-  // ==========================================
   const [noticias, setNoticias] = useState<any[]>([]);
   const [guardandoNoticia, setGuardandoNoticia] = useState(false);
   const [nuevaNoticia, setNuevaNoticia] = useState({ titulo: '', fecha: '', extracto: '', imagen: '', tag: 'Noticia', visitas: '0 Visitas' });
@@ -112,9 +111,7 @@ export default function AdminInstitucional() {
     }
   };
 
-  // ==========================================
   // ESTADOS Y LÓGICA: EVENTOS
-  // ==========================================
   const [eventos, setEventos] = useState<any[]>([]);
   const [guardandoEvento, setGuardandoEvento] = useState(false);
   const [nuevoEvento, setNuevoEvento] = useState({ titulo: '', descripcion: '', fecha: '', categoria: 'Institucional' });
@@ -137,14 +134,9 @@ export default function AdminInstitucional() {
       const diaStr = String(dateObj.getDate()).padStart(2, '0');
       const mesStr = dateObj.toLocaleString('es-ES', { month: 'short' }).substring(0, 3);
 
-      const eventoFinal = {
-        ...nuevoEvento,
-        dia: diaStr,
-        mes: mesStr
-      };
-
+      const eventoFinal = { ...nuevoEvento, dia: diaStr, mes: mesStr };
       await addDoc(collection(db, "eventos"), eventoFinal);
-      alert('Evento publicado en la agenda exitosamente');
+      alert('Evento publicado exitosamente');
       setNuevoEvento({ titulo: '', descripcion: '', fecha: '', categoria: 'Institucional' });
       cargarEventos();
     } catch (error) {
@@ -155,15 +147,13 @@ export default function AdminInstitucional() {
   };
 
   const handleEliminarEvento = async (id: string) => {
-    if (window.confirm("¿Estás seguro de eliminar este evento de la agenda?")) {
+    if (window.confirm("¿Estás seguro de eliminar este evento?")) {
       await deleteDoc(doc(db, "eventos", id));
       cargarEventos();
     }
   };
 
-  // ==========================================
   // ESTADOS Y LÓGICA: AUTORIDADES
-  // ==========================================
   const [autoridades, setAutoridades] = useState<any[]>([]);
   const [guardandoAutoridad, setGuardandoAutoridad] = useState(false);
   const [nuevaAutoridad, setNuevaAutoridad] = useState({ nombre: '', cargo: '', imagen: '' });
@@ -199,251 +189,236 @@ export default function AdminInstitucional() {
     }
   };
 
-  // ==========================================
-  // ESTADOS Y LÓGICA: CÓDIGOS DE PRUEBA (NUEVO)
-  // ==========================================
-  const [codigoGenerado, setCodigoGenerado] = useState('');
-  const [generandoCodigo, setGenerandoCodigo] = useState(false);
-
-  const handleGenerarCodigoPrueba = async () => {
-    setGenerandoCodigo(true);
-    try {
-      const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
-      const nuevoCodigo = `CSSJ-${randomStr}`;
-
-      await accessCodeService.createCode({
-        code: nuevoCodigo,
-        description: 'Código de prueba generado desde admin',
-        year: 2026,
-        maxUses: 1, 
-        currentUses: 0,
-        isActive: true,
-        gradeLevel: 'all', 
-        createdBy: 'admin_test',
-        creatorName: 'Administrador',
-      } as any);
-
-      setCodigoGenerado(nuevoCodigo);
-    } catch (error) {
-      console.error(error);
-      alert('Hubo un error al generar el código en Firebase.');
-    } finally {
-      setGenerandoCodigo(false);
-    }
-  };
-
-  // ==========================================
-  // RENDERIZADO DE LA INTERFAZ
-  // ==========================================
   return (
-    <div style={{ padding: '3rem', maxWidth: '1000px', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
+    <div className="admin-institucional-layout">
       
-      <h2 style={{ color: '#002a4a', fontSize: '2rem', marginBottom: '0.5rem' }}>Panel de Administración</h2>
-      <p style={{ color: '#64748b', marginBottom: '2rem' }}>Gestiona toda la información pública del colegio.</p>
-
-      {/* Navegación por Pestañas */}
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-        {[
-          { id: 'identidad', label: 'Misión/Visión' },
-          { id: 'contactos', label: 'Información de Contacto' },
-          { id: 'noticias', label: 'Gestor de Noticias' },
-          { id: 'eventos', label: 'Gestor de Eventos' },
-          { id: 'autoridades', label: 'Autoridades' },
-          { id: 'codigos', label: ' Generar Códigos' } // <-- NUEVA PESTAÑA
-        ].map(tab => (
-          <button 
-            key={tab.id}
-            onClick={() => setPestañaActiva(tab.id)}
-            style={{ 
-              padding: '0.8rem 1.2rem', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer',
-              backgroundColor: pestañaActiva === tab.id ? '#0068B3' : '#f1f5f9',
-              color: pestañaActiva === tab.id ? 'white' : '#475569',
-              transition: 'all 0.2s'
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* PESTAÑA IDENTIDAD */}
-      {pestañaActiva === 'identidad' && (
-        <form onSubmit={handleGuardarIdentidad} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '800px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{ fontWeight: 'bold', color: '#0068B3' }}>Misión del Colegio:</label>
-            <textarea value={mision} onChange={(e) => setMision(e.target.value)} rows={5} required style={{ padding: '1rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{ fontWeight: 'bold', color: '#008C5A' }}>Visión del Colegio:</label>
-            <textarea value={vision} onChange={(e) => setVision(e.target.value)} rows={5} required style={{ padding: '1rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
-          </div>
-          <button type="submit" disabled={guardandoIdentidad} style={{ backgroundColor: '#FAB529', fontWeight: 'bold', padding: '1rem', border: 'none', borderRadius: '8px', cursor: guardandoIdentidad ? 'not-allowed' : 'pointer' }}>
-            {guardandoIdentidad ? 'Guardando...' : 'Guardar Cambios'}
-          </button>
-        </form>
-      )}
-
-      {/* PESTAÑA CONTACTOS */}
-      {pestañaActiva === 'contactos' && (
-        <form onSubmit={handleGuardarContacto} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '600px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{ fontWeight: 'bold' }}>Teléfono Principal:</label>
-            <input type="text" value={telefono} onChange={(e) => setTelefono(e.target.value)} required style={{ padding: '1rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} placeholder="Ej. +503 2440-0000" />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{ fontWeight: 'bold' }}>Correo Electrónico:</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ padding: '1rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} placeholder="Ej. info@colegiosalesiano.edu.sv" />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{ fontWeight: 'bold' }}>Dirección Física:</label>
-            <textarea value={direccion} onChange={(e) => setDireccion(e.target.value)} rows={3} required style={{ padding: '1rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} placeholder="Dirección completa del campus" />
-          </div>
-          <button type="submit" disabled={guardandoContacto} style={{ backgroundColor: '#0068B3', color: 'white', fontWeight: 'bold', padding: '1rem', border: 'none', borderRadius: '8px', cursor: guardandoContacto ? 'not-allowed' : 'pointer' }}>
-            {guardandoContacto ? 'Guardando...' : 'Guardar Contactos'}
-          </button>
-        </form>
-      )}
-
-      {/* PESTAÑA NOTICIAS */}
-      {pestañaActiva === 'noticias' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem' }}>
-          <div>
-            <h3 style={{ color: '#008C5A', marginBottom: '1.5rem' }}>Publicar Nueva Noticia</h3>
-            <form onSubmit={handleAgregarNoticia} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', backgroundColor: '#f8fafc', padding: '2rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-              <input type="text" value={nuevaNoticia.titulo} onChange={(e) => setNuevaNoticia({...nuevaNoticia, titulo: e.target.value})} required style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }} placeholder="Título de la noticia" />
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <input type="text" value={nuevaNoticia.fecha} onChange={(e) => setNuevaNoticia({...nuevaNoticia, fecha: e.target.value})} required style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', flex: 1 }} placeholder="Ej. 15 mayo, 2026" />
-                <input type="text" value={nuevaNoticia.tag} onChange={(e) => setNuevaNoticia({...nuevaNoticia, tag: e.target.value})} required style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', flex: 1 }} placeholder="Etiqueta (Ej. Noticia)" />
-              </div>
-              <input type="url" value={nuevaNoticia.imagen} onChange={(e) => setNuevaNoticia({...nuevaNoticia, imagen: e.target.value})} required style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }} placeholder="URL de la Imagen" />
-              <textarea value={nuevaNoticia.extracto} onChange={(e) => setNuevaNoticia({...nuevaNoticia, extracto: e.target.value})} required rows={3} style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }} placeholder="Extracto (Resumen)..." />
-              <button type="submit" disabled={guardandoNoticia} style={{ backgroundColor: '#008C5A', color: 'white', fontWeight: 'bold', padding: '1rem', border: 'none', borderRadius: '6px' }}>Publicar Noticia</button>
-            </form>
-          </div>
-          <div>
-            <h3 style={{ color: '#002a4a', marginBottom: '1.5rem' }}>Noticias Publicadas</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '600px', overflowY: 'auto' }}>
-              {noticias.map((noticia) => (
-                <div key={noticia.id} style={{ display: 'flex', gap: '1rem', backgroundColor: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <img src={noticia.imagen} alt="miniatura" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}>{noticia.titulo}</h4>
-                    <p style={{ margin: '0', fontSize: '0.8rem', color: '#64748b' }}>{noticia.fecha}</p>
-                  </div>
-                  <button onClick={() => handleEliminarNoticia(noticia.id)} style={{ backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', padding: '0.5rem', cursor: 'pointer', alignSelf: 'flex-start' }}>Eliminar</button>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* NAVBAR OFICIAL */}
+      <nav className="admin-navbar">
+        <div className="navbar-brand">
+          <img src={logoImg} alt="Logotipo Institucional" className="navbar-logo" />
+          <span className="navbar-title">Colegio Salesiano San José</span>
         </div>
-      )}
+        <button onClick={handleLogout} className="btn-logout">Cerrar Sesión</button>
+      </nav>
 
-      {/* PESTAÑA EVENTOS */}
-      {pestañaActiva === 'eventos' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem' }}>
-          <div>
-            <h3 style={{ color: '#FAB529', marginBottom: '1.5rem' }}>Agendar Nuevo Evento</h3>
-            <form onSubmit={handleAgregarEvento} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', backgroundColor: '#f8fafc', padding: '2rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-              
-              <input type="text" value={nuevoEvento.titulo} onChange={(e) => setNuevoEvento({...nuevoEvento, titulo: e.target.value})} required style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }} placeholder="Título del evento" />
-              
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <input type="date" value={nuevoEvento.fecha} onChange={(e) => setNuevoEvento({...nuevoEvento, fecha: e.target.value})} required style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', flex: 1 }} />
-                
-                <select value={nuevoEvento.categoria} onChange={(e) => setNuevoEvento({...nuevoEvento, categoria: e.target.value})} style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', flex: 1 }}>
-                  <option value="Académico">Académico</option>
-                  <option value="Institucional">Institucional</option>
-                  <option value="Pastoral">Pastoral</option>
-                  <option value="Deportes">Deportes</option>
-                  <option value="Importante">Importante</option>
-                </select>
+      <main className="institucional-main">
+        
+        {/* HEADER */}
+        <header className="institucional-header">
+          <div className="header-titles">
+            <h1>Gestor de Página Web</h1>
+            <p>Control de contenidos y configuración del portal público.</p>
+          </div>
+          <Link to="/admin/dashboard" className="btn-back">
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+            Volver al Panel Central
+          </Link>
+        </header>
+
+        {/* PESTAÑAS */}
+        <div className="tabs-container">
+          {[
+            { id: 'identidad', label: 'Misión y Visión' },
+            { id: 'contactos', label: 'Contacto y Dirección' },
+            { id: 'noticias', label: 'Gestor de Noticias' },
+            { id: 'eventos', label: 'Agenda de Eventos' },
+            { id: 'autoridades', label: 'Directorio de Autoridades' }
+          ].map(tab => (
+            <button 
+              key={tab.id}
+              onClick={() => setPestañaActiva(tab.id)}
+              className={`tab-button ${pestañaActiva === tab.id ? 'active' : ''}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* CONTENEDOR DE LA PESTAÑA ACTIVA */}
+        <div className="content-card">
+          
+          {pestañaActiva === 'identidad' && (
+            <form onSubmit={handleGuardarIdentidad} className="form-layout">
+              <div className="form-group">
+                <label style={{ color: '#0068B3' }}>Misión del Colegio:</label>
+                <textarea value={mision} onChange={(e) => setMision(e.target.value)} rows={5} required />
               </div>
-
-              <textarea value={nuevoEvento.descripcion} onChange={(e) => setNuevoEvento({...nuevoEvento, descripcion: e.target.value})} required rows={3} style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }} placeholder="Descripción corta del evento..." />
-              
-              <button type="submit" disabled={guardandoEvento} style={{ backgroundColor: '#FAB529', color: '#002a4a', fontWeight: 'bold', padding: '1rem', border: 'none', borderRadius: '6px', cursor: guardandoEvento ? 'not-allowed' : 'pointer' }}>
-                {guardandoEvento ? 'Agendando...' : 'Agendar Evento'}
+              <div className="form-group">
+                <label style={{ color: '#008C5A' }}>Visión del Colegio:</label>
+                <textarea value={vision} onChange={(e) => setVision(e.target.value)} rows={5} required />
+              </div>
+              <button type="submit" disabled={guardandoIdentidad} className="btn-primary">
+                {guardandoIdentidad ? 'Guardando en Firebase...' : 'Guardar Cambios de Identidad'}
               </button>
             </form>
-          </div>
-          <div>
-            <h3 style={{ color: '#002a4a', marginBottom: '1.5rem' }}>Agenda Actual</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '600px', overflowY: 'auto' }}>
-              {eventos.map((evento) => (
-                <div key={evento.id} style={{ display: 'flex', gap: '1rem', backgroundColor: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', alignItems: 'center' }}>
-                  <div style={{ backgroundColor: '#0068B3', color: 'white', padding: '0.5rem', borderRadius: '8px', textAlign: 'center', minWidth: '50px' }}>
-                    <span style={{ display: 'block', fontSize: '1.2rem', fontWeight: 'bold' }}>{evento.dia}</span>
-                    <span style={{ display: 'block', fontSize: '0.8rem', textTransform: 'uppercase' }}>{evento.mes}</span>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{ margin: '0 0 0.3rem 0', fontSize: '0.95rem', color: '#002a4a' }}>{evento.titulo}</h4>
-                    <span style={{ fontSize: '0.8rem', backgroundColor: '#e2e8f0', padding: '0.2rem 0.5rem', borderRadius: '4px', color: '#475569', fontWeight: 'bold' }}>{evento.categoria}</span>
-                  </div>
-                  <button onClick={() => handleEliminarEvento(evento.id)} style={{ backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', padding: '0.5rem', cursor: 'pointer' }}>Eliminar</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* PESTAÑA AUTORIDADES */}
-      {pestañaActiva === 'autoridades' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem' }}>
-          <div>
-            <h3 style={{ color: '#0068B3', marginBottom: '1.5rem' }}>Registrar Autoridad</h3>
-            <form onSubmit={handleAgregarAutoridad} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', backgroundColor: '#f8fafc', padding: '2rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-              <input type="text" value={nuevaAutoridad.nombre} onChange={(e) => setNuevaAutoridad({...nuevaAutoridad, nombre: e.target.value})} required style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }} placeholder="Nombre completo" />
-              <input type="text" value={nuevaAutoridad.cargo} onChange={(e) => setNuevaAutoridad({...nuevaAutoridad, cargo: e.target.value})} required style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }} placeholder="Cargo (Ej. Rector General)" />
-              <input type="url" value={nuevaAutoridad.imagen} onChange={(e) => setNuevaAutoridad({...nuevaAutoridad, imagen: e.target.value})} required style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }} placeholder="URL de la Foto de Perfil" />
-              <button type="submit" disabled={guardandoAutoridad} style={{ backgroundColor: '#0068B3', color: 'white', fontWeight: 'bold', padding: '1rem', border: 'none', borderRadius: '6px' }}>Agregar Registro</button>
+          {pestañaActiva === 'contactos' && (
+            <form onSubmit={handleGuardarContacto} className="form-layout">
+              <div className="form-group">
+                <label>Teléfono Principal:</label>
+                <input type="text" value={telefono} onChange={(e) => setTelefono(e.target.value)} required placeholder="Ej. +503 2440-0000" />
+              </div>
+              <div className="form-group">
+                <label>Correo Electrónico Oficial:</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="Ej. info@colegiosalesiano.edu.sv" />
+              </div>
+              <div className="form-group">
+                <label>Dirección Física Completa:</label>
+                <textarea value={direccion} onChange={(e) => setDireccion(e.target.value)} rows={3} required placeholder="Dirección completa del campus" />
+              </div>
+              <button type="submit" disabled={guardandoContacto} className="btn-primary" style={{ backgroundColor: '#0068B3', color: 'white' }}>
+                {guardandoContacto ? 'Guardando...' : 'Actualizar Información de Contacto'}
+              </button>
             </form>
-          </div>
-          <div>
-            <h3 style={{ color: '#002a4a', marginBottom: '1.5rem' }}>Directorio Actual</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '600px', overflowY: 'auto' }}>
-              {autoridades.map((autoridad) => (
-                <div key={autoridad.id} style={{ display: 'flex', gap: '1rem', backgroundColor: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', alignItems: 'center' }}>
-                  <img src={autoridad.imagen} alt="perfil" style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '50%' }} />
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{ margin: '0', fontSize: '0.95rem' }}>{autoridad.nombre}</h4>
-                    <p style={{ margin: '0', fontSize: '0.85rem', color: '#008C5A', fontWeight: 'bold' }}>{autoridad.cargo}</p>
+          )}
+
+          {pestañaActiva === 'noticias' && (
+            <div className="grid-2-cols">
+              <div>
+                <h3 className="section-title">Redactar Noticia</h3>
+                <form onSubmit={handleAgregarNoticia} className="form-layout">
+                  <div className="form-group">
+                    <label>Título de la noticia</label>
+                    <input type="text" value={nuevaNoticia.titulo} onChange={(e) => setNuevaNoticia({...nuevaNoticia, titulo: e.target.value})} required />
                   </div>
-                  <button onClick={() => handleEliminarAutoridad(autoridad.id)} style={{ backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', padding: '0.5rem', cursor: 'pointer' }}>Eliminar</button>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label>Fecha</label>
+                      <input type="text" value={nuevaNoticia.fecha} onChange={(e) => setNuevaNoticia({...nuevaNoticia, fecha: e.target.value})} required placeholder="Ej. 15 mayo, 2026" />
+                    </div>
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label>Etiqueta</label>
+                      <input type="text" value={nuevaNoticia.tag} onChange={(e) => setNuevaNoticia({...nuevaNoticia, tag: e.target.value})} required placeholder="Ej. Evento" />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>URL de Imagen Portada</label>
+                    <input type="url" value={nuevaNoticia.imagen} onChange={(e) => setNuevaNoticia({...nuevaNoticia, imagen: e.target.value})} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Extracto o Resumen</label>
+                    <textarea value={nuevaNoticia.extracto} onChange={(e) => setNuevaNoticia({...nuevaNoticia, extracto: e.target.value})} required rows={3} />
+                  </div>
+                  <button type="submit" disabled={guardandoNoticia} className="btn-primary" style={{ backgroundColor: '#008C5A', color: 'white' }}>Publicar Noticia</button>
+                </form>
+              </div>
+              <div>
+                <h3 className="section-title">Noticias Publicadas</h3>
+                <div className="items-list">
+                  {noticias.map((noticia) => (
+                    <div key={noticia.id} className="list-item">
+                      <img src={noticia.imagen} alt="miniatura" />
+                      <div className="list-item-content">
+                        <h4>{noticia.titulo}</h4>
+                        <p>{noticia.fecha}</p>
+                      </div>
+                      <button onClick={() => handleEliminarNoticia(noticia.id)} className="btn-danger-icon" title="Eliminar">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* PESTAÑA DE CÓDIGOS (NUEVA) */}
-      {pestañaActiva === 'codigos' && (
-        <div style={{ backgroundColor: '#f8fafc', padding: '2rem', borderRadius: '12px', border: '1px solid #e2e8f0', maxWidth: '500px' }}>
-          <h3 style={{ color: '#008C5A', marginBottom: '1rem' }}>Generador Rápido de Códigos</h3>
-          <p style={{ color: '#64748b', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-            Utiliza este botón para generar un código de acceso válido (1 solo uso) para probar el formulario de admisiones.
-          </p>
-          
-          <button 
-            onClick={handleGenerarCodigoPrueba} 
-            disabled={generandoCodigo}
-            style={{ backgroundColor: '#FAB529', color: '#002a4a', fontWeight: 'bold', padding: '1rem 2rem', border: 'none', borderRadius: '8px', cursor: generandoCodigo ? 'not-allowed' : 'pointer', width: '100%', marginBottom: '1.5rem' }}
-          >
-            {generandoCodigo ? 'Generando en Firebase...' : 'Generar Código de Prueba'}
-          </button>
-
-          {codigoGenerado && (
-            <div style={{ backgroundColor: '#e0f2fe', border: '1px dashed #bae6fd', padding: '1.5rem', borderRadius: '8px', textAlign: 'center' }}>
-              <span style={{ display: 'block', color: '#0369a1', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Tu código generado es:</span>
-              <span style={{ fontSize: '2rem', fontFamily: 'monospace', fontWeight: '900', color: '#002a4a', letterSpacing: '2px' }}>
-                {codigoGenerado}
-              </span>
+              </div>
             </div>
           )}
-        </div>
-      )}
 
+          {pestañaActiva === 'eventos' && (
+            <div className="grid-2-cols">
+              <div>
+                <h3 className="section-title">Agendar Evento</h3>
+                <form onSubmit={handleAgregarEvento} className="form-layout">
+                  <div className="form-group">
+                    <label>Título del evento</label>
+                    <input type="text" value={nuevoEvento.titulo} onChange={(e) => setNuevoEvento({...nuevoEvento, titulo: e.target.value})} required />
+                  </div>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label>Fecha</label>
+                      <input type="date" value={nuevoEvento.fecha} onChange={(e) => setNuevoEvento({...nuevoEvento, fecha: e.target.value})} required />
+                    </div>
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label>Categoría</label>
+                      <select value={nuevoEvento.categoria} onChange={(e) => setNuevoEvento({...nuevoEvento, categoria: e.target.value})}>
+                        <option value="Académico">Académico</option>
+                        <option value="Institucional">Institucional</option>
+                        <option value="Pastoral">Pastoral</option>
+                        <option value="Deportes">Deportes</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Descripción corta</label>
+                    <textarea value={nuevoEvento.descripcion} onChange={(e) => setNuevoEvento({...nuevoEvento, descripcion: e.target.value})} required rows={3} />
+                  </div>
+                  <button type="submit" disabled={guardandoEvento} className="btn-primary">Agendar en Calendario</button>
+                </form>
+              </div>
+              <div>
+                <h3 className="section-title">Agenda Actual</h3>
+                <div className="items-list">
+                  {eventos.map((evento) => (
+                    <div key={evento.id} className="list-item">
+                      <div className="date-badge">
+                        <span className="day">{evento.dia}</span>
+                        <span className="month">{evento.mes}</span>
+                      </div>
+                      <div className="list-item-content">
+                        <h4>{evento.titulo}</h4>
+                        <p style={{ color: '#008C5A', fontWeight: 'bold' }}>{evento.categoria}</p>
+                      </div>
+                      <button onClick={() => handleEliminarEvento(evento.id)} className="btn-danger-icon">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {pestañaActiva === 'autoridades' && (
+            <div className="grid-2-cols">
+              <div>
+                <h3 className="section-title">Registrar Autoridad</h3>
+                <form onSubmit={handleAgregarAutoridad} className="form-layout">
+                  <div className="form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" value={nuevaAutoridad.nombre} onChange={(e) => setNuevaAutoridad({...nuevaAutoridad, nombre: e.target.value})} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Cargo (Ej. Rector General)</label>
+                    <input type="text" value={nuevaAutoridad.cargo} onChange={(e) => setNuevaAutoridad({...nuevaAutoridad, cargo: e.target.value})} required />
+                  </div>
+                  <div className="form-group">
+                    <label>URL de la Foto de Perfil</label>
+                    <input type="url" value={nuevaAutoridad.imagen} onChange={(e) => setNuevaAutoridad({...nuevaAutoridad, imagen: e.target.value})} required />
+                  </div>
+                  <button type="submit" disabled={guardandoAutoridad} className="btn-primary" style={{ backgroundColor: '#0068B3', color: 'white' }}>Agregar al Directorio</button>
+                </form>
+              </div>
+              <div>
+                <h3 className="section-title">Directorio Actual</h3>
+                <div className="items-list">
+                  {autoridades.map((autoridad) => (
+                    <div key={autoridad.id} className="list-item">
+                      <img src={autoridad.imagen} alt="perfil" style={{ borderRadius: '50%' }} />
+                      <div className="list-item-content">
+                        <h4>{autoridad.nombre}</h4>
+                        <p style={{ color: '#0068B3', fontWeight: 'bold' }}>{autoridad.cargo}</p>
+                      </div>
+                      <button onClick={() => handleEliminarAutoridad(autoridad.id)} className="btn-danger-icon">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </main>
     </div>
   );
 }

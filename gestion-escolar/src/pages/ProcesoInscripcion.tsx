@@ -1,5 +1,6 @@
 // src/pages/ProcesoInscripcion.tsx
 import { useEffect } from 'react';
+import { Link } from 'react-router-dom'; // <-- IMPORTANTE: Agregamos Link para la navegación interna
 import { Navbar } from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import './ProcesoInscripcion.css';
@@ -47,7 +48,8 @@ export default function ProcesoInscripcion() {
             <svg className="bento-icon" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>
             <h3>Solicita más información</h3>
             <p>¿Tienes dudas sobre nuestras especialidades técnicas o el modelo educativo? Estamos para orientarte.</p>
-            <a href="/ubicacion" className="btn-bento">Quiero conocer más</a>
+            {/* Convertido a Link */}
+            <Link to="/ubicacion" className="btn-bento">Quiero conocer más</Link>
           </div>
 
           {/* Caja 3: Azul Oscuro (Nuevo Ingreso) */}
@@ -55,7 +57,8 @@ export default function ProcesoInscripcion() {
             <svg className="bento-icon" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" /></svg>
             <h3>Nuevo Ingreso</h3>
             <p>Inicia tu proceso de admisión para estudiantes de primer ingreso. Evaluaciones diagnósticas y entrevistas.</p>
-            <a href="#" className="btn-bento">Inicia tu proceso aquí</a>
+            {/* CONECTADO AL PORTAL DE NUEVO INGRESO */}
+            <Link to="/solicitud-admision" className="btn-bento">Inicia tu proceso aquí</Link>
           </div>
 
           {/* Caja 4: Verde (Antiguo Ingreso) */}
@@ -63,7 +66,8 @@ export default function ProcesoInscripcion() {
             <svg className="bento-icon" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
             <h3>Antiguo Ingreso</h3>
             <p>Proceso de ratificación de matrícula para estudiantes activos. Actualización de datos y reserva de cupo.</p>
-            <a href="#" className="btn-bento">Renovar matrícula</a>
+            {/* CONECTADO AL NUEVO LOGIN DE REINGRESO */}
+            <Link to="/reingreso/login" className="btn-bento">Renovar matrícula</Link>
           </div>
 
           {/* Caja 5: Celeste (Aranceles) */}
@@ -90,7 +94,8 @@ export default function ProcesoInscripcion() {
             <svg className="bento-icon" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
             <h3>Visita nuestro Campus</h3>
             <p>Conoce nuestras instalaciones deportivas, laboratorios técnicos y aulas multimedia.</p>
-            <a href="/ubicacion" className="btn-bento">Ver mapa</a>
+            {/* Convertido a Link */}
+            <Link to="/ubicacion" className="btn-bento">Ver mapa</Link>
           </div>
         </div>
       </section>

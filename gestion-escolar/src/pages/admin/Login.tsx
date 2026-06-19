@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebase/config';
 import { useNavigate } from 'react-router-dom';
+import logoImg from '../../assets/logo.png';
+import './adminStyles/AdminLogin.css'; 
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -17,67 +19,88 @@ export default function Login() {
     setCargando(true);
 
     try {
-      // Intenta iniciar sesión con Firebase
       await signInWithEmailAndPassword(auth, email, password);
-      // Si el login es correcto, lo enviamos al panel
-      navigate('/admin/institucional');
+      navigate('/admin/dashboard');
     } catch (err: any) {
       console.error(err);
-      setError('Credenciales incorrectas. Verifica tu correo y contraseña.');
+      setError('Credenciales incorrectas. Verifique su correo y contraseña.');
     } finally {
       setCargando(false);
     }
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f4f6f9' }}>
+    <div className="admin-login-container">
       
-      <form onSubmit={handleLogin} style={{ backgroundColor: 'white', padding: '3rem', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', width: '100%', maxWidth: '400px' }}>
-        
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h2 style={{ color: '#002a4a', margin: '0 0 0.5rem 0' }}>Acceso Restringido</h2>
-          <p style={{ color: '#64748b', margin: 0 }}>Panel de Administración San José</p>
+      {/* PANEL IZQUIERDO: Branding Institucional */}
+      <div className="admin-login-brand">
+        <div className="brand-content">
+          <img src={logoImg} alt="Colegio Salesiano San José" className="brand-logo" />
+          <h1 className="brand-title">Colegio Salesiano San José</h1>
+          <p className="brand-subtitle">
+            Sistema Integrado de Gestión Académica y Administrativa
+          </p>
+          <div className="brand-divider"></div>
+          <p className="brand-footer">Santa Ana, El Salvador</p>
         </div>
+      </div>
 
-        {error && (
-          <div style={{ backgroundColor: '#fee2e2', color: '#ef4444', padding: '0.8rem', borderRadius: '6px', marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'center' }}>
-            {error}
+      {/* PANEL DERECHO: Formulario de Acceso */}
+      <div className="admin-login-form-wrapper">
+        <div className="admin-login-card">
+          <div className="form-header">
+            <h2>Acceso Restringido</h2>
+            <p>Ingrese sus credenciales institucionales autorizadas para acceder al panel de control.</p>
           </div>
-        )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
-          <label style={{ fontWeight: 'bold', color: '#334155', fontSize: '0.9rem' }}>Correo Electrónico</label>
-          <input 
-            type="email" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
-            required 
-            style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }} 
-            placeholder="admin@colegio.edu.sv"
-          />
+          {error && (
+            <div className="error-message">
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="login-form">
+            <div className="input-group">
+              <label>Correo Electrónico Institucional</label>
+              <input 
+                type="email" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                required 
+                placeholder="usuario@salesianosanjose.edu.sv"
+                autoComplete="email"
+              />
+            </div>
+
+            <div className="input-group">
+              <label>Contraseña de Acceso</label>
+              <input 
+                type="password" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                required 
+                placeholder="••••••••"
+                autoComplete="current-password"
+              />
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={cargando}
+              className={cargando ? 'btn-submit loading' : 'btn-submit'}
+            >
+              {cargando ? 'Autenticando...' : 'Ingresar al Sistema'}
+            </button>
+          </form>
+
+          <div className="form-footer">
+            <p>El acceso a este sistema está estrictamente monitoreado. Todo intento de acceso no autorizado será registrado.</p>
+          </div>
         </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
-          <label style={{ fontWeight: 'bold', color: '#334155', fontSize: '0.9rem' }}>Contraseña</label>
-          <input 
-            type="password" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            required 
-            style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }} 
-            placeholder="••••••••"
-          />
-        </div>
-
-        <button 
-          type="submit" 
-          disabled={cargando}
-          style={{ width: '100%', backgroundColor: '#008C5A', color: 'white', fontWeight: 'bold', padding: '1rem', border: 'none', borderRadius: '6px', cursor: cargando ? 'not-allowed' : 'pointer', fontSize: '1rem', transition: 'background-color 0.3s' }}
-        >
-          {cargando ? 'Iniciando sesión...' : 'Entrar al Panel'}
-        </button>
-
-      </form>
+      </div>
     </div>
   );
 }

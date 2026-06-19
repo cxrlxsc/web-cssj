@@ -1,0 +1,100 @@
+/* src/pages/shared/ContratoImpresion.css */
+
+.impresion-layout {
+  min-height: 100vh;
+  background-color: #e2e8f0; /* Fondo gris oscuro para contrastar la hoja */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.impresion-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  width: 100%;
+  max-width: 210mm; /* Mismo ancho de la hoja A4 */
+  justify-content: space-between;
+}
+
+.btn-back {
+  background-color: #FFFFFF;
+  color: #475569;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 700;
+  border: 1px solid #cbd5e1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.btn-back:hover {
+  background-color: #f1f5f9;
+  color: #030405;
+}
+
+.btn-print {
+  background-color: #FAB529; /* Dorado Oficial */
+  color: #030405;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px rgba(250, 181, 41, 0.2);
+}
+
+.btn-print:hover {
+  background-color: #f5a623;
+  transform: translateY(-2px);
+}
+
+/* LA HOJA TAMAÑO A4 */
+.a4-sheet {
+  background: white;
+  width: 100%;
+  max-width: 210mm; /* Ancho exacto A4 */
+  min-height: 297mm; /* Alto exacto A4 */
+  padding: 25mm 20mm;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+  font-family: 'Times New Roman', serif; /* Tipografía formal para contratos */
+  font-size: 11pt;
+  line-height: 1.5;
+  color: #000000;
+  white-space: pre-wrap;
+  text-align: justify;
+}
+
+/* REGLAS ESTRICTAS DE IMPRESIÓN */
+@media print {
+  body {
+    background-color: white;
+  }
+  body * {
+    visibility: hidden; /* Oculta todo el navegador */
+  }
+  .impresion-controls {
+    display: none !important; /* Oculta los botones */
+  }
+  .a4-sheet, .a4-sheet * {
+    visibility: visible; /* Solo muestra la hoja y su contenido */
+  }
+  .a4-sheet {
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: 0;
+    padding: 15mm;
+    box-shadow: none;
+    width: 100%;
+  }
+}

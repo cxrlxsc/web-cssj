@@ -1,0 +1,216 @@
+/* src/pages/admin/AdminAdmisiones.css */
+
+.admin-admisiones-layout {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* NAVBAR VERDE OFICIAL */
+.admin-navbar {
+  background-color: #008C5A;
+  color: #FFFFFF;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 2.5rem;
+  border-bottom: 4px solid #FAB529;
+  box-shadow: 0 4px 12px rgba(0, 140, 90, 0.2);
+}
+
+.navbar-brand { display: flex; align-items: center; gap: 1.25rem; }
+.navbar-logo { height: 48px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); }
+.navbar-title { font-size: 1.35rem; font-weight: 700; margin: 0; }
+
+.btn-logout {
+  background-color: transparent; color: #FFFFFF; border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.6rem 1.3rem; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.btn-logout:hover { background-color: #030405; border-color: #030405; }
+
+/* CONTENEDOR PRINCIPAL */
+.admisiones-main {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+.admisiones-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.header-top { width: 100%; margin-bottom: 0.5rem; }
+
+.header-titles h1 { color: #030405; font-size: 2.25rem; font-weight: 800; margin: 0 0 0.5rem 0; letter-spacing: -0.5px; }
+.header-titles p { color: #64748b; font-size: 1.05rem; margin: 0; }
+
+.btn-back {
+  display: inline-flex; align-items: center; gap: 0.5rem; background-color: #f1f5f9; color: #475569;
+  padding: 0.75rem 1.25rem; border-radius: 8px; font-weight: 600; text-decoration: none; border: 1px solid #e2e8f0; transition: all 0.2s ease;
+}
+.btn-back:hover { background-color: #e2e8f0; color: #030405; }
+
+/* Botón Actualizar (Ahora en Verde Fresco) */
+.btn-refresh {
+  background-color: #008C5A;
+  color: #FFFFFF;
+  padding: 0.85rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 140, 90, 0.2);
+}
+.btn-refresh:hover { background-color: #006e46; transform: translateY(-1px); box-shadow: 0 6px 8px rgba(0, 140, 90, 0.25); }
+
+/* TABLA DE SOLICITUDES (Diseño Amigable) */
+.table-container {
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.empty-state { padding: 4rem 2rem; text-align: center; color: #64748b; font-size: 1.1rem; }
+
+.admisiones-table { width: 100%; border-collapse: collapse; text-align: left; }
+.admisiones-table th {
+  background-color: #f8fafc; color: #475569; font-size: 0.85rem; text-transform: uppercase;
+  letter-spacing: 0.5px; padding: 1.25rem 1.5rem; font-weight: 700; border-bottom: 2px solid #e2e8f0;
+}
+.admisiones-table td { padding: 1.25rem 1.5rem; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+
+/* Efecto hover interactivo en las filas */
+.admisiones-table tbody tr { transition: all 0.2s ease; }
+.admisiones-table tbody tr:hover { background-color: #f0fdf4; /* Verde super clarito */ transform: scale(1.002); }
+
+.student-name { font-weight: 800; color: #030405; margin-bottom: 0.25rem; font-size: 1.1rem; }
+.parent-name { font-size: 0.85rem; color: #64748b; }
+.grade-badge { color: #008C5A; font-weight: 700; background: rgba(0, 140, 90, 0.1); padding: 0.4rem 0.8rem; border-radius: 6px; }
+
+/* Badges de Estado más vivos */
+.status-badge { padding: 0.4rem 0.85rem; border-radius: 50px; font-size: 0.85rem; font-weight: 700; display: inline-block; }
+.status-pending { background-color: #fef9c3; color: #b45309; border: 1px solid #fde047; }
+.status-approved { background-color: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.status-process { background-color: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; }
+
+.btn-action-table {
+  padding: 0.6rem 1.2rem; background-color: #f1f5f9; color: #008C5A; border: 1px solid #cbd5e1;
+  border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.9rem; transition: all 0.2s ease; white-space: nowrap;
+}
+.btn-action-table:hover { background-color: #008C5A; color: #FFFFFF; border-color: #008C5A; box-shadow: 0 4px 6px rgba(0,140,90,0.2); }
+
+/* =========================================
+   MODAL DE EXPEDIENTE (Fresco y Animado)
+   ========================================= */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(3, 4, 5, 0.6); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 2rem;
+  animation: fadeInOverlay 0.3s ease forwards;
+}
+
+.modal-content {
+  background-color: #FFFFFF; border-radius: 20px; width: 100%; max-width: 850px; max-height: 90vh;
+  display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden;
+  animation: modalPopUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalPopUp { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+/* Cabecera del modal ahora es VERDE OFICIAL */
+.modal-header {
+  padding: 1.5rem 2.5rem; background-color: #008C5A; color: #FFFFFF; display: flex;
+  justify-content: space-between; align-items: center; border-bottom: 5px solid #FAB529;
+}
+.modal-header h2 { margin: 0 0 0.2rem 0; font-size: 1.6rem; font-weight: 800; }
+.modal-header p { margin: 0; color: #dcfce7; font-size: 0.95rem; }
+
+.btn-close-modal {
+  background: rgba(255,255,255,0.1); border: none; color: #FFFFFF; cursor: pointer;
+  padding: 0.6rem; border-radius: 50%; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+}
+.btn-close-modal:hover { background-color: #dc2626; transform: rotate(90deg); }
+
+.modal-body { padding: 2.5rem; overflow-y: auto; }
+.modal-section-title { color: #030405; margin: 0 0 1.5rem 0; font-size: 1.3rem; font-weight: 800; }
+
+.docs-list { display: flex; flex-direction: column; gap: 1.25rem; }
+.doc-item {
+  display: flex; justify-content: space-between; align-items: center; padding: 1.5rem;
+  border: 1px solid #e2e8f0; border-radius: 12px; background-color: #f8fafc; transition: all 0.2s ease;
+}
+.doc-item:hover { border-color: #cbd5e1; background-color: #FFFFFF; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+.doc-item.doc-approved { background-color: #f0fdf4; border-color: #bbf7d0; }
+.doc-item.doc-rejected { background-color: #fef2f2; border-color: #fecaca; }
+
+.doc-info h4 { margin: 0 0 0.4rem 0; color: #030405; font-size: 1.1rem; font-weight: 800; }
+.doc-meta { display: flex; gap: 1rem; align-items: center; }
+.doc-type { font-size: 0.85rem; color: #64748b; text-transform: uppercase; font-weight: 700; background: #e2e8f0; padding: 0.2rem 0.6rem; border-radius: 4px; }
+.doc-reason { font-size: 0.85rem; color: #b91c1c; margin: 0.5rem 0 0 0; font-weight: 600; }
+
+.doc-actions { display: flex; gap: 0.75rem; align-items: center; }
+.btn-doc-view {
+  padding: 0.6rem 1.2rem; background-color: #FFFFFF; color: #0068B3; text-decoration: none;
+  border-radius: 8px; font-weight: 700; font-size: 0.85rem; transition: all 0.2s ease; border: 1px solid #cbd5e1;
+}
+.btn-doc-view:hover { background-color: #0068B3; color: #FFFFFF; border-color: #0068B3; }
+
+.btn-icon-action {
+  width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+  border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; color: white;
+}
+.btn-approve { background-color: #008C5A; } .btn-approve:hover { background-color: #006e46; transform: scale(1.05); }
+.btn-reject { background-color: #dc2626; } .btn-reject:hover { background-color: #b91c1c; transform: scale(1.05); }
+
+/* Caja de Rechazo Amigable */
+.reject-box { margin-top: 1rem; padding: 1.5rem; background-color: #fef2f2; border-radius: 12px; border: 1px solid #fca5a5; position: relative; }
+.reject-box label { display: block; font-weight: 800; color: #b91c1c; margin-bottom: 0.75rem; font-size: 0.95rem; }
+.reject-input { width: 100%; padding: 1rem; border-radius: 8px; border: 1px solid #fca5a5; margin-bottom: 1rem; font-family: inherit; }
+.reject-input:focus { outline: none; border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1); }
+
+/* Acción Final (Dorado Pulsante) */
+.modal-footer-action { margin-top: 3rem; padding-top: 2.5rem; border-top: 2px dashed #e2e8f0; text-align: center; }
+.modal-footer-action h3 { color: #030405; margin: 0 0 0.5rem 0; font-size: 1.3rem; font-weight: 800; }
+.modal-footer-action p { color: #64748b; font-size: 1rem; margin: 0 0 1.5rem 0; }
+
+.btn-primary-action {
+  padding: 1.1rem 2.5rem; font-size: 1.15rem; font-weight: 800; border: none; border-radius: 12px;
+  width: 100%; max-width: 450px; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.75rem;
+}
+.btn-primary-action.active {
+  background-color: #FAB529; color: #030405; box-shadow: 0 4px 15px rgba(250, 181, 41, 0.3);
+  animation: pulseGold 2s infinite;
+}
+.btn-primary-action.active:hover { background-color: #f5a623; transform: translateY(-2px); animation: none; }
+.btn-primary-action.disabled { background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed; border: 1px solid #cbd5e1; }
+
+@keyframes pulseGold {
+  0% { box-shadow: 0 0 0 0 rgba(250, 181, 41, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(250, 181, 41, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(250, 181, 41, 0); }
+}
+
+@media (max-width: 768px) {
+  .admin-navbar { flex-direction: column; gap: 1rem; padding: 1.5rem; }
+  .admisiones-header { flex-direction: column; align-items: flex-start; }
+  .modal-body { padding: 1.5rem; }
+  .doc-item { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .doc-actions { width: 100%; justify-content: flex-start; }
+}
