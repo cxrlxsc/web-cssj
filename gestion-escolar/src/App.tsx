@@ -20,6 +20,7 @@ import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import ContratoImpresion from './pages/shared/ContratoImpresion';
 import AdminContrato from './pages/admin/AdminContrato';
 import AdminContratosFirmados from './pages/admin/AdminContratosFirmados';
+import ExamTemplateBuilder from './pages/admin/evaluaciones/ExamTemplateBuilder'; // <-- NUEVO: Importación del constructor de exámenes
 
 // Páginas Públicas Adicionales
 import Historia from './pages/Historia';
@@ -123,6 +124,13 @@ function App() {
       <Route path="/admin/contratos-firmados" element={
         <ProtectedRoute>
           <AdminContratosFirmados />
+        </ProtectedRoute>
+      } />
+
+      {/* CONSTRUCTOR DE EXÁMENES */}
+      <Route path="/admin/evaluaciones/constructor" element={
+        <ProtectedRoute>
+          <ExamTemplateBuilder />
         </ProtectedRoute>
       } />
 

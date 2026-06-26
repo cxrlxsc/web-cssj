@@ -1,38 +1,76 @@
+// src/pages/reingreso/TalonarioPrint.tsx
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Barcode from 'react-barcode'; // <-- IMPORTAMOS LA LIBRERÍA DE CÓDIGOS DE BARRA
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import Barcode from 'react-barcode';
 import { mockStudentDB } from '../../data/mockStudent';
 import { generarTalonario, type TalonarioInfo } from '../../utils/npeGenerator';
 import logoImg from '../../assets/logo.png'; 
 
 export const TalonarioPrint = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [student, setStudent] = useState<any>(null);
   const [datosTalonario, setDatosTalonario] = useState<TalonarioInfo | null>(null);
 
   useEffect(() => {
-    const sessionCarnet = localStorage.getItem('studentSession');
-    if (!sessionCarnet || !mockStudentDB[sessionCarnet as keyof typeof mockStudentDB]) {
-      navigate('/reingreso/login'); 
-    } else {
-      const studentData = mockStudentDB[sessionCarnet as keyof typeof mockStudentDB];
-      setStudent(studentData);
+    // 1. Verificamos primero si viene con un PASE VIP de Nuevo Ingreso por la URL
+    const source = searchParams.get('source');
+    
+    if (source === 'nuevo_ingreso') {
+      // Es un aspirante de Nuevo Ingreso. Armamos sus datos desde la URL.
+      const nombreUrl = searchParams.get('nombre') || '';
+      const apellidoUrl = searchParams.get('apellido') || '';
+      const gradoUrl = searchParams.get('grado') || '';
+      const codigoAspirante = searchParams.get('codigo') || 'ASP-0000';
 
-      // Generamos el NPE real y la cadena del código de barras
+      const aspiranteData = {
+        carnet: codigoAspirante, // Usamos su código como carnet temporal
+        nie: 'PENDIENTE',
+        nombres: nombreUrl,
+        apellidos: apellidoUrl,
+        gradoMatricular: gradoUrl
+      };
+      
+      setStudent(aspiranteData);
+
       const talonarioGenerado = generarTalonario(
-        studentData.carnet,
-        `${studentData.nombres} ${studentData.apellidos}`,
-        studentData.gradoMatricular,
+        aspiranteData.carnet,
+        `${aspiranteData.nombres} ${aspiranteData.apellidos}`,
+        aspiranteData.gradoMatricular,
         "Matrícula 2026 y Primera Cuota",
         145.00, 
         new Date(2026, 6, 31) 
       );
       setDatosTalonario(talonarioGenerado);
-    }
-  }, [navigate]);
 
-  if (!student || !datosTalonario) return <div>Cargando comprobante seguro...</div>;
+    } else {
+      // 2. Si no es Nuevo Ingreso, buscamos si es un alumno Antiguo (Reingreso)
+      const sessionCarnet = localStorage.getItem('studentSession');
+      
+      if (!sessionCarnet || !mockStudentDB[sessionCarnet as keyof typeof mockStudentDB]) {
+        // Si no tiene pase VIP ni sesión de antiguo, lo expulsamos al login
+        navigate('/reingreso/login'); 
+      } else {
+        // Es un alumno antiguo, cargamos sus datos de la base simulada
+        const studentData = mockStudentDB[sessionCarnet as keyof typeof mockStudentDB];
+        setStudent(studentData);
+
+        const talonarioGenerado = generarTalonario(
+          studentData.carnet,
+          `${studentData.nombres} ${studentData.apellidos}`,
+          studentData.gradoMatricular,
+          "Matrícula 2026 y Primera Cuota",
+          145.00, 
+          new Date(2026, 6, 31) 
+        );
+        setDatosTalonario(talonarioGenerado);
+      }
+    }
+  }, [navigate, searchParams]);
+
+  if (!student || !datosTalonario) return <div style={{ padding: '2rem', textAlign: 'center' }}>Cargando comprobante seguro...</div>;
 
   return (
     <div style={{ background: '#f8fafc', minHeight: '100vh', padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
@@ -64,8 +102,8 @@ export const TalonarioPrint = () => {
             <p style={{ margin: 0, fontWeight: 'bold', fontSize: '1.1rem', color: '#0f172a' }}>{datosTalonario.estudiante.nombre}</p>
           </div>
           <div style={{ flex: 1 }}>
-            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>Carnet / NIE</p>
-            <p style={{ margin: 0, fontWeight: 'bold', fontSize: '1.1rem', color: '#0f172a' }}>{student.carnet} / {student.nie}</p>
+            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>Carnet / Código</p>
+            <p style={{ margin: 0, fontWeight: 'bold', fontSize: '1.1rem', color: '#0f172a' }}>{student.carnet}</p>
           </div>
           <div style={{ flex: 1 }}>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>Grado a cursar</p>
@@ -92,12 +130,10 @@ export const TalonarioPrint = () => {
         <div style={{ textAlign: 'center', border: '2px dashed #94a3b8', padding: '2rem', borderRadius: '12px', marginBottom: '2rem', background: '#f1f5f9' }}>
           <p style={{ margin: '0 0 0.5rem 0', color: '#64748b', fontWeight: 'bold', letterSpacing: '2px' }}>NÚMERO DE PAGO ELECTRÓNICO (NPE)</p>
           
-          {/* El NPE en texto */}
           <p style={{ margin: '0 0 1.5rem 0', fontSize: '2.5rem', fontFamily: 'monospace', fontWeight: 'bold', color: '#002a4a', letterSpacing: '2px' }}>
             {datosTalonario.npe}
           </p>
 
-          {/* El Código de Barras dibujado */}
           <div style={{ display: 'flex', justifyContent: 'center', background: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', width: 'fit-content', margin: '0 auto' }}>
             <Barcode 
               value={datosTalonario.npeBarra} 

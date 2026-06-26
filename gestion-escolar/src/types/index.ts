@@ -44,8 +44,7 @@ export interface Admission {
   howDidYouHear?: string;
   comments?: string;
   // Status
-  status: 'pending' | 'approved' | 'rejected' | 'enrolled';
-  applicationDate: Date;
+status: 'pending' | 'evaluations' | 'interview' | 'approved' | 'rejected' | 'enrolled';  applicationDate: Date;
   documents: string[];
   accessCodeUsed?: string;
   enrollmentYear?: number;        // Año de matrícula (viene del código de acceso)
@@ -306,7 +305,7 @@ export interface Evaluator {
   isActive: boolean;
 }
 
-// Evaluación individual de un estudiante
+// Evaluación individual de un estudiante (Optimizado sin formularios clínicos)
 export interface AdmissionEvaluation {
   id: string;
   admissionId: string; // Referencia a la solicitud
@@ -315,7 +314,7 @@ export interface AdmissionEvaluation {
   phaseType: EvaluationType;
   phaseName: string;
   
-  // Programación
+  // Programación (Sirve tanto para la cita en compus como para la cita psicológica física)
   scheduledDate?: Date;
   scheduledTime?: string; // "09:00"
   location?: string; // "Aula 101", "Sala de Entrevistas"
@@ -343,28 +342,10 @@ export interface AdmissionEvaluation {
   result?: EvaluationResult;
   observations?: string;
   recommendations?: string;
-  notes?: string; // Notas adicionales
+  notes?: string; // Notas adicionales generales
   
-  // Notas de entrevista psicológica (pueden agregar admin y psicólogas)
-  interviewNotes?: {
-    content: string;
-    addedBy: string;
-    addedByName: string;
-    addedAt: Date;
-  }[];
-  interviewSummary?: string; // Resumen final de la entrevista
-  interviewRecommendation?: 'favorable' | 'with_observations' | 'not_recommended';
-  psychologyInterviewForm?: {
-    childObservations?: string;
-    familyObservations?: string;
-    testIndicators?: string;
-    protectiveFactors?: string;
-    riskFactors?: string;
-    recommendations?: string;
-  };
-  
-  // Examen en línea
-  examEnabled?: boolean; // Habilitar examen en línea
+  // Examen en línea (Exclusivo para la fase académica en sitio)
+  examEnabled?: boolean; 
   examStartedAt?: Date;
   examCompletedAt?: Date;
   
@@ -377,6 +358,10 @@ export interface AdmissionEvaluation {
     questionCount: number;
   }[];
   
+  // Control de plantillas dinámicas académicas
+  templateId?: string; // ID de la plantilla del examen
+  answers?: Record<string, string>; // Respuestas del alumno: { "id_pregunta": "respuesta" }
+
   // Metadatos
   scheduledBy?: string;
   scheduledAt?: Date;
@@ -425,15 +410,14 @@ export interface AdmissionProgress {
 // GLOBAL EVALUATION SCHEDULE (Fechas Globales)
 // ============================================
 
-// Configuración global de fechas por tipo de evaluación
 export interface GlobalEvaluationSchedule {
   id: string;
   year: number; // Año lectivo (2026)
   type: EvaluationType;
-  name: string; // "Examen Psicológico", "Examen Académico", etc.
+  name: string; 
   date: Date;
-  startTime: string; // "08:00"
-  endTime: string; // "12:00"
+  startTime: string; 
+  endTime: string; 
   location: string;
   instructions?: string; // Instrucciones para los padres
   evaluatorIds: string[];
@@ -454,67 +438,76 @@ export interface BulkGradeEntry {
   observations?: string;
 }
 
+export interface EvaluationQuestion {
+  id: string;
+  question: string;
+  options: string[]; // Ej: ["2", "4", "6", "8"]
+  correctAnswer: string; 
+}
+
+export interface EvaluationTemplate {
+  id: string;
+  title: string;
+  grade: string; // Ej: "Kinder 5"
+  type: 'academic'; 
+  isActive: boolean;
+  questions: EvaluationQuestion[];
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // ============================================
 // ADMISSION DOCUMENTS SYSTEM
 // ============================================
 
-// Tipos de documentos requeridos para admisión
 export type AdmissionDocumentType = 
-  | 'birth_certificate'    // Partida de nacimiento
-  | 'previous_grades'      // Notas del año anterior
-  | 'recent_photo'         // Foto reciente
-  | 'vaccination_card'     // Carné de vacunas (opcional)
-  | 'identification'       // DUI del padre/madre
-  | 'other'               // Otros documentos
+  | 'birth_certificate'    
+  | 'previous_grades'      
+  | 'recent_photo'         
+  | 'vaccination_card'     
+  | 'identification'       
+  | 'other'              
   | 'financial_solvency'
   | 'grade_certificate';
 
-// Estado de un documento individual
 export type DocumentReviewStatus = 
-  | 'pending'     // Pendiente de revisión
-  | 'approved'    // Aprobado
-  | 'rejected'    // Rechazado - necesita corrección
-  | 'resubmitted'; // Re-subido después de rechazo
+  | 'pending'     
+  | 'approved'    
+  | 'rejected'    
+  | 'resubmitted'; 
 
-// Documento de admisión subido por el aspirante
 export interface AdmissionDocument {
   id: string;
   admissionId: string;
   type: AdmissionDocumentType;
   fileName: string;
   fileUrl: string;
-  fileSize: number; // bytes
+  fileSize: number; 
   mimeType: string;
-  
-  // Estado de revisión
   status: DocumentReviewStatus;
   reviewedBy?: string;
   reviewedAt?: Date;
-  rejectionReason?: string; // Motivo del rechazo
-  
-  // Historial de versiones
+  rejectionReason?: string; 
   version: number;
   previousVersions?: {
     fileUrl: string;
     uploadedAt: Date;
     rejectionReason?: string;
   }[];
-  
   uploadedAt: Date;
   updatedAt: Date;
 }
 
-// Configuración de documentos requeridos
 export interface RequiredDocument {
   type: AdmissionDocumentType;
   name: string;
   description: string;
   isRequired: boolean;
-  acceptedFormats: string[]; // ['pdf', 'jpg', 'png']
+  acceptedFormats: string[]; 
   maxSizeMB: number;
 }
 
-// Estado general de documentación de una admisión
 export interface AdmissionDocumentsStatus {
   admissionId: string;
   totalRequired: number;
@@ -522,44 +515,41 @@ export interface AdmissionDocumentsStatus {
   approved: number;
   rejected: number;
   pending: number;
-  isComplete: boolean; // Todos los requeridos están aprobados
+  isComplete: boolean; 
   documents: AdmissionDocument[];
 }
 
-// Etapa del proceso de admisión del aspirante
 export type AdmissionStage = 
-  | 'form_submitted'      // Formulario enviado
-  | 'documents_pending'   // Esperando documentos
-  | 'documents_review'    // Documentos en revisión
-  | 'documents_complete'  // Documentos aprobados
-  | 'evaluation_pending'  // Esperando evaluaciones
-  | 'evaluation_complete' // Evaluaciones completadas
-  | 'dictamen_pending'    // Entrevista completada, pendiente dictamen psicológico
-  | 'decision_pending'    // Dictamen emitido, pendiente decisión institucional
-  | 'enrollment_pending'  // Pendiente de matrícula
-  | 'enrollment_process'  // En proceso de matrícula
-  | 'enrolled'            // Matriculado
-  | 'rejected';           // Rechazado
+  | 'form_submitted'      
+  | 'documents_pending'   
+  | 'documents_review'    
+  | 'documents_complete'  
+  | 'evaluation_pending'  
+  | 'evaluation_complete' 
+  | 'dictamen_pending'    
+  | 'decision_pending'    
+  | 'enrollment_pending'  
+  | 'enrollment_process'  
+  | 'enrolled'            
+  | 'rejected';
 
 // ============================================
 // ENROLLMENT SYSTEM (Matrícula)
 // ============================================
 
-// Estado del proceso de matrícula
 export type EnrollmentStatus = 
-  | 'pending'           // Pendiente de iniciar
-  | 'form_pending'      // Esperando formulario adicional
-  | 'form_submitted'    // Formulario enviado
-  | 'payment_pending'   // Esperando pago
-  | 'payment_review'    // Pago en revisión
-  | 'payment_approved'  // Pago aprobado
-  | 'contract_pending'  // Esperando contrato
-  | 'contract_generated'// Contrato generado
-  | 'contract_uploaded' // Contrato firmado subido
-  | 'contract_approved' // Contrato aprobado
-  | 'completed';        // Matrícula completada
+  | 'pending'           
+  | 'form_pending'      
+  | 'form_submitted'    
+  | 'payment_pending'   
+  | 'payment_review'    
+  | 'payment_approved'  
+  | 'contract_pending'  
+  | 'contract_generated'
+  | 'contract_uploaded' 
+  | 'contract_approved' 
+  | 'completed';        
 
-// Datos de matrícula del estudiante
 export interface EnrollmentData {
   id: string;
   admissionId: string;
@@ -567,11 +557,7 @@ export interface EnrollmentData {
   gradeAssigned: string;
   sectionAssigned?: string;
   academicYear: number;
-  
-  // Estado general
   status: EnrollmentStatus;
-  
-  // Información adicional del estudiante
   additionalInfo?: {
     bloodType?: string;
     allergies?: string;
@@ -583,21 +569,15 @@ export interface EnrollmentData {
     emergencyContact2Name?: string;
     emergencyContact2Phone?: string;
     emergencyContact2Relationship?: string;
-    authorizedPickup?: string[]; // Personas autorizadas para recoger
+    authorizedPickup?: string[]; 
     transportMethod?: 'parent' | 'bus' | 'walk' | 'other';
     busRoute?: string;
     additionalNotes?: string;
   };
-  
-  // Pagos
-  payments: EnrollmentPayment[];
+  payments: any[]; // Cambiado a any[] o define EnrollmentPayment si lo tienes separado
   totalAmount: number;
   amountPaid: number;
-  
-  // Contrato
-  contract?: EnrollmentContract;
-  
-  // Metadatos
+  contract?: any; // Cambiado a any o define EnrollmentContract si aplica
   createdAt: Date;
   updatedAt: Date;
   completedAt?: Date;
@@ -694,3 +674,4 @@ export interface EnrollmentProgress {
   }[];
   pendingActions: string[];
 }
+

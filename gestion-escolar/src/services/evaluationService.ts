@@ -27,11 +27,13 @@ import type {
   EvaluationStatus,
   EvaluationResult,
   GlobalEvaluationSchedule,
-  BulkGradeEntry
+  BulkGradeEntry,
+  EvaluationTemplate, // Nuevo tipo agregado
+  EvaluationQuestion // Nuevo tipo agregado
 } from '../types';
 
 // ============================================
-// El resto de tu código original empieza aquí:
+// CONFIGURACIÓN INICIAL
 // ============================================
 
 const EVALUATION_DATE_FIELDS = new Set([
@@ -114,7 +116,7 @@ export const evaluationService = {
       {
         name: 'Examen Psicológico',
         type: 'psychological',
-        description: 'Evaluación psicológica para determinar aptitudes y perfil del estudiante',
+        description: 'Cita presencial para evaluación psicológica del estudiante',
         order: 1,
         isRequired: true,
         estimatedDuration: 60,
@@ -123,7 +125,7 @@ export const evaluationService = {
       {
         name: 'Entrevista Psicológica',
         type: 'psychological_interview',
-        description: 'Entrevista individual con el estudiante y sus padres/encargados para evaluación psicológica complementaria',
+        description: 'Entrevista presencial con los padres/encargados',
         order: 2,
         isRequired: true,
         estimatedDuration: 30,
@@ -132,7 +134,7 @@ export const evaluationService = {
       {
         name: 'Examen Académico',
         type: 'academic',
-        description: 'Evaluación de conocimientos en matemáticas, lenguaje y cultura general',
+        description: 'Evaluación de conocimientos (Matemáticas, Lenguaje). Se realiza en la plataforma del colegio.',
         order: 3,
         isRequired: true,
         passingScore: 60,
@@ -145,7 +147,7 @@ export const evaluationService = {
         type: 'english',
         description: 'Evaluación de conocimientos de inglés (solo para 7mo grado en adelante)',
         order: 4,
-        isRequired: false, // Solo requerido para 7mo+
+        isRequired: false, 
         passingScore: 60,
         maxScore: 100,
         estimatedDuration: 45,
@@ -253,7 +255,6 @@ export const evaluationService = {
     const evaluations: AdmissionEvaluation[] = [];
     
     for (const phase of activePhases) {
-      // Avoid duplicated evaluations if they already exist for this admission
       if (existingTypes.has(phase.type)) {
         continue;
       }
@@ -374,6 +375,7 @@ export const evaluationService = {
     return candidate;
   },
 
+  // Agendar cita psicológica generalizada (Eliminada la basura de formularios clínicos)
   async ensurePsychologicalInterviewScheduled(
     admissionId: string,
     studentName: string,
@@ -424,9 +426,6 @@ export const evaluationService = {
       await this.updateEvaluation(existingInterview.id, {
         ...basePayload,
         completedAt: undefined,
-        interviewSummary: shouldForceReschedule ? undefined : existingInterview.interviewSummary,
-        interviewRecommendation: shouldForceReschedule ? undefined : existingInterview.interviewRecommendation,
-        psychologyInterviewForm: shouldForceReschedule ? undefined : existingInterview.psychologyInterviewForm,
         rescheduledCount: shouldForceReschedule
           ? (existingInterview.rescheduledCount || 0) + 1
           : existingInterview.rescheduledCount || 0,
@@ -471,6 +470,7 @@ export const evaluationService = {
     });
   },
 
+  // Habilitar acceso manual para el examen en la plataforma
   async enableExamManualAccess(
     evaluationId: string,
     actor: { uid: string; displayName: string }
@@ -555,7 +555,6 @@ export const evaluationService = {
     });
   },
 
-  // Reset exam to allow student to retake it
   async resetExamForRetry(
     evaluationId: string,
     actor?: { uid: string; displayName: string }
@@ -572,6 +571,7 @@ export const evaluationService = {
       score: deleteField(),
       maxScore: deleteField(),
       result: deleteField(),
+      answers: deleteField(), // Limpiamos respuestas
       observations: deleteField(),
       completedAt: deleteField(),
       examStartedAt: deleteField(),
@@ -584,7 +584,6 @@ export const evaluationService = {
   // EVALUATION SESSIONS (Jornadas)
   // ============================================
 
-  // Get all sessions
   async getSessions(): Promise<EvaluationSession[]> {
     const sessionsRef = collection(db, 'evaluationSessions');
     const q = query(sessionsRef, orderBy('date', 'asc'));
@@ -601,7 +600,6 @@ export const evaluationService = {
     });
   },
 
-  // Create session
   async createSession(session: Omit<EvaluationSession, 'id'>): Promise<string> {
     const docRef = await addDoc(collection(db, 'evaluationSessions'), {
       ...session,
@@ -611,7 +609,6 @@ export const evaluationService = {
     return docRef.id;
   },
 
-  // Update session
   async updateSession(id: string, data: Partial<EvaluationSession>): Promise<void> {
     const docRef = doc(db, 'evaluationSessions', id);
     const updateData: any = { ...data };
@@ -625,7 +622,6 @@ export const evaluationService = {
   // HELPER FUNCTIONS
   // ============================================
 
-  // Get all pending evaluations (for evaluator dashboard)
   async getPendingEvaluations(evaluatorId?: string): Promise<AdmissionEvaluation[]> {
     const evalsRef = collection(db, 'admissionEvaluations');
     let q;
@@ -656,7 +652,6 @@ export const evaluationService = {
     });
   },
 
-  // Get evaluations by date (for calendar view)
   async getEvaluationsByDate(date: Date): Promise<AdmissionEvaluation[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
@@ -682,7 +677,6 @@ export const evaluationService = {
     });
   },
 
-  // Check if all evaluations are completed for an admission
   async checkAdmissionEvaluationsComplete(admissionId: string): Promise<{
     allComplete: boolean;
     allPassed: boolean;
@@ -706,7 +700,6 @@ export const evaluationService = {
   // GLOBAL EVALUATION SCHEDULE (Fechas Globales)
   // ============================================
 
-  // Get global schedules for a year
   async getGlobalSchedules(year: number): Promise<GlobalEvaluationSchedule[]> {
     const schedulesRef = collection(db, 'globalEvaluationSchedules');
     const q = query(schedulesRef, where('year', '==', year), orderBy('date', 'asc'));
@@ -724,7 +717,6 @@ export const evaluationService = {
     });
   },
 
-  // Get active global schedule by type
   async getActiveScheduleByType(type: EvaluationType, year: number): Promise<GlobalEvaluationSchedule | null> {
     const schedulesRef = collection(db, 'globalEvaluationSchedules');
     const q = query(
@@ -748,15 +740,12 @@ export const evaluationService = {
     } as GlobalEvaluationSchedule;
   },
 
-  // Save global schedule
   async saveGlobalSchedule(schedule: Omit<GlobalEvaluationSchedule, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     const now = new Date();
     
-    // Check if exists for this type and year
     const existing = await this.getActiveScheduleByType(schedule.type, schedule.year);
     
     if (existing) {
-      // Update existing
       const docRef = doc(db, 'globalEvaluationSchedules', existing.id);
       await updateDoc(docRef, {
         ...schedule,
@@ -765,7 +754,6 @@ export const evaluationService = {
       });
       return existing.id;
     } else {
-      // Create new
       const docRef = await addDoc(collection(db, 'globalEvaluationSchedules'), {
         ...schedule,
         date: Timestamp.fromDate(schedule.date as Date),
@@ -776,7 +764,6 @@ export const evaluationService = {
     }
   },
 
-  // Create evaluations with global schedule dates
   async createEvaluationsWithGlobalDates(
     admissionId: string, 
     studentName: string,
@@ -790,7 +777,6 @@ export const evaluationService = {
     const existingTypes = new Set(existingEvaluations.map(e => e.phaseType));
     const now = new Date();
     
-    // Determinar si es 7mo grado o superior (para examen de inglés)
     const gradesRequiringEnglish = ['7mo_grado', '8vo_grado', '9no_grado', '1er_año', '2do_año', '7mo', '8vo', '9no', '1ro_bach', '2do_bach'];
     const requiresEnglishExam = gradesRequiringEnglish.some(g => 
       gradeApplying.toLowerCase().includes(g.toLowerCase()) || 
@@ -800,17 +786,14 @@ export const evaluationService = {
     const evaluations: AdmissionEvaluation[] = [];
     
     for (const phase of activePhases) {
-      // Avoid duplicated evaluations if they already exist for this admission
       if (existingTypes.has(phase.type)) {
         continue;
       }
 
-      // Skip English exam if grade is below 7mo
       if (phase.type === 'english' && !requiresEnglishExam) {
         continue;
       }
       
-      // Find global schedule for this phase type
       const globalSchedule = schedules.find(s => s.type === phase.type && s.isActive);
       
       const evalData: Omit<AdmissionEvaluation, 'id'> = {
@@ -827,7 +810,6 @@ export const evaluationService = {
         updatedAt: now,
       };
       
-      // Preparar datos para Firestore (sin campos undefined)
       const firestoreData: any = {
         admissionId,
         studentName,
@@ -840,7 +822,6 @@ export const evaluationService = {
         updatedAt: Timestamp.fromDate(now),
       };
       
-      // Solo agregar campos opcionales si existen
       if (globalSchedule?.date) {
         firestoreData.scheduledDate = Timestamp.fromDate(globalSchedule.date as Date);
       }
@@ -862,47 +843,28 @@ export const evaluationService = {
     return evaluations;
   },
 
-  // Apply global schedule to all pending evaluations of a type
   async applyGlobalScheduleToAll(scheduleId: string): Promise<number> {
     const scheduleDoc = await getDoc(doc(db, 'globalEvaluationSchedules', scheduleId));
     if (!scheduleDoc.exists()) {
-      console.log('Schedule no encontrado:', scheduleId);
       return 0;
     }
     
     const scheduleData = scheduleDoc.data();
-    console.log('Schedule data completo:', JSON.stringify(scheduleData));
-    console.log('startTime del schedule:', scheduleData.startTime);
-    
-    // Convertir la fecha de Firestore Timestamp a Date
     const scheduleDate = scheduleData.date?.toDate?.() || new Date(scheduleData.date);
-    console.log('Fecha a aplicar:', scheduleDate, 'Hora:', scheduleData.startTime);
     
-    // Get all pending AND scheduled evaluations of this type (not completed)
     const evalsRef = collection(db, 'admissionEvaluations');
-    
-    // Primero verificar cuántas evaluaciones hay en total
-    const allEvalsSnapshot = await getDocs(evalsRef);
-    console.log('Total de evaluaciones en la BD:', allEvalsSnapshot.size);
-    allEvalsSnapshot.docs.forEach(doc => {
-      const data = doc.data();
-      console.log('Eval:', doc.id, 'tipo:', data.phaseType, 'status:', data.status, 'student:', data.studentName);
-    });
     
     const q = query(
       evalsRef,
       where('phaseType', '==', scheduleData.type),
-      where('status', 'in', ['pending', 'scheduled']) // Incluir las ya programadas también
+      where('status', 'in', ['pending', 'scheduled']) 
     );
     const snapshot = await getDocs(q);
-    
-    console.log('Evaluaciones encontradas para actualizar:', snapshot.size, 'para tipo:', scheduleData.type);
     
     let updated = 0;
     const batch = writeBatch(db);
     
     snapshot.docs.forEach(evalDoc => {
-      console.log('Actualizando evaluación:', evalDoc.id, evalDoc.data());
       batch.update(evalDoc.ref, {
         scheduledDate: Timestamp.fromDate(scheduleDate),
         scheduledTime: scheduleData.startTime,
@@ -915,13 +877,11 @@ export const evaluationService = {
     
     if (updated > 0) {
       await batch.commit();
-      console.log('Batch committed, actualizadas:', updated);
     }
     
     return updated;
   },
 
-  // Get evaluations by type and scheduled date (for jornada view)
   async getEvaluationsByTypeAndDate(type: EvaluationType, date: Date): Promise<AdmissionEvaluation[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
@@ -950,7 +910,6 @@ export const evaluationService = {
     });
   },
 
-  // Bulk grade evaluations
   async bulkGradeEvaluations(entries: BulkGradeEntry[]): Promise<number> {
     const batch = writeBatch(db);
     const now = new Date();
@@ -971,7 +930,6 @@ export const evaluationService = {
     return entries.length;
   },
 
-  // Get all evaluations (for listing)
   async getAllEvaluations(): Promise<(AdmissionEvaluation & { gradeApplying?: string })[]> {
     const evalsRef = collection(db, 'admissionEvaluations');
     const snapshot = await getDocs(evalsRef);
@@ -1004,7 +962,7 @@ export const evaluationService = {
     });
   },
 
-  // Limpiar evaluaciones duplicadas y entrevistas familiares de una admisión
+  // Limpiar evaluaciones duplicadas (Limpiado de condicionales clínicos)
   async cleanupEvaluations(admissionId: string): Promise<{ deleted: number; kept: string[] }> {
     const evalsRef = collection(db, 'admissionEvaluations');
     const q = query(evalsRef, where('admissionId', '==', admissionId));
@@ -1017,13 +975,6 @@ export const evaluationService = {
     };
 
     const getRichnessScore = (data: any): number => {
-      const hasInterviewForm = data.psychologyInterviewForm && Object.values(data.psychologyInterviewForm).some((value) => {
-        if (typeof value === 'string') {
-          return value.trim().length > 0;
-        }
-        return Boolean(value);
-      });
-      const interviewNotesCount = Array.isArray(data.interviewNotes) ? data.interviewNotes.length : 0;
       const subjectConfigCount = Array.isArray(data.subjectConfigs) ? data.subjectConfigs.length : 0;
       const recommendationCount = Array.isArray(data.recommendations)
         ? data.recommendations.length
@@ -1034,10 +985,6 @@ export const evaluationService = {
       if (data.completedAt) score += 12;
       if (data.score !== undefined && data.score !== null) score += 8;
       if (typeof data.result === 'string' && data.result.trim()) score += 10;
-      if (typeof data.interviewSummary === 'string' && data.interviewSummary.trim()) score += 35;
-      if (typeof data.interviewRecommendation === 'string' && data.interviewRecommendation.trim()) score += 20;
-      if (hasInterviewForm) score += 45;
-      if (interviewNotesCount > 0) score += interviewNotesCount * 5;
       if (typeof data.observations === 'string' && data.observations.trim()) score += 8;
       if (recommendationCount > 0) score += Math.min(20, recommendationCount * 4);
       if (data.attendanceStatus && data.attendanceStatus !== 'pending') score += 12;
@@ -1046,6 +993,7 @@ export const evaluationService = {
       if (subjectConfigCount > 0) score += Math.min(15, subjectConfigCount * 2);
       if (typeof data.notes === 'string' && data.notes.trim()) score += 6;
       if (data.examEnabled) score += 2;
+      if (data.answers && Object.keys(data.answers).length > 0) score += 20;
 
       return score;
     };
@@ -1053,12 +1001,10 @@ export const evaluationService = {
     const evaluationsByType: Record<string, { id: string; createdAt: number; updatedAt: number; richness: number }[]> = {};
     const toDelete: string[] = [];
     
-    // Agrupar evaluaciones por tipo
     snapshot.docs.forEach(docSnap => {
       const data = docSnap.data();
       const type = data.phaseType;
       
-      // Si es entrevista familiar, marcar para eliminar
       if (type === 'interview') {
         toDelete.push(docSnap.id);
         return;
@@ -1075,18 +1021,11 @@ export const evaluationService = {
       });
     });
     
-    // Para cada tipo, conservar primero la evaluación con más información útil y usar la recencia solo como desempate.
     Object.entries(evaluationsByType).forEach(([_type, evals]) => {
       if (evals.length > 1) {
         evals.sort((a, b) => {
-          if (b.richness !== a.richness) {
-            return b.richness - a.richness;
-          }
-
-          if (b.updatedAt !== a.updatedAt) {
-            return b.updatedAt - a.updatedAt;
-          }
-
+          if (b.richness !== a.richness) return b.richness - a.richness;
+          if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
           return b.createdAt - a.createdAt;
         });
 
@@ -1096,7 +1035,6 @@ export const evaluationService = {
       }
     });
     
-    // Eliminar las evaluaciones marcadas
     const batch = writeBatch(db);
     toDelete.forEach(id => {
       batch.delete(doc(db, 'admissionEvaluations', id));
@@ -1110,12 +1048,10 @@ export const evaluationService = {
     return { deleted: toDelete.length, kept };
   },
 
-  // Limpiar TODAS las evaluaciones de entrevistas familiares y duplicados
   async cleanupAllEvaluations(): Promise<{ totalDeleted: number; admissionsProcessed: number }> {
     const evalsRef = collection(db, 'admissionEvaluations');
     const snapshot = await getDocs(evalsRef);
     
-    // Agrupar por admissionId
     const byAdmission: Record<string, any[]> = {};
     snapshot.docs.forEach(docSnap => {
       const data = docSnap.data();
@@ -1125,12 +1061,62 @@ export const evaluationService = {
     });
     
     let totalDeleted = 0;
-    
     for (const admissionId of Object.keys(byAdmission)) {
       const result = await this.cleanupEvaluations(admissionId);
       totalDeleted += result.deleted;
     }
     
     return { totalDeleted, admissionsProcessed: Object.keys(byAdmission).length };
+  },
+
+  // ============================================
+  // EXAM TEMPLATES & ASSIGNMENTS (NUEVO)
+  // ============================================
+
+  // Obtener todas las plantillas creadas
+  async getExamTemplates(): Promise<EvaluationTemplate[]> {
+    const snapshot = await getDocs(collection(db, 'evaluationTemplates'));
+    return snapshot.docs.map(doc => ({ 
+      id: doc.id, 
+      ...doc.data() 
+    } as EvaluationTemplate));
+  },
+
+  // Crear una nueva plantilla (Admin)
+  async createExamTemplate(data: Omit<EvaluationTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+    const now = new Date();
+    const docRef = await addDoc(collection(db, 'evaluationTemplates'), {
+      ...data,
+      createdAt: Timestamp.fromDate(now),
+      updatedAt: Timestamp.fromDate(now)
+    });
+    return docRef.id;
+  },
+
+  // Actualizar una plantilla existente (Admin)
+  async updateExamTemplate(id: string, data: Partial<EvaluationTemplate>): Promise<void> {
+    const docRef = doc(db, 'evaluationTemplates', id);
+    await updateDoc(docRef, {
+      ...data,
+      updatedAt: Timestamp.fromDate(new Date())
+    });
+  },
+
+  // Asignar una plantilla a la evaluación de un aspirante (Admin)
+  async assignTemplateToEvaluation(evaluationId: string, templateId: string): Promise<void> {
+    const docRef = doc(db, 'admissionEvaluations', evaluationId);
+    await updateDoc(docRef, {
+      templateId,
+      updatedAt: Timestamp.fromDate(new Date())
+    });
+  },
+
+  // Guardar el progreso/respuestas del estudiante (Aspirante)
+  async saveExamAnswers(evaluationId: string, answers: Record<string, string>): Promise<void> {
+    const docRef = doc(db, 'admissionEvaluations', evaluationId);
+    await updateDoc(docRef, {
+      answers,
+      updatedAt: Timestamp.fromDate(new Date())
+    });
   }
 };
