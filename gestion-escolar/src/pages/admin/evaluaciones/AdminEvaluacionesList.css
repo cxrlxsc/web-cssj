@@ -1,0 +1,148 @@
+/* src/pages/admin/evaluaciones/AdminEvaluacionesList.css */
+
+.admin-evaluaciones-layout {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.evaluaciones-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  color: #002a4a;
+}
+
+/* NAVBAR VERDE OFICIAL (Reutilizada estructura de Admisiones) */
+.admin-navbar {
+  background-color: #008C5A;
+  color: #FFFFFF;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 2.5rem;
+  border-bottom: 4px solid #FAB529;
+  box-shadow: 0 4px 12px rgba(0, 140, 90, 0.2);
+}
+
+.navbar-brand { display: flex; align-items: center; gap: 1.25rem; }
+.navbar-logo { height: 48px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); }
+.navbar-title { font-size: 1.35rem; font-weight: 700; margin: 0; }
+
+.btn-logout {
+  background-color: transparent; color: #FFFFFF; border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.6rem 1.3rem; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.btn-logout:hover { background-color: #030405; border-color: #030405; }
+
+/* CONTENEDOR PRINCIPAL */
+.evaluaciones-main {
+  flex: 1;
+  max-width: 1300px; /* Un poco más ancho para la tabla de evaluaciones */
+  width: 100%;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+.evaluaciones-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.header-top { margin-bottom: 1.5rem; }
+
+.header-titles h1 { color: #030405; font-size: 2.25rem; font-weight: 800; margin: 0 0 0.5rem 0; letter-spacing: -0.5px; }
+.header-titles p { color: #64748b; font-size: 1.05rem; margin: 0; }
+
+.btn-back {
+  display: inline-flex; align-items: center; gap: 0.5rem; background-color: #f1f5f9; color: #475569;
+  padding: 0.75rem 1.25rem; border-radius: 8px; font-weight: 600; text-decoration: none; border: 1px solid #e2e8f0; transition: all 0.2s ease;
+}
+.btn-back:hover { background-color: #e2e8f0; color: #030405; }
+
+/* Botón Actualizar */
+.btn-refresh {
+  background-color: #002a4a;
+  color: #FFFFFF;
+  padding: 0.85rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 42, 74, 0.2);
+}
+.btn-refresh:hover { background-color: #001a2e; transform: translateY(-1px); box-shadow: 0 6px 8px rgba(0, 42, 74, 0.25); }
+
+/* Alertas */
+.alert-box { padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-weight: bold; }
+.alert-box.error { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+.alert-box.success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+
+/* TABLA DE EVALUACIONES */
+.table-container {
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+  overflow-x: auto;
+}
+
+.empty-state { padding: 5rem 2rem; text-align: center; color: #64748b; font-weight: 600; font-size: 1.1rem; }
+
+.evaluaciones-table { width: 100%; border-collapse: collapse; text-align: left; min-width: 900px; }
+.evaluaciones-table th {
+  background-color: #f8fafc; color: #475569; font-size: 0.85rem; text-transform: uppercase;
+  letter-spacing: 0.5px; padding: 1.25rem 1.5rem; font-weight: 700; border-bottom: 2px solid #e2e8f0;
+}
+.evaluaciones-table td { padding: 1.25rem 1.5rem; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+.evaluaciones-table tbody tr { transition: all 0.2s ease; }
+.evaluaciones-table tbody tr:hover { background-color: #f8fafc; }
+
+.student-name { font-weight: 800; color: #030405; font-size: 1.05rem; }
+.grade-text { color: #0068B3; font-weight: 700; }
+
+/* Badges de Tipo de Prueba */
+.phase-badge { padding: 0.4rem 0.85rem; border-radius: 4px; font-size: 0.85rem; font-weight: 700; }
+.phase-academic { background-color: #e0f2fe; color: #0369a1; }
+.phase-psychological { background-color: #fef3c7; color: #d97706; }
+
+/* Status Pills (Píldoras de estado) */
+.status-pill { padding: 0.4rem 0.85rem; border-radius: 50px; font-size: 0.85rem; font-weight: 700; display: inline-block; }
+.status-pill.completed { background-color: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.status-pill.scheduled { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+.status-pill.pending { background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
+/* Controles de Agendamiento */
+.schedule-controls { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.schedule-input { padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; color: #030405; font-family: inherit; }
+.schedule-input-text { padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; width: 140px; color: #030405; font-family: inherit; }
+.btn-schedule { padding: 0.55rem 1rem; background-color: #008C5A; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; transition: all 0.2s; }
+.btn-schedule:hover { background-color: #006e46; }
+
+.text-muted { color: #64748b; font-size: 0.9rem; font-style: italic; }
+.text-muted-bold { color: #94a3b8; font-size: 0.85rem; font-style: italic; font-weight: 600; }
+
+/* Botones de Acción (Habilitar Examen) */
+.btn-enable-exam { padding: 0.55rem 1.2rem; background-color: #0068B3; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,104,179,0.2); transition: all 0.2s; }
+.btn-enable-exam:hover { background-color: #004d86; }
+
+.exam-active-badge { background-color: #dcfce7; color: #166534; padding: 0.4rem 0.85rem; border-radius: 6px; font-size: 0.85rem; font-weight: bold; border: 1px solid #86efac; }
+.score-badge { color: #16a34a; font-weight: 800; background-color: #e0f2fe; padding: 0.4rem 0.85rem; border-radius: 6px; font-size: 0.9rem; }
+
+@media (max-width: 768px) {
+  .admin-navbar { flex-direction: column; gap: 1rem; padding: 1.5rem; }
+  .evaluaciones-header { flex-direction: column; align-items: flex-start; }
+}

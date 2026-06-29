@@ -129,6 +129,39 @@ export default function AdminRecursosInternos() {
             </Link>
           </section>
 
+          {/* MÓDULO 5: EVALUACIONES (NUEVO - VIOLETA) */}
+          <section className="recurso-card card-evaluaciones" style={{ borderTop: '4px solid #6b21a8' }}>
+            <div className="card-top">
+              <div className="recurso-icon" style={{ background: '#f3e8ff', color: '#6b21a8' }}>
+                <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+              </div>
+              <div className="recurso-text">
+                <h3>Gestión de Evaluaciones</h3>
+                <p>Agenda citas presenciales para aspirantes y construye los exámenes académicos que se realizarán en línea.</p>
+              </div>
+            </div>
+            
+            {/* Botones de acción divididos */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto' }}>
+              <Link 
+                to="/admin/evaluaciones" 
+                className="btn-recurso" 
+                style={{ flex: 1, background: '#6b21a8', color: 'white', border: 'none', justifyContent: 'center' }}
+              >
+                <span>Ver Aspirantes</span>
+              </Link>
+              <Link 
+                to="/admin/evaluaciones/constructor" 
+                className="btn-recurso" 
+                style={{ flex: 1, background: 'white', color: '#6b21a8', border: '1px solid #6b21a8', justifyContent: 'center' }}
+              >
+                <span>Crear Examen</span>
+              </Link>
+            </div>
+          </section>
+
         </div>
       </main>
     </div>

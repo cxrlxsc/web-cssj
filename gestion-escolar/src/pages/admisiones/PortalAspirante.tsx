@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, type JSX } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import ExpedienteModal from './ExpedienteModal'; // <-- IMPORTAMOS EL MODAL
 import './PortalAspirante.css';
 
 // Servicios
@@ -39,7 +40,8 @@ const Icons = {
   Upload: () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>,
   Camera: () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   Paperclip: () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>,
-  Calendar: () => <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+  Calendar: () => <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+  ClipboardList: () => <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
 };
 
 export default function PortalAspirante() {
@@ -64,6 +66,9 @@ export default function PortalAspirante() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Estados y Refs para Fase de Matrícula
+  const [expedienteCompletado, setExpedienteCompletado] = useState(false);
+  const [showExpedienteModal, setShowExpedienteModal] = useState(false);
+
   const [talonarioGenerado, setTalonarioGenerado] = useState(false);
   const [estadoComprobante, setEstadoComprobante] = useState<ComprobanteEstado>('pendiente');
   const [isUploadingPago, setIsUploadingPago] = useState(false);
@@ -89,6 +94,10 @@ export default function PortalAspirante() {
       setEvaluations(evals);
 
       await enrollmentService.getEnrollmentByAdmission(admissionData.id);
+
+      // Cargar los estados guardados
+      const expGuardado = localStorage.getItem(`expediente_${admissionData.id}`);
+      if (expGuardado) setExpedienteCompletado(true);
 
       const pagoGuardado = localStorage.getItem(`pago_${admissionData.id}`);
       if (pagoGuardado) setEstadoComprobante(pagoGuardado as ComprobanteEstado);
@@ -129,6 +138,9 @@ export default function PortalAspirante() {
       const latestAdmission = admissions.sort((a, b) => 
         new Date(b.applicationDate).getTime() - new Date(a.applicationDate).getTime()
       )[0];
+
+      // PARA PRUEBAS: Puedes comentar o descomentar esto para forzar estado aprobado
+      // latestAdmission.status = 'approved';
 
       setAdmission(latestAdmission);
       await loadPortalData(latestAdmission);
@@ -180,6 +192,14 @@ export default function PortalAspirante() {
     }
   };
 
+  // Función para guardar Expediente
+  const handleGuardarExpediente = (e: React.FormEvent) => {
+    e.preventDefault();
+    setExpedienteCompletado(true);
+    setShowExpedienteModal(false);
+    localStorage.setItem(`expediente_${admission?.id}`, 'true');
+  };
+
   const handleGenerarTalonario = () => {
     setTalonarioGenerado(true);
     const params = new URLSearchParams({
@@ -197,7 +217,7 @@ export default function PortalAspirante() {
       setIsUploadingPago(true);
       setTimeout(() => {
         setIsUploadingPago(false);
-        setEstadoComprobante('aprobado');
+        setEstadoComprobante('aprobado'); // Auto-aprobado para pruebas
         localStorage.setItem(`pago_${admission?.id}`, 'aprobado');
       }, 2000);
     }
@@ -219,7 +239,7 @@ export default function PortalAspirante() {
       setIsUploadingContrato(true);
       setTimeout(() => {
         setIsUploadingContrato(false);
-        setEstadoContrato('aprobado');
+        setEstadoContrato('aprobado'); // Auto-aprobado para pruebas
         localStorage.setItem(`contrato_${admission?.id}`, 'aprobado');
       }, 2500);
     }
@@ -251,7 +271,6 @@ export default function PortalAspirante() {
     }
   };
 
-  // Ayudante para formatear fechas
   const formatearFecha = (fecha?: Date) => {
     if (!fecha) return 'Fecha por definir';
     return new Intl.DateTimeFormat('es-SV', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).format(fecha);
@@ -297,7 +316,6 @@ export default function PortalAspirante() {
     );
   }
 
-  // Extraer evaluaciones específicas si existen
   const evalAcademica = evaluations.find(e => e.phaseType === 'academic');
   const evalPsicologica = evaluations.find(e => e.phaseType === 'psychological');
 
@@ -352,29 +370,47 @@ export default function PortalAspirante() {
               <div style={{ color: '#16a34a', marginTop: '0.2rem' }}><Icons.Check /></div>
               <div>
                 <h3 style={{ margin: 0, color: '#166534', fontWeight: 800, fontSize: '1.2rem' }}>¡Felicidades! Has sido admitido/a</h3>
-                <p style={{ margin: '0.3rem 0 0', color: '#15803d', fontSize: '0.95rem' }}>Tu proceso de admisión ha concluido con éxito. Ahora debes completar los siguientes 4 pasos para oficializar tu matrícula en la institución.</p>
+                <p style={{ margin: '0.3rem 0 0', color: '#15803d', fontSize: '0.95rem' }}>Tu proceso de admisión ha concluido con éxito. Ahora debes completar los siguientes pasos para oficializar tu matrícula en la institución.</p>
               </div>
             </div>
 
-            {/* PASOS DE MATRÍCULA (1, 2, 3, 4) */}
-            <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderLeft: '5px solid #FAB529' }}>
+            {/* PASO 1: COMPLETAR EXPEDIENTE ESTUDIANTIL */}
+            <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderLeft: expedienteCompletado ? '5px solid #22c55e' : '5px solid #002a4a' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '50%', color: '#d97706' }}>
+                <div style={{ background: expedienteCompletado ? '#dcfce7' : '#e0e7ff', padding: '1rem', borderRadius: '50%', color: expedienteCompletado ? '#16a34a' : '#3730a3' }}>
+                  {expedienteCompletado ? <Icons.Check /> : <Icons.ClipboardList />}
+                </div>
+                <div>
+                  <h3 style={{ margin: '0 0 0.4rem 0', color: '#0f172a' }}>1. Ficha de Expediente General</h3>
+                  <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>Completa los datos familiares, transporte y facturación necesarios para tu contrato.</p>
+                  {expedienteCompletado && <div style={{ marginTop: '0.5rem' }}><span style={{ background: '#dcfce7', color: '#166534', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>Expediente Guardado Exitosamente</span></div>}
+                </div>
+              </div>
+              <button onClick={() => setShowExpedienteModal(true)} style={{ padding: '0.8rem 1.5rem', background: expedienteCompletado ? '#f1f5f9' : '#002a4a', color: expedienteCompletado ? '#475569' : 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                {expedienteCompletado ? 'Revisar Datos' : 'Llenar Formulario'}
+              </button>
+            </div>
+
+            {/* PASO 2: TALONARIO */}
+            <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderLeft: expedienteCompletado ? '5px solid #FAB529' : '5px solid #e2e8f0', opacity: expedienteCompletado ? 1 : 0.6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                <div style={{ background: expedienteCompletado ? '#fef3c7' : '#f1f5f9', padding: '1rem', borderRadius: '50%', color: expedienteCompletado ? '#d97706' : '#94a3b8' }}>
                   <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9zm3.75 11.625a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>
                 </div>
                 <div>
-                  <h3 style={{ margin: '0 0 0.4rem 0', color: '#0f172a' }}>1. Generar Talonario</h3>
-                  <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>Descarga tu talonario para realizar el pago de matrícula y primera colegiatura.</p>
+                  <h3 style={{ margin: '0 0 0.4rem 0', color: expedienteCompletado ? '#0f172a' : '#64748b' }}>2. Generar Talonario</h3>
+                  <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>{expedienteCompletado ? 'Descarga tu talonario para realizar el pago de matrícula y primera colegiatura.' : 'Completa el paso 1 para habilitar tu talonario.'}</p>
                 </div>
               </div>
-              <button onClick={handleGenerarTalonario} style={{ padding: '0.8rem 1.5rem', background: talonarioGenerado ? '#f1f5f9' : '#0068B3', color: talonarioGenerado ? '#475569' : 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              <button onClick={handleGenerarTalonario} disabled={!expedienteCompletado} style={{ padding: '0.8rem 1.5rem', background: talonarioGenerado ? '#f1f5f9' : (expedienteCompletado ? '#0068B3' : '#cbd5e1'), color: talonarioGenerado ? '#475569' : 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: expedienteCompletado ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap' }}>
                 {talonarioGenerado ? 'Descargar de nuevo' : 'Descargar PDF'}
               </button>
             </div>
 
-            <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderLeft: estadoComprobante === 'aprobado' ? '5px solid #22c55e' : '5px solid #0068B3' }}>
+            {/* PASO 3: COMPROBANTE PAGO */}
+            <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderLeft: estadoComprobante === 'aprobado' ? '5px solid #22c55e' : (expedienteCompletado ? '5px solid #0068B3' : '5px solid #e2e8f0'), opacity: expedienteCompletado ? 1 : 0.6 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                <div style={{ background: estadoComprobante === 'aprobado' ? '#dcfce7' : '#e0f2fe', padding: '1rem', borderRadius: '50%', color: estadoComprobante === 'aprobado' ? '#16a34a' : '#0284c7' }}>
+                <div style={{ background: estadoComprobante === 'aprobado' ? '#dcfce7' : (expedienteCompletado ? '#e0f2fe' : '#f1f5f9'), padding: '1rem', borderRadius: '50%', color: estadoComprobante === 'aprobado' ? '#16a34a' : (expedienteCompletado ? '#0284c7' : '#94a3b8') }}>
                   {estadoComprobante === 'aprobado' ? (
                     <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   ) : (
@@ -382,7 +418,7 @@ export default function PortalAspirante() {
                   )}
                 </div>
                 <div>
-                  <h3 style={{ margin: '0 0 0.4rem 0', color: '#0f172a' }}>2. Comprobante de Pago</h3>
+                  <h3 style={{ margin: '0 0 0.4rem 0', color: expedienteCompletado ? '#0f172a' : '#64748b' }}>3. Comprobante de Pago</h3>
                   <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>Sube la fotografía o PDF del recibo de pago del banco.</p>
                   <div style={{ marginTop: '0.5rem' }}>
                     {estadoComprobante === 'pendiente' && <span style={{ background: '#f1f5f9', color: '#64748b', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>Pendiente de subir</span>}
@@ -395,20 +431,21 @@ export default function PortalAspirante() {
               <div>
                 <input type="file" accept="image/*,.pdf" ref={fileInputRefPago} style={{ display: 'none' }} onChange={handleFileChangePago} />
                 {(estadoComprobante === 'pendiente' || estadoComprobante === 'rechazado') && (
-                  <button onClick={() => fileInputRefPago.current?.click()} disabled={isUploadingPago} style={{ padding: '0.8rem 1.5rem', background: '#008C5A', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: isUploadingPago ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}>
+                  <button onClick={() => fileInputRefPago.current?.click()} disabled={!expedienteCompletado || isUploadingPago} style={{ padding: '0.8rem 1.5rem', background: expedienteCompletado ? '#008C5A' : '#cbd5e1', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: expedienteCompletado ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap' }}>
                     {isUploadingPago ? 'Subiendo...' : 'Subir Comprobante'}
                   </button>
                 )}
               </div>
             </div>
 
+            {/* PASO 4: CONTRATO */}
             <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderLeft: estadoComprobante === 'aprobado' ? '5px solid #002a4a' : '5px solid #e2e8f0', opacity: estadoComprobante === 'aprobado' ? 1 : 0.6 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                 <div style={{ background: estadoComprobante === 'aprobado' ? '#e0e7ff' : '#f1f5f9', padding: '1rem', borderRadius: '50%', color: estadoComprobante === 'aprobado' ? '#3730a3' : '#94a3b8' }}>
                   <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
                 </div>
                 <div>
-                  <h3 style={{ margin: '0 0 0.4rem 0', color: estadoComprobante === 'aprobado' ? '#0f172a' : '#64748b' }}>3. Generar Contrato</h3>
+                  <h3 style={{ margin: '0 0 0.4rem 0', color: estadoComprobante === 'aprobado' ? '#0f172a' : '#64748b' }}>4. Generar Contrato</h3>
                   <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
                     {estadoComprobante === 'aprobado' ? 'Descarga e imprime tu contrato de servicios educativos para firmarlo físicamente.' : 'Este paso se habilitará automáticamente cuando tu comprobante sea revisado y aprobado.'}
                   </p>
@@ -419,20 +456,18 @@ export default function PortalAspirante() {
               </button>
             </div>
 
+            {/* PASO 5: SUBIR CONTRATO FIRMADO */}
             <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderLeft: estadoContrato === 'aprobado' ? '5px solid #22c55e' : (estadoComprobante === 'aprobado' ? '5px solid #FAB529' : '5px solid #e2e8f0'), opacity: estadoComprobante === 'aprobado' ? 1 : 0.6 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                 <div style={{ background: estadoContrato === 'aprobado' ? '#dcfce7' : (estadoComprobante === 'aprobado' ? '#fef3c7' : '#f1f5f9'), padding: '1rem', borderRadius: '50%', color: estadoContrato === 'aprobado' ? '#16a34a' : (estadoComprobante === 'aprobado' ? '#d97706' : '#94a3b8') }}>
                   <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
                 </div>
                 <div>
-                  <h3 style={{ margin: '0 0 0.4rem 0', color: estadoComprobante === 'aprobado' ? '#0f172a' : '#64748b' }}>4. Subir Contrato Firmado</h3>
+                  <h3 style={{ margin: '0 0 0.4rem 0', color: estadoComprobante === 'aprobado' ? '#0f172a' : '#64748b' }}>5. Subir Contrato Firmado</h3>
                   <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
                     {estadoComprobante === 'aprobado' ? 'Escanea o toma una fotografía legible del contrato ya firmado y súbelo para auditoría.' : 'Se habilitará tras confirmar tu pago.'}
                   </p>
                   <div style={{ marginTop: '0.5rem' }}>
-                    {estadoComprobante === 'aprobado' && estadoContrato === 'pendiente' && <span style={{ background: '#f1f5f9', color: '#64748b', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>Esperando documento</span>}
-                    {estadoContrato === 'revision' && <span style={{ background: '#fef08a', color: '#854d0e', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>En Auditoría Legal</span>}
-                    {estadoContrato === 'rechazado' && <span style={{ background: '#fef2f2', color: '#b91c1c', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>Documento Devuelto (Verificar)</span>}
                     {estadoContrato === 'aprobado' && <span style={{ background: '#dcfce7', color: '#166534', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>¡Matrícula Oficializada! 🎉</span>}
                   </div>
                 </div>
@@ -454,7 +489,6 @@ export default function PortalAspirante() {
              VISTA: FASE DE EVALUACIONES (DINÁMICA)
              ========================================================= */
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '2rem' }}>
-            
             <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '1.5rem', borderRadius: '8px', color: '#166534' }}>
               <h3 style={{ margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Icons.Check /> ¡Documentos Aprobados!
@@ -481,7 +515,6 @@ export default function PortalAspirante() {
                   </div>
                 </div>
 
-                {/* Botón dinámico según el estado del examen */}
                 {evalAcademica?.status === 'completed' ? (
                   <span style={{ background: '#dcfce7', color: '#166534', padding: '0.5rem 1rem', borderRadius: '20px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Icons.Check /> Examen Finalizado
@@ -531,7 +564,6 @@ export default function PortalAspirante() {
                 ) : null}
               </div>
             </div>
-
           </div>
 
         ) : admission?.status === 'interview' ? (
@@ -669,6 +701,17 @@ export default function PortalAspirante() {
         </div>
 
       </main>
+
+      {/* =======================================================
+          MODAL DE EXPEDIENTE (COMPONENTE EXTERNO)
+          ======================================================= */}
+      <ExpedienteModal 
+        isOpen={showExpedienteModal} 
+        onClose={() => setShowExpedienteModal(false)} 
+        onSave={handleGuardarExpediente} 
+        admission={admission} 
+      />
+
       <Footer />
     </div>
   );
