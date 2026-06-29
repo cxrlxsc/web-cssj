@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import AOS from 'aos';
 import 'aos/dist/aos.css'; 
 
-import Home from './pages/Home'; 
+import Home from '././pages/Home'; 
 import About from './components/home/About';
 import AccesoAdmision from './pages/admisiones/AccesoAdmision'; 
 import ProcesoAdmision from './pages/admisiones/ProcesoAdmision';
@@ -24,15 +24,15 @@ import AdminContratosFirmados from './pages/admin/AdminContratosFirmados';
 import ExamTemplateBuilder from './pages/admin/evaluaciones/ExamTemplateBuilder'; // <-- NUEVO: Importación del constructor de exámenes
 
 // Páginas Públicas Adicionales
-import Historia from './pages/Historia';
-import Ubicacion from './pages/Ubicacion';
-import Autoridades from './pages/Autoridades';
-import MundoSalesiano from './pages/MundoSalesiano';
-import ModeloEducativo from './pages/ModeloEducativo';
-import Directorio from './pages/Directorio';
-import Noticias from './pages/Noticias';
-import ProcesoInscripcion from './pages/ProcesoInscripcion';
-import CalendarioAcademico from './pages/CalendarioAcademico';
+import Historia from './pages/home/Historia';
+import Ubicacion from './pages/home/Ubicacion';
+import Autoridades from './pages/home/Autoridades';
+import MundoSalesiano from './pages/home/MundoSalesiano';
+import ModeloEducativo from './pages/home/ModeloEducativo';
+import Directorio from './pages/home/Directorio';
+import Noticias from './pages/home/Noticias';
+import ProcesoInscripcion from './pages/home/ProcesoInscripcion';
+import CalendarioAcademico from './pages/home/CalendarioAcademico';
 
 // Módulo de Reingreso Estudiantes
 import PortalAspirante from './pages/admisiones/PortalAspirante';

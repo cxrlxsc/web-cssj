@@ -1,10 +1,10 @@
 // src/pages/Autoridades.tsx
 import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { db } from '../../firebase/config';
 
-import { Navbar } from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
+import { Navbar } from '../../components/layout/Navbar';
+import Footer from '../../components/layout/Footer';
 import './Autoridades.css';
 
 export default function Autoridades() {

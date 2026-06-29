@@ -6,7 +6,7 @@ interface ExpedienteModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (e: React.FormEvent) => void;
-  admission: any; // Aquí pasamos los datos del aspirante para precargar el nombre
+  admission: any;
 }
 
 export default function ExpedienteModal({ isOpen, onClose, onSave, admission }: ExpedienteModalProps) {
@@ -14,15 +14,15 @@ export default function ExpedienteModal({ isOpen, onClose, onSave, admission }: 
 
   return (
     <div className="expediente-overlay">
-      <div className="expediente-modal">
+      <div className="expediente-modal modal-enter">
         
         {/* HEADER FIJO */}
         <div className="expediente-header">
-          <div>
+          <div className="header-text">
             <h2>Ficha de Expediente Estudiantil</h2>
             <p>Complete cuidadosamente la información requerida por la institución.</p>
           </div>
-          <button type="button" onClick={onClose} className="btn-close-expediente">
+          <button type="button" onClick={onClose} className="btn-close-expediente" aria-label="Cerrar modal">
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -42,35 +42,57 @@ export default function ExpedienteModal({ isOpen, onClose, onSave, admission }: 
                 <label>Apellidos: <input type="text" defaultValue={admission?.studentLastName} required /></label>
                 <label>NIE: <input type="text" required /></label>
                 <label>Sexo: 
-                  <select required>
-                    <option value="">Seleccione...</option>
-                    <option value="MASCULINO">MASCULINO</option>
-                    <option value="FEMENINO">FEMENINO</option>
-                  </select>
+                  <span className="custom-select-wrapper">
+                    <select required>
+                      <option value="">Seleccione...</option>
+                      <option value="MASCULINO">MASCULINO</option>
+                      <option value="FEMENINO">FEMENINO</option>
+                    </select>
+                  </span>
                 </label>
                 <label>Fecha de Nac.: <input type="date" required /></label>
                 <label>Nacionalidad: <input type="text" defaultValue="SALVADOREÑA" /></label>
                 <label>Zona Residencial: 
-                  <select><option>URBANA</option><option>RURAL</option></select>
+                  <span className="custom-select-wrapper">
+                    <select><option>URBANA</option><option>RURAL</option></select>
+                  </span>
                 </label>
                 <label>Departamento: <input type="text" required /></label>
                 <label>Municipio: <input type="text" required /></label>
                 <label className="full-width">Dirección Completa: <input type="text" required /></label>
                 <label>Teléfono: <input type="tel" /></label>
                 <label>Vive con: 
-                  <select><option>AMBOS PADRES</option><option>SOLO MADRE</option><option>SOLO PADRE</option><option>OTROS</option></select>
+                  <span className="custom-select-wrapper">
+                    <select><option>AMBOS PADRES</option><option>SOLO MADRE</option><option>SOLO PADRE</option><option>OTROS</option></select>
+                  </span>
                 </label>
                 <label>Religión: <input type="text" defaultValue="CRISTIANO CATOLICO" /></label>
                 <label>Tipo de Sangre: <input type="text" /></label>
                 <label>Enfermedades: <input type="text" placeholder="Ninguna" /></label>
                 <label>Alergias: <input type="text" placeholder="Ninguna" /></label>
                 
-                {/* Sacramentos (En línea) */}
+                {/* Sacramentos (Toggle Pills) */}
                 <div className="sacramentos-row full-width">
-                  <label className="inline-label">Bautizado: <select><option>NO</option><option>SI</option></select></label>
-                  <label className="inline-label">Confirmado: <select><option>NO</option><option>SI</option></select></label>
-                  <label className="inline-label">Comunión: <select><option>NO</option><option>SI</option></select></label>
-                  <label className="inline-label">¿Cursó Parvularia?: <select><option>NO</option><option>SI</option></select></label>
+                  <label className="toggle-pill-label">
+                    Bautizado
+                    <input type="checkbox" name="bautizado" value="SI" className="toggle-pill-input" />
+                    <span className="toggle-pill">Sí</span>
+                  </label>
+                  <label className="toggle-pill-label">
+                    Confirmado
+                    <input type="checkbox" name="confirmado" value="SI" className="toggle-pill-input" />
+                    <span className="toggle-pill">Sí</span>
+                  </label>
+                  <label className="toggle-pill-label">
+                    Comunión
+                    <input type="checkbox" name="comunion" value="SI" className="toggle-pill-input" />
+                    <span className="toggle-pill">Sí</span>
+                  </label>
+                  <label className="toggle-pill-label">
+                    ¿Cursó Parvularia?
+                    <input type="checkbox" name="parvularia" value="SI" className="toggle-pill-input" />
+                    <span className="toggle-pill">Sí</span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -117,12 +139,14 @@ export default function ExpedienteModal({ isOpen, onClose, onSave, admission }: 
             <div className="form-section border-green">
               <div className="form-grid" style={{ gridTemplateColumns: '1fr 2fr 1fr' }}>
                 <label>Responsable Legal: 
-                  <select required>
-                    <option value="EL PADRE">EL PADRE</option>
-                    <option value="LA MADRE">LA MADRE</option>
-                    <option value="AMBOS">AMBOS</option>
-                    <option value="EL ENCARGADO">EL ENCARGADO</option>
-                  </select>
+                  <span className="custom-select-wrapper">
+                    <select required>
+                      <option value="EL PADRE">EL PADRE</option>
+                      <option value="LA MADRE">LA MADRE</option>
+                      <option value="AMBOS">AMBOS</option>
+                      <option value="EL ENCARGADO">EL ENCARGADO</option>
+                    </select>
+                  </span>
                 </label>
                 <label>Llamar en caso de Emergencia a: <input type="text" required /></label>
                 <label>Teléfono Emergencia: <input type="tel" required /></label>
@@ -156,12 +180,14 @@ export default function ExpedienteModal({ isOpen, onClose, onSave, admission }: 
               </div>
               <div className="form-grid">
                 <label>Tipo de Transporte: 
-                  <select required>
-                    <option>VEHICULO PROPIO</option>
-                    <option>TRANSPORTE ESCOLAR (MICROBUS)</option>
-                    <option>A PIE</option>
-                    <option>TRANSPORTE PUBLICO</option>
-                  </select>
+                  <span className="custom-select-wrapper">
+                    <select required>
+                      <option>VEHICULO PROPIO</option>
+                      <option>TRANSPORTE ESCOLAR (MICROBUS)</option>
+                      <option>A PIE</option>
+                      <option>TRANSPORTE PUBLICO</option>
+                    </select>
+                  </span>
                 </label>
                 <label>Nombre del Motorista: <input type="text" /></label>
                 <label>Placa del Vehículo: <input type="text" /></label>

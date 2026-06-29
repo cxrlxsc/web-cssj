@@ -1,7 +1,7 @@
 // src/pages/MundoSalesiano.tsx
 import { useState, useEffect } from 'react';
-import { Navbar } from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
+import { Navbar } from '../../components/layout/Navbar';
+import Footer from '../../components/layout/Footer';
 import './MundoSalesiano.css';
 
 export default function MundoSalesiano() {

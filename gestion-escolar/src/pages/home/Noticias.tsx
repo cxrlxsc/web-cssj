@@ -1,10 +1,10 @@
 // src/pages/Noticias.tsx
 import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase/config'; // Asegúrate de que esta ruta sea correcta
+import { db } from '../../firebase/config'; // Asegúrate de que esta ruta sea correcta
 
-import { Navbar } from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
+import { Navbar } from '../../components/layout/Navbar';
+import Footer from '../../components/layout/Footer';
 import './Noticias.css';
 
 export default function Noticias() {

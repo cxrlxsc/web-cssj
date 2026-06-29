@@ -1,7 +1,7 @@
 // src/pages/Historia.tsx
 import { useEffect } from 'react';
-import { Navbar } from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
+import { Navbar } from '../../components/layout/Navbar';
+import Footer from '../../components/layout/Footer';
 import './Historia.css';
 
 export default function Historia() {

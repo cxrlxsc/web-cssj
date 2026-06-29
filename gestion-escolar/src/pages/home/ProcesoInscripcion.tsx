@@ -1,8 +1,8 @@
 // src/pages/ProcesoInscripcion.tsx
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom'; // <-- IMPORTANTE: Agregamos Link para la navegación interna
-import { Navbar } from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
+import { Navbar } from '../../components/layout/Navbar';
+import Footer from '../../components/layout/Footer';
 import './ProcesoInscripcion.css';
 
 export default function ProcesoInscripcion() {

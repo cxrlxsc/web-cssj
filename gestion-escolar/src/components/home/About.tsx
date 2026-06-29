@@ -7,7 +7,7 @@ import Img1 from '../../../public/img1.jpeg';
 
 import { Navbar } from '../layout/Navbar';
 import Footer from '../layout/Footer';
-import '../../pages/About.css'; // Asegúrate de importar el CSS nuevo
+import '../../pages/home/About.css'; // Asegúrate de importar el CSS nuevo
 
 export default function About() {
   const [info, setInfo] = useState({
