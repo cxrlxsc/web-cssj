@@ -5,6 +5,8 @@ import { Navbar } from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import ExpedienteModal from './ExpedienteModal'; // <-- IMPORTAMOS EL MODAL
 import './PortalAspirante.css';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../../firebase/config';
 
 // Servicios
 import { accessCodeService } from '../../services/accessCodeService';
@@ -193,11 +195,47 @@ export default function PortalAspirante() {
   };
 
   // Función para guardar Expediente
-  const handleGuardarExpediente = (e: React.FormEvent) => {
+const handleGuardarExpediente = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setExpedienteCompletado(true);
-    setShowExpedienteModal(false);
-    localStorage.setItem(`expediente_${admission?.id}`, 'true');
+    
+    // 1. Capturamos todos los datos del formulario
+    const formData = new FormData(e.currentTarget);
+    const datosCompletos = Object.fromEntries(formData.entries());
+    
+    // 2. Preparamos el resumen para el contrato
+    const datosContrato = {
+      nombre: formData.get('sostenedor_nombre'),
+      direccion: formData.get('sostenedor_direccion'),
+      dui: formData.get('sostenedor_dui'),
+      nit: formData.get('sostenedor_nit'),
+      telefono: formData.get('sostenedor_telefono'),
+      profesion: formData.get('sostenedor_profesion'),
+      parentesco: formData.get('sostenedor_parentesco'),
+    };
+
+    try {
+      if (!admission) throw new Error("No hay admisión seleccionada");
+
+      // 3. ENVIAMOS A FIREBASE
+      const admissionRef = doc(db, 'admissions', admission.id);
+      await updateDoc(admissionRef, {
+        expedienteDigital: datosCompletos,
+        datosSostenedor: datosContrato,
+        expedienteCompletado: true // Marcamos como completado en la BD
+      });
+
+      // 4. Guardamos localmente para los PDFs
+      localStorage.setItem(`contrato_datos_${admission.id}`, JSON.stringify(datosContrato));
+      localStorage.setItem(`expediente_${admission.id}`, 'true');
+
+      setExpedienteCompletado(true);
+      setShowExpedienteModal(false);
+      alert("¡Expediente guardado exitosamente en el sistema!");
+
+    } catch (err) {
+      console.error("Error al guardar:", err);
+      alert("Ocurrió un error al guardar. Por favor, intenta de nuevo.");
+    }
   };
 
   const handleGenerarTalonario = () => {
@@ -229,7 +267,7 @@ export default function PortalAspirante() {
       nombre: admission?.studentFirstName || '',
       apellido: admission?.studentLastName || '',
       grado: admission?.gradeApplying || '',
-      codigo: accessCode?.code || 'N/A'
+      id: admission?.id || '' 
     }).toString();
     navigate(`/imprimir-contrato?${params}`);
   };

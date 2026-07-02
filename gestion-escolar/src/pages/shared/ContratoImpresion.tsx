@@ -12,11 +12,30 @@ export default function ContratoImpresion() {
   const [templateText, setTemplateText] = useState('Cargando documento legal...');
   const [loadingTemplate, setLoadingTemplate] = useState(true);
   
-  // Estado dinámico para guardar los datos del alumno (Nuevos o Antiguos)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [studentData, setStudentData] = useState<any>(null);
 
-  // 1. Cargar la plantilla de Firebase
+  // Función auxiliar para convertir la fecha a letras
+  const getFechaLetras = () => {
+    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const numeros = ['cero', 'un', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve', 'veinte', 'veintiún', 'veintidós', 'veintitrés', 'veinticuatro', 'veinticinco', 'veintiséis', 'veintisiete', 'veintiocho', 'veintinueve', 'treinta', 'treinta y un'];
+    
+    const d = new Date();
+    const dia = numeros[d.getDate()] || d.getDate().toString();
+    const mes = meses[d.getMonth()];
+    
+    // Diccionario simple para los años próximos
+    const aniosLetras: Record<number, string> = {
+      2024: 'dos mil veinticuatro',
+      2025: 'dos mil veinticinco',
+      2026: 'dos mil veintiséis',
+      2027: 'dos mil veintisiete'
+    };
+    const anio = aniosLetras[d.getFullYear()] || d.getFullYear().toString();
+
+    return `${dia} días del mes de ${mes} del año ${anio}`;
+  };
+
   useEffect(() => {
     const fetchTemplate = async () => {
       try {
@@ -24,7 +43,7 @@ export default function ContratoImpresion() {
         if (docSnap.exists() && docSnap.data().texto_base) {
           setTemplateText(docSnap.data().texto_base);
         } else {
-          setTemplateText("Error: El administrador aún no ha configurado la plantilla del contrato en el sistema.");
+          setTemplateText("Error: La plantilla del contrato no ha sido configurada en el sistema.");
         }
       } catch (error) {
         console.error("Error al cargar la plantilla", error);
@@ -36,83 +55,103 @@ export default function ContratoImpresion() {
     fetchTemplate();
   }, []);
 
-  // 2. Determinar quién está intentando imprimir (Nuevo Ingreso vs Reingreso)
   useEffect(() => {
     const source = searchParams.get('source');
     const todayStr = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 
     if (source === 'nuevo_ingreso') {
-      // Es un aspirante de Nuevo Ingreso (Pase VIP por URL)
+      // 1. LEEMOS LOS DATOS GUARDADOS
+      const admissionId = searchParams.get('id') || ''; 
+      const savedDataStr = localStorage.getItem(`contrato_datos_${admissionId}`);
+      const datosLegales = savedDataStr ? JSON.parse(savedDataStr) : null;
+
       const nombreUrl = searchParams.get('nombre') || '';
       const apellidoUrl = searchParams.get('apellido') || '';
       const gradoUrl = searchParams.get('grado') || '';
 
+      // 2. INYECTAMOS TODOS LOS DATOS
+      // 2. INYECTAMOS TODOS LOS DATOS
       setStudentData({
-        nombre_responsable: '________________________', // El padre llenará estos datos a mano si no están en la URL
-        edad_responsable: '___',
-        nacionalidad_responsable: 'SALVADOREÑA',
-        profesion_responsable: '________________________',
-        estado_civil_responsable: '________________________',
-        dui_responsable: '________________________',
-        domicilio_responsable: '________________________',
-        nombre_estudiante: `${nombreUrl} ${apellidoUrl}`,
-        edad_estudiante: '___',
-        anio_lectivo: '2026',
+        nombre_responsable: datosLegales?.nombre ? datosLegales.nombre : '________________________',
+        nacionalidad_responsable: 'Salvadoreña',
+        profesion_responsable: datosLegales?.profesion ? datosLegales.profesion : '________________________',
+        dui_responsable: datosLegales?.dui ? datosLegales.dui : '________________________',
+        nit_responsable: datosLegales?.nit ? datosLegales.nit : '________________________',
+        domicilio_responsable: datosLegales?.direccion ? datosLegales.direccion : '________________________',
+        parentesco_responsable: datosLegales?.parentesco ? datosLegales.parentesco : 'PADRE O MADRE',
+        
+        edad_responsable: datosLegales?.edad_responsable ? datosLegales.edad_responsable : '__________', 
+        estado_civil_responsable: datosLegales?.estado_civil ? datosLegales.estado_civil : '_________________', 
+        edad_estudiante: datosLegales?.edad_estudiante ? datosLegales.edad_estudiante : '_____', 
+        
+        nombre_estudiante: `${nombreUrl} ${apellidoUrl}`.trim(),
         grado_estudiante: gradoUrl,
-        nivel_estudiante: 'BÁSICA / MEDIA',
+        nivel_estudiante: gradoUrl.includes('Parvularia') || gradoUrl.includes('Kinder') ? 'Parvularia' : 'Educación Básica / Media',
+        anio_lectivo: '2026',
         cuota_matricula: '145.00',
         cuota_mensual: '85.00',
-        fecha_emision: todayStr
+        fecha_emision: todayStr,
+        fecha_emision_letras: getFechaLetras()
       });
 
     } else {
-      // Es un alumno Antiguo (Reingreso - Busca en memoria)
+      // Es un alumno Antiguo (Reingreso)
       const sessionCarnet = localStorage.getItem('studentSession');
       
       if (!sessionCarnet || !mockStudentDB[sessionCarnet as keyof typeof mockStudentDB]) {
-        navigate('/reingreso/login'); // Sin sesión y sin pase VIP = Expulsado
+        navigate('/reingreso/login'); 
       } else {
         const data = mockStudentDB[sessionCarnet as keyof typeof mockStudentDB];
         setStudentData({
           nombre_responsable: 'PADRE / MADRE / ENCARGADO',
-          edad_responsable: '___',
-          nacionalidad_responsable: 'SALVADOREÑA',
+          nacionalidad_responsable: 'Salvadoreña',
           profesion_responsable: '________________________',
-          estado_civil_responsable: '________________________',
           dui_responsable: '________________________',
+          nit_responsable: '________________________',
           domicilio_responsable: '________________________',
+          parentesco_responsable: '________________________',
+          edad_responsable: '_____',
+          estado_civil_responsable: '_________________',
+          edad_estudiante: '_____',
           nombre_estudiante: `${data.nombres} ${data.apellidos}`,
-          edad_estudiante: '___',
-          anio_lectivo: '2026',
           grado_estudiante: data.gradoMatricular,
           nivel_estudiante: 'BÁSICA / MEDIA',
+          anio_lectivo: '2026',
           cuota_matricula: '145.00',
           cuota_mensual: '85.00',
-          fecha_emision: todayStr
+          fecha_emision: todayStr,
+          fecha_emision_letras: getFechaLetras()
         });
       }
     }
   }, [navigate, searchParams]);
 
-  // Función que inyecta los datos del alumno en la plantilla de Firebase
+  // MOTOR BLINDADO DE REEMPLAZO
   const getRenderedContract = () => {
-    if (loadingTemplate || !studentData) return templateText;
+    if (loadingTemplate || !studentData) return 'Generando documento...';
     
     let renderedText = templateText;
-    Object.keys(studentData).forEach((key) => {
-      const regex = new RegExp(`{{${key}}}`, 'g');
-      renderedText = renderedText.replace(regex, studentData[key as keyof typeof studentData]);
+    
+    // Esta expresión regular busca cualquier cosa entre {{ }}
+    // Si la encuentra en studentData, la pone. Si no, pone "____________________"
+    renderedText = renderedText.replace(/{{([^}]+)}}/g, (match, key) => {
+      const cleanKey = key.trim();
+      return studentData[cleanKey] || '____________________'; 
     });
+
     return renderedText;
   };
 
   if (!studentData) {
-    return <div style={{ padding: '3rem', textAlign: 'center' }}>Cargando datos del estudiante...</div>;
+    return (
+      <div style={{ padding: '3rem', textAlign: 'center', fontFamily: 'system-ui' }}>
+        <h2>Preparando Contrato...</h2>
+      </div>
+    );
   }
 
   return (
     <div className="impresion-layout">
-      
       <div className="impresion-controls">
         <button onClick={() => navigate(-1)} className="btn-back">
           <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -130,11 +169,8 @@ export default function ContratoImpresion() {
       </div>
 
       <div className="a4-sheet">
-        {/* Aquí usamos dangerouslySetInnerHTML si en Firebase la plantilla tiene saltos de línea (HTML)
-            o simplemente lo mostramos como texto. */}
         <div dangerouslySetInnerHTML={{ __html: getRenderedContract() }} />
       </div>
-
     </div>
   );
 }

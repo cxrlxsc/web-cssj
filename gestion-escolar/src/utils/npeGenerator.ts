@@ -97,7 +97,8 @@ export function generarNPE(
   carnet: string, anho: string, mes: string, dia: string, costo: number, grado: string
 ): string {
   const banco = '0655';
-  const npeSinVerificador = banco + calcCosto(costo) + anho + mes + dia + '0' + carnet + getGradeCode(grado) + mes + anho.substring(2, 4);
+  const carnetNum = carnet.replace(/\D/g, '').padStart(8, '0').slice(-8);
+  const npeSinVerificador = banco + calcCosto(costo) + anho + mes + dia + '0' + carnetNum + getGradeCode(grado) + mes + anho.substring(2, 4);
   const npeCompleto = npeSinVerificador + calcVerificador(npeSinVerificador);
   return formatNPE(npeCompleto);
 }
@@ -110,7 +111,8 @@ export function generarNPEBarra(
   const cantidad = '839020000';
   const fechamax = '96';
   const ref = '8020';
-  return GLN + banco + cantidad + calcCosto(costo) + fechamax + anho + mes + dia + ref + carnet + getGradeCode(grado) + mes + anho.substring(2, 4);
+  const carnetNum = carnet.replace(/\D/g, '').padStart(8, '0').slice(-8);
+  return GLN + banco + cantidad + calcCosto(costo) + fechamax + anho + mes + dia + ref + carnetNum + getGradeCode(grado) + mes + anho.substring(2, 4);
 }
 
 export interface TalonarioInfo {

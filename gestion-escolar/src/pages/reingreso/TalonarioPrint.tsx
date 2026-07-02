@@ -24,9 +24,11 @@ export const TalonarioPrint = () => {
       const apellidoUrl = searchParams.get('apellido') || '';
       const gradoUrl = searchParams.get('grado') || '';
       const codigoAspirante = searchParams.get('codigo') || 'ASP-0000';
+      // El NPE exige un carnet numérico de 8 dígitos; el código trae letras y guion (ej: CSSJ-0042)
+      const carnetNumerico = (codigoAspirante.match(/\d+/g)?.join('') || '0').padStart(8, '0').slice(-8);
 
       const aspiranteData = {
-        carnet: codigoAspirante, // Usamos su código como carnet temporal
+        carnet: carnetNumerico, // Carnet temporal numérico derivado del código del aspirante
         nie: 'PENDIENTE',
         nombres: nombreUrl,
         apellidos: apellidoUrl,
