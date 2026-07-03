@@ -29,11 +29,6 @@ const AZURE_CLIENT_SECRET = defineSecret("AZURE_CLIENT_SECRET");
 // Parámetros no sensibles (con default). El SKU de licencia es opcional: si se deja
 // vacío no se asigna licencia (la cuenta se crea, pero Teams requiere licencia).
 const AZURE_LICENSE_SKU = defineString("AZURE_LICENSE_SKU", { default: "" });
-// Dominio institucional cuyos usuarios (Firebase Auth) pueden provisionar.
-const ADMIN_EMAIL_DOMAIN = defineString("ADMIN_EMAIL_DOMAIN", {
-  default: "salesianosanjose.edu.sv",
-});
-
 const GRAPH = "https://graph.microsoft.com/v1.0";
 
 /** Obtiene un token de aplicación para Microsoft Graph. */
@@ -50,15 +45,20 @@ async function getGraphToken(): Promise<string> {
   return token.token;
 }
 
-/** Lanza HttpsError legible a partir de una respuesta de error de Graph. */
-async function graphError(res: Response, contexto: string): Promise<never> {
-  let detalle = res.statusText;
+/** Extrae el mensaje de error legible de una respuesta de Graph (sin lanzar). */
+async function graphMessage(res: Response): Promise<string> {
   try {
     const body = (await res.json()) as { error?: { message?: string } };
-    if (body?.error?.message) detalle = body.error.message;
+    if (body?.error?.message) return body.error.message;
   } catch {
     // sin cuerpo JSON
   }
+  return res.statusText;
+}
+
+/** Lanza HttpsError legible a partir de una respuesta de error de Graph. */
+async function graphError(res: Response, contexto: string): Promise<never> {
+  const detalle = await graphMessage(res);
   throw new HttpsError("internal", `${contexto}: ${detalle}`);
 }
 
@@ -68,13 +68,10 @@ export const provisionM365User = onCall(
     region: "us-central1",
   },
   async (request) => {
-    // 1. Autorización: debe ser un admin institucional autenticado.
-    const authEmail = request.auth?.token?.email as string | undefined;
-    if (!request.auth || !authEmail) {
+    // 1. Autorización: debe ser un usuario autenticado. En esta app, solo los
+    //    administradores usan Firebase Auth (los aspirantes usan códigos de acceso).
+    if (!request.auth) {
       throw new HttpsError("unauthenticated", "Debes iniciar sesión como administrador.");
-    }
-    if (!authEmail.toLowerCase().endsWith(`@${ADMIN_EMAIL_DOMAIN.value().toLowerCase()}`)) {
-      throw new HttpsError("permission-denied", "No autorizado para provisionar cuentas.");
     }
 
     // 2. Leer la admisión.
@@ -109,8 +106,10 @@ export const provisionM365User = onCall(
       const token = await getGraphToken();
       const authHeader = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
-      // 3. Crear el usuario en Microsoft 365.
+      // 3. Crear el usuario en Microsoft 365 (idempotente: si ya existe, lo reutiliza).
       const mailNickname = email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "");
+      let microsoftUserId: string;
+
       const createRes = await fetch(`${GRAPH}/users`, {
         method: "POST",
         headers: authHeader,
@@ -127,37 +126,52 @@ export const provisionM365User = onCall(
         }),
       });
 
-      if (!createRes.ok) {
-        await graphError(createRes, "Error al crear la cuenta en Microsoft 365");
+      if (createRes.ok) {
+        microsoftUserId = ((await createRes.json()) as { id: string }).id;
+      } else {
+        // Si el usuario ya existe (reintento), lo recuperamos por su UPN y seguimos.
+        const getRes = await fetch(`${GRAPH}/users/${encodeURIComponent(email)}`, {
+          method: "GET",
+          headers: authHeader,
+        });
+        if (getRes.ok) {
+          microsoftUserId = ((await getRes.json()) as { id: string }).id;
+        } else {
+          await graphError(createRes, "Error al crear la cuenta en Microsoft 365");
+        }
       }
-      const created = (await createRes.json()) as { id: string };
-      const microsoftUserId = created.id;
 
-      // 4. (Opcional) Asignar licencia para habilitar Teams.
+      // La cuenta ya existe en Microsoft: marcamos como provisionada de inmediato.
+      await ref.update({
+        "assignedCredentials.provisioningStatus": "provisioned",
+        "assignedCredentials.microsoftUserId": microsoftUserId!,
+        "assignedCredentials.provisioningError": admin.firestore.FieldValue.delete(),
+      });
+
+      // 4. (Opcional) Asignar licencia para habilitar Teams. Un fallo aquí NO revierte
+      //    la cuenta: queda provisionada, solo sin licencia, con una advertencia.
       let teamsEnabled = false;
+      let licenseWarning: string | null = null;
       const skuId = AZURE_LICENSE_SKU.value().trim();
       if (skuId) {
-        const licRes = await fetch(`${GRAPH}/users/${microsoftUserId}/assignLicense`, {
+        const licRes = await fetch(`${GRAPH}/users/${microsoftUserId!}/assignLicense`, {
           method: "POST",
           headers: authHeader,
           body: JSON.stringify({ addLicenses: [{ skuId, disabledPlans: [] }], removeLicenses: [] }),
         });
-        if (!licRes.ok) {
-          // La cuenta ya existe; reportamos, pero no revertimos.
-          await graphError(licRes, "Cuenta creada, pero falló la asignación de licencia");
+        if (licRes.ok) {
+          teamsEnabled = true;
+        } else {
+          licenseWarning = await graphMessage(licRes);
         }
-        teamsEnabled = true;
       }
 
-      // 5. Guardar resultado en la admisión.
       await ref.update({
-        "assignedCredentials.provisioningStatus": "provisioned",
-        "assignedCredentials.microsoftUserId": microsoftUserId,
         "assignedCredentials.teamsEnabled": teamsEnabled,
-        "assignedCredentials.provisioningError": admin.firestore.FieldValue.delete(),
+        "assignedCredentials.provisioningError": licenseWarning || admin.firestore.FieldValue.delete(),
       });
 
-      return { ok: true, microsoftUserId, userPrincipalName: email, teamsEnabled };
+      return { ok: true, microsoftUserId: microsoftUserId!, userPrincipalName: email, teamsEnabled, licenseWarning };
     } catch (err: any) {
       // Registrar el fallo en la admisión para trazabilidad.
       await ref

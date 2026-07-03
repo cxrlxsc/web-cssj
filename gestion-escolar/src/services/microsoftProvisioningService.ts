@@ -8,6 +8,7 @@ export interface ProvisionResult {
   microsoftUserId: string;
   userPrincipalName: string;
   teamsEnabled: boolean;
+  licenseWarning?: string | null;
 }
 
 export const microsoftProvisioningService = {

@@ -19,24 +19,52 @@ import { buildInstitutionalEmail, buildUniqueEmail, buildTempPassword } from '..
 // Los estados derivados del proceso y la coordinación con otras áreas viven en
 // servicios complementarios como admissionWorkflowService e admissionInterconnectionService.
 
-// Mapeo de grados a códigos numéricos
-const gradeToCode: { [key: string]: string } = {
-  'kinder': '00',
-  'preparatoria': '01',
-  '1': '01',
-  '2': '02',
-  '3': '03',
-  '4': '04',
-  '5': '05',
-  '6': '06',
-  '7': '07',
-  '8': '08',
-  '9': '09',
-  '1-bachillerato': '10',
-  '2-bachillerato': '11',
-  'primero-bachillerato': '10',
-  'segundo-bachillerato': '11',
+// Mapeo de grados a códigos de CARNET (tabla oficial del colegio).
+// Formato del carnet: <añoMatrícula><códigoGrado><nºMatrícula>  ->  ej: 2026 + 11 + 01 = 20261101
+const CARNET_GRADE_CODES: { [key: string]: string } = {
+  'KINDER 4': '14', 'KINDER 5': '15', 'PREPARATORIA': '16',
+  'PRIMER GRADO': '01', 'SEGUNDO GRADO': '02', 'TERCER GRADO': '03',
+  'CUARTO GRADO': '04', 'QUINTO GRADO': '05', 'SEXTO GRADO': '06',
+  'SEPTIMO GRADO': '07', 'OCTAVO GRADO': '08', 'NOVENO GRADO': '09',
+  'PRIMER AÑO DE BACHILLERATO': '10', 'SEGUNDO AÑO DE BACHILLERATO': '11',
+  'PRIMER AÑO TÉC. DIS. GRÁFICO': '31', 'SEGUNDO AÑO TÉC. DIS. GRÁFICO': '32', 'TERCER AÑO TÉC. DIS. GRÁFICO': '33',
+  'PRIMER AÑO TÉC. SIS. ELÉCTRICOS': '41', 'SEGUNDO AÑO TÉC. SIS. ELÉCTRICOS': '42', 'TERCER AÑO TÉC. SIS. ELÉCTRICOS': '43',
+  'PRIMER AÑO TÉC. DES. DE SOFTWARE': '51', 'SEGUNDO AÑO TÉC. DES. DE SOFTWARE': '52', 'TERCER AÑO TÉC. DES. DE SOFTWARE': '53',
 };
+
+// Etiquetas cortas tal como aparecen en la app (ej: "2° Bachillerato", "7° Grado", "Kinder 5")
+const CARNET_GRADE_CODES_SHORT: { [key: string]: string } = {
+  'kinder 4': '14', 'kinder 5': '15', 'preparatoria': '16',
+  '1° grado': '01', '2° grado': '02', '3° grado': '03', '4° grado': '04', '5° grado': '05',
+  '6° grado': '06', '7° grado': '07', '8° grado': '08', '9° grado': '09',
+  '1° bachillerato': '10', '2° bachillerato': '11',
+  '1° diseño gráfico': '31', '2° diseño gráfico': '32', '3° diseño gráfico': '33',
+  '1° sistemas eléctricos': '41', '2° sistemas eléctricos': '42', '3° sistemas eléctricos': '43',
+  '1° desarrollo de software': '51', '2° desarrollo de software': '52', '3° desarrollo de software': '53',
+};
+
+/** Código de grado de 2 dígitos para el carnet, tolerante a variaciones del nombre del grado. */
+function getCarnetGradeCode(grado: string): string {
+  const g = (grado || '').trim();
+  if (CARNET_GRADE_CODES[g.toUpperCase()]) return CARNET_GRADE_CODES[g.toUpperCase()];
+
+  const lower = g.toLowerCase();
+  if (CARNET_GRADE_CODES_SHORT[lower]) return CARNET_GRADE_CODES_SHORT[lower];
+  for (const [key, value] of Object.entries(CARNET_GRADE_CODES_SHORT)) {
+    if (lower.includes(key)) return value;
+  }
+
+  // Fallback por número + palabra clave
+  const num = parseInt((g.match(/\d+/) || ['0'])[0], 10);
+  if (lower.includes('kinder')) return num === 4 ? '14' : num === 5 ? '15' : '16';
+  if (lower.includes('preparatoria')) return '16';
+  if (lower.includes('software')) return num >= 1 && num <= 3 ? `5${num}` : '51';
+  if (lower.includes('eléctric') || lower.includes('electric')) return num >= 1 && num <= 3 ? `4${num}` : '41';
+  if (lower.includes('gráfico') || lower.includes('grafico') || lower.includes('diseño') || lower.includes('diseno')) return num >= 1 && num <= 3 ? `3${num}` : '31';
+  if (lower.includes('bachillerato')) return num === 2 ? '11' : '10';
+  if (lower.includes('grado') && num >= 1 && num <= 9) return num.toString().padStart(2, '0');
+  return '00';
+}
 
 function stripUndefinedDeep<T>(value: T): T {
   if (value === undefined || value === null) {
@@ -311,40 +339,30 @@ export const admissionService = {
     await deleteDoc(docRef);
   },
 
-  // Generar número de carnet
-  // Formato: AÑOGRADOORDEN (ej: 20250103 = año 2025, grado 01, orden 03)
-  async generateStudentCarnet(gradeApplying: string): Promise<string> {
-    const currentYear = new Date().getFullYear();
-    
-    // Obtener código del grado
-    const gradeCode = gradeToCode[gradeApplying.toLowerCase()] || '00';
-    
-    // Contar cuántos estudiantes aprobados hay para este grado este año
+  // Generar número de carnet.
+  // Formato: <añoMatrícula><códigoGrado><correlativo>  ->  ej: 2026 + 11 + 01 = 20261101
+  async generateStudentCarnet(gradeApplying: string, enrollmentYear?: number): Promise<string> {
+    const añoMatricula = enrollmentYear || new Date().getFullYear();
+    const gradeCode = getCarnetGradeCode(gradeApplying);
+    const prefix = `${añoMatricula}${gradeCode}`;
+
+    // Correlativo: cuántos carnets ya existen con el mismo prefijo (año + grado)
     const admissionsRef = collection(db, 'admissions');
     const q = query(
-      admissionsRef, 
+      admissionsRef,
       where('status', '==', 'approved'),
       where('gradeApplying', '==', gradeApplying)
     );
     const snapshot = await getDocs(q);
-    
-    // Filtrar por año de aprobación
-    const approvedThisYear = snapshot.docs.filter(doc => {
-      const data = doc.data();
-      const decidedAt = data.finalDecision?.decidedAt;
-      if (decidedAt) {
-        const date = decidedAt.toDate ? decidedAt.toDate() : new Date(decidedAt);
-        return date.getFullYear() === currentYear;
-      }
-      return false;
-    });
-    
-    // El orden será el siguiente número
-    const orderNumber = approvedThisYear.length + 1;
-    const orderCode = orderNumber.toString().padStart(2, '0');
-    
-    // Formato final: AÑOGRADOORDEN
-    return `${currentYear}${gradeCode}${orderCode}`;
+    const usados = snapshot.docs
+      .map(doc => {
+        const data = doc.data() as any;
+        return (data.carnet || data.assignedCredentials?.studentCode || '') as string;
+      })
+      .filter(carnet => carnet.startsWith(prefix));
+
+    const orderCode = (usados.length + 1).toString().padStart(2, '0');
+    return `${prefix}${orderCode}`;
   },
 
   // Obtener todos los carnets del año y grado específico
@@ -389,11 +407,11 @@ export const admissionService = {
       throw new Error('Este aspirante ya fue aprobado anteriormente.');
     }
 
-    // 1. Generar carnet institucional (8 dígitos)
-    const carnet = await this.generateStudentCarnet(admission.gradeApplying);
+    // 1. Año de matrícula (usa el del código de acceso o el año actual). Se usa en carnet y correo.
+    const añoMatricula = admission.enrollmentYear || new Date().getFullYear();
 
-    // 2. Año de ingreso para el correo (usa el del código de acceso o el próximo año lectivo)
-    const añoIngreso = admission.enrollmentYear || (new Date().getFullYear() + 1);
+    // 2. Generar carnet institucional (8 dígitos): añoMatricula + códigoGrado + correlativo
+    const carnet = await this.generateStudentCarnet(admission.gradeApplying, añoMatricula);
 
     // 3. Correo institucional único (evita colisiones con correos ya asignados)
     const all = await this.getAllAdmissions();
@@ -403,7 +421,7 @@ export const admissionService = {
     const baseEmail = buildInstitutionalEmail(
       admission.studentFirstName,
       admission.studentLastName,
-      añoIngreso
+      añoMatricula
     );
     const email = buildUniqueEmail(baseEmail, existingEmails);
 

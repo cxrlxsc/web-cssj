@@ -55,11 +55,11 @@ export function buildUniqueEmail(baseEmail: string, existingEmails: string[]): s
 }
 
 /**
- * Contraseña inicial temporal derivada del carnet: Csj<carnet>!
- * Cumple complejidad típica (mayúscula, minúsculas, dígitos, símbolo, >= 8).
- * El alumno debe cambiarla en el primer inicio de sesión.
+ * Contraseña inicial temporal derivada del carnet: Cssj<carnet>!  (ej: Cssj20261101!)
+ * "Cssj" = Colegio Salesiano San José. Cumple complejidad (mayúscula, minúsculas,
+ * dígitos, símbolo, >= 8). El alumno debe cambiarla en el primer inicio de sesión.
  */
 export function buildTempPassword(carnet: string): string {
   const soloDigitos = (carnet || '').replace(/\D/g, '') || '00000000';
-  return `Csj${soloDigitos}!`;
+  return `Cssj${soloDigitos}!`;
 }

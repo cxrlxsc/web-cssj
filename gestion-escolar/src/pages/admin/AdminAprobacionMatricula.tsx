@@ -10,6 +10,8 @@ const VERDE = '#008C5A';
 const NAVY = '#002a4a';
 
 type Credenciales = { carnet: string; email: string; password: string; nombre: string };
+type ConfirmData = { title: string; message: string; confirmLabel: string; tone: 'verde' | 'navy'; onConfirm: () => void };
+type AlertData = { title: string; message: string; tone: 'success' | 'error' | 'info' };
 
 export default function AdminAprobacionMatricula() {
   const navigate = useNavigate();
@@ -18,6 +20,11 @@ export default function AdminAprobacionMatricula() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [provisioningId, setProvisioningId] = useState<string | null>(null);
   const [resultado, setResultado] = useState<Credenciales | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmData | null>(null);
+  const [alertDialog, setAlertDialog] = useState<AlertData | null>(null);
+
+  const showAlert = (title: string, message: string, tone: AlertData['tone'] = 'info') =>
+    setAlertDialog({ title, message, tone });
 
   const handleLogout = () => {
     localStorage.removeItem('adminSession');
@@ -40,13 +47,18 @@ export default function AdminAprobacionMatricula() {
     loadData();
   }, []);
 
-  const handleAprobar = async (adm: Admission) => {
-    const ok = window.confirm(
-      `¿Aprobar a ${adm.studentFirstName} ${adm.studentLastName} para matrícula?\n\n` +
-      `Se le generará su carnet, correo institucional y contraseña.`
-    );
-    if (!ok) return;
+  const handleAprobar = (adm: Admission) => {
+    setConfirmDialog({
+      title: 'Aprobar para matrícula',
+      message: `¿Aprobar a ${adm.studentFirstName} ${adm.studentLastName} para matrícula? Se le generará su carnet, correo institucional y contraseña.`,
+      confirmLabel: 'Aprobar y Matricular',
+      tone: 'verde',
+      onConfirm: () => aprobarConfirmado(adm),
+    });
+  };
 
+  const aprobarConfirmado = async (adm: Admission) => {
+    setConfirmDialog(null);
     setProcessingId(adm.id);
     try {
       const creds = await admissionService.approveForEnrollment(adm, 'Admin_Registro');
@@ -56,30 +68,43 @@ export default function AdminAprobacionMatricula() {
       });
       await loadData();
     } catch (err: any) {
-      alert(err?.message || 'Error al aprobar al aspirante.');
+      showAlert('No se pudo aprobar', err?.message || 'Error al aprobar al aspirante.', 'error');
     } finally {
       setProcessingId(null);
     }
   };
 
-  const handleProvisionar = async (adm: Admission) => {
-    const ok = window.confirm(
-      `¿Crear la cuenta real en Microsoft 365 para ${adm.studentFirstName} ${adm.studentLastName}?\n\n` +
-      `Correo: ${adm.assignedCredentials?.microsoftEmail}`
-    );
-    if (!ok) return;
+  const handleProvisionar = (adm: Admission) => {
+    setConfirmDialog({
+      title: 'Provisionar en Microsoft 365',
+      message: `¿Crear la cuenta real en Microsoft 365 para ${adm.studentFirstName} ${adm.studentLastName}?\nCorreo: ${adm.assignedCredentials?.microsoftEmail}`,
+      confirmLabel: 'Crear cuenta',
+      tone: 'navy',
+      onConfirm: () => provisionarConfirmado(adm),
+    });
+  };
 
+  const provisionarConfirmado = async (adm: Admission) => {
+    setConfirmDialog(null);
     setProvisioningId(adm.id);
     try {
       const res = await microsoftProvisioningService.provisionAccount(adm.id);
-      alert(
-        `Cuenta creada en Microsoft 365.\n\n` +
-        `Usuario: ${res.userPrincipalName}\n` +
-        `Teams habilitado: ${res.teamsEnabled ? 'Sí' : 'No (sin licencia)'}`
-      );
+      if (res.licenseWarning) {
+        showAlert(
+          'Cuenta creada (sin licencia)',
+          `La cuenta ${res.userPrincipalName} se creó correctamente, pero no se asignó licencia:\n${res.licenseWarning}\n\nTeams no estará activo hasta asignar un SKU de licencia válido.`,
+          'info'
+        );
+      } else {
+        showAlert(
+          'Cuenta creada en Microsoft 365',
+          `Usuario: ${res.userPrincipalName}\nTeams habilitado: ${res.teamsEnabled ? 'Sí' : 'No (sin licencia)'}`,
+          'success'
+        );
+      }
       await loadData();
     } catch (err: any) {
-      alert(err?.message || 'Error al provisionar la cuenta en Microsoft 365.');
+      showAlert('Error al provisionar', err?.message || 'Error al provisionar la cuenta en Microsoft 365.', 'error');
     } finally {
       setProvisioningId(null);
     }
@@ -227,9 +252,86 @@ export default function AdminAprobacionMatricula() {
           </div>
         </div>
       )}
+
+      {/* MODAL DE CONFIRMACIÓN */}
+      {confirmDialog && (
+        <ModalOverlay>
+          <div style={dialogCard}>
+            <h2 style={{ margin: 0, color: NAVY, fontSize: '1.25rem' }}>{confirmDialog.title}</h2>
+            <p style={{ margin: '0.7rem 0 0', color: '#475569', whiteSpace: 'pre-line', lineHeight: 1.5 }}>
+              {confirmDialog.message}
+            </p>
+            <div style={{ display: 'flex', gap: '0.6rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
+              <button onClick={() => setConfirmDialog(null)} style={btnGhost}>Cancelar</button>
+              <button
+                onClick={confirmDialog.onConfirm}
+                style={{ ...btnPrimario, background: confirmDialog.tone === 'navy' ? NAVY : VERDE }}
+              >
+                {confirmDialog.confirmLabel}
+              </button>
+            </div>
+          </div>
+        </ModalOverlay>
+      )}
+
+      {/* MODAL DE ALERTA */}
+      {alertDialog && (
+        <ModalOverlay>
+          <div style={{ ...dialogCard, textAlign: 'center' }}>
+            <div style={{ ...alertIcon, background: alertTone(alertDialog.tone).bg, color: alertTone(alertDialog.tone).fg }}>
+              {alertDialog.tone === 'success' ? (
+                <svg width="30" height="30" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+              ) : alertDialog.tone === 'error' ? (
+                <svg width="30" height="30" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+              ) : (
+                <svg width="30" height="30" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>
+              )}
+            </div>
+            <h2 style={{ margin: '0.9rem 0 0', color: NAVY, fontSize: '1.2rem' }}>{alertDialog.title}</h2>
+            <p style={{ margin: '0.5rem 0 0', color: '#475569', whiteSpace: 'pre-line', lineHeight: 1.5 }}>
+              {alertDialog.message}
+            </p>
+            <button
+              onClick={() => setAlertDialog(null)}
+              style={{ ...btnPrimario, width: '100%', marginTop: '1.4rem', justifyContent: 'center', background: alertDialog.tone === 'error' ? '#dc2626' : VERDE }}
+            >
+              Entendido
+            </button>
+          </div>
+        </ModalOverlay>
+      )}
     </div>
   );
 }
+
+function ModalOverlay({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 60 }}>
+      {children}
+    </div>
+  );
+}
+
+function alertTone(tone: AlertData['tone']) {
+  if (tone === 'success') return { bg: '#dcfce7', fg: VERDE };
+  if (tone === 'error') return { bg: '#fee2e2', fg: '#dc2626' };
+  return { bg: '#e0f2fe', fg: '#0369a1' };
+}
+
+const dialogCard: React.CSSProperties = {
+  background: 'white', borderRadius: '16px', maxWidth: '440px', width: '100%',
+  padding: '1.8rem', boxShadow: '0 20px 45px rgba(0,0,0,0.25)',
+};
+
+const alertIcon: React.CSSProperties = {
+  width: '56px', height: '56px', borderRadius: '50%', display: 'flex',
+  alignItems: 'center', justifyContent: 'center', margin: '0 auto',
+};
+
+const btnGhost: React.CSSProperties = {
+  background: 'transparent', color: '#64748b', border: '1px solid #cbd5e1',
+  borderRadius: '8px', padding: '0.7rem 1.3rem', fontWeight: 700, cursor: 'pointer',
+};
 
 // ---------- Subcomponentes / estilos ----------
 
