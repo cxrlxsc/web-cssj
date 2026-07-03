@@ -69,25 +69,33 @@
 /* DISEÑO DIVIDIDO (Formulario vs Previsualización) */
 .contrato-grid {
   display: grid;
-  grid-template-columns: 400px 1fr;
+  grid-template-columns: minmax(340px, 400px) 1fr;
   gap: 2rem;
   align-items: start;
 }
 
 /* Panel Izquierdo: Controles y Variables */
 .controls-panel {
-  background: #FFFFFF; padding: 2rem; border-radius: 16px; border: 1px solid #e2e8f0;
+  background: #FFFFFF; padding: 1.75rem; border-radius: 16px; border: 1px solid #e2e8f0;
   box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); border-top: 6px solid #FAB529;
+  min-width: 0; /* evita que el contenido desborde la columna del grid */
 }
 
-.controls-panel h3 { color: #0068B3; margin: 0 0 1.5rem 0; font-size: 1.2rem; font-weight: 800; }
+.controls-panel h3 { color: #0068B3; margin: 0 0 1rem 0; font-size: 1.2rem; font-weight: 800; }
 
-.form-group { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
-.form-group label { font-weight: 700; color: #030405; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;}
+/* Sub-secciones del simulador (Datos del Responsable / Estudiante) */
+.controls-panel .form-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.9rem; min-width: 0; }
+.form-group label { font-weight: 700; color: #334155; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.4px; }
 .form-group input, .form-group select {
-  padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 0.95rem; background-color: #f8fafc;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.65rem 0.85rem; border-radius: 8px; border: 1px solid #cbd5e1;
+  font-family: inherit; font-size: 0.9rem; background-color: #f8fafc; color: #0f172a;
+  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
 }
-.form-group input:focus { border-color: #008C5A; background-color: #FFFFFF; outline: none; box-shadow: 0 0 0 3px rgba(0, 140, 90, 0.1); }
+.form-group input:focus, .form-group select:focus {
+  border-color: #008C5A; background-color: #FFFFFF; outline: none; box-shadow: 0 0 0 3px rgba(0, 140, 90, 0.12);
+}
 
 .help-text { font-size: 0.8rem; color: #64748b; margin-top: -0.25rem; margin-bottom: 1rem; }
 
@@ -99,14 +107,17 @@
 
 /* Editor de Plantilla Textarea */
 .template-editor {
-  width: 100%; height: 600px; padding: 1.5rem; border-radius: 8px; border: 2px solid #e2e8f0;
-  font-family: monospace; font-size: 0.9rem; line-height: 1.6; resize: vertical; background-color: #f8fafc;
+  width: 100%; box-sizing: border-box; height: 600px; padding: 1.25rem; border-radius: 10px; border: 2px solid #e2e8f0;
+  font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; resize: vertical; background-color: #f8fafc; color: #0f172a;
 }
-.template-editor:focus { outline: none; border-color: #0068B3; background-color: #FFFFFF; }
+.template-editor:focus { outline: none; border-color: #0068B3; background-color: #FFFFFF; box-shadow: 0 0 0 3px rgba(0,104,179,0.1); }
 
-/* Panel Derecho: Previsualización tipo Hoja A4 */
+/* Panel Derecho: Previsualización tipo Hoja A4 (scrollable y fijo al hacer scroll) */
 .preview-panel {
-  display: flex; justify-content: center; padding: 1rem; background-color: #e2e8f0; border-radius: 12px;
+  display: flex; justify-content: center; padding: 1.5rem; background-color: #e2e8f0; border-radius: 12px;
+  position: sticky; top: 1rem;
+  max-height: calc(100vh - 180px);
+  overflow: auto;
 }
 
 .a4-sheet {
@@ -114,13 +125,14 @@
   width: 100%;
   max-width: 210mm; /* Ancho estándar A4 */
   min-height: 297mm; /* Alto estándar A4 */
-  padding: 25mm 20mm;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  padding: 22mm 20mm;
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.25);
   font-family: 'Times New Roman', serif; /* Tipografía legal clásica */
-  font-size: 11pt;
-  line-height: 1.5;
+  font-size: 10.5pt;
+  line-height: 1.55;
   color: #000000;
   white-space: pre-wrap;
+  word-wrap: break-word;
   text-align: justify;
 }
 
@@ -137,7 +149,8 @@
 @media (max-width: 1024px) {
   .contrato-grid { grid-template-columns: 1fr; }
   .controls-panel { order: 2; }
-  .preview-panel { order: 1; overflow-x: auto;}
+  .preview-panel { order: 1; position: static; max-height: none; overflow-x: auto; }
+  .contrato-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
 }
 @media print {
   body * { visibility: hidden; }

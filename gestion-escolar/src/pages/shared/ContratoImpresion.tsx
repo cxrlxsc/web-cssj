@@ -11,6 +11,8 @@ export default function ContratoImpresion() {
   const [searchParams] = useSearchParams();
   const [templateText, setTemplateText] = useState('Cargando documento legal...');
   const [loadingTemplate, setLoadingTemplate] = useState(true);
+  // Datos institucionales (Director / Representante) editables desde el panel admin.
+  const [institucional, setInstitucional] = useState<Record<string, string>>({});
   
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [studentData, setStudentData] = useState<any>(null);
@@ -42,6 +44,9 @@ export default function ContratoImpresion() {
         const docSnap = await getDoc(doc(db, 'configuracion', 'plantilla_contrato'));
         if (docSnap.exists() && docSnap.data().texto_base) {
           setTemplateText(docSnap.data().texto_base);
+          if (docSnap.data().datos_institucionales) {
+            setInstitucional(docSnap.data().datos_institucionales);
+          }
         } else {
           setTemplateText("Error: La plantilla del contrato no ha sido configurada en el sistema.");
         }
@@ -143,16 +148,14 @@ export default function ContratoImpresion() {
   const getRenderedContract = () => {
     if (loadingTemplate || !studentData) return 'Generando documento...';
     
-    let renderedText = templateText;
-    
-    // Esta expresión regular busca cualquier cosa entre {{ }}
-    // Si la encuentra en studentData, la pone. Si no, pone "____________________"
-    renderedText = renderedText.replace(/{{([^}]+)}}/g, (match, key) => {
-      const cleanKey = key.trim();
-      return studentData[cleanKey] || '____________________'; 
-    });
+    // Combinamos datos institucionales (Director/Representante) + datos del estudiante.
+    const data: Record<string, string> = { ...institucional, ...studentData };
 
-    return renderedText;
+    // Reemplaza cualquier {{clave}} por su valor; si no existe, deja una línea en blanco.
+    return templateText.replace(/{{([^}]+)}}/g, (_match, key) => {
+      const val = data[key.trim()];
+      return val !== undefined && val !== '' ? val : '____________________';
+    });
   };
 
   if (!studentData) {
