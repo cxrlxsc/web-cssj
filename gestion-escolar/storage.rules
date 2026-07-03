@@ -1,0 +1,33 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Archivos de admisión subidos por los aspirantes (documentos, pago, contrato).
+    // Se permite subir sin necesidad de cuenta (el aspirante entra con código),
+    // pero con límites: máximo 10 MB y solo imágenes o PDF.
+    match /admissions/{admissionId}/{category}/{fileName} {
+      allow read: if true;
+      allow write: if request.resource.size < 10 * 1024 * 1024
+                   && (
+                     request.resource.contentType.matches('image/.*') ||
+                     request.resource.contentType == 'application/pdf'
+                   );
+    }
+
+    // Pagos/contratos de alumnos de reingreso (antiguo ingreso).
+    match /reingreso/{carnet}/{category}/{fileName} {
+      allow read: if true;
+      allow write: if request.resource.size < 10 * 1024 * 1024
+                   && (
+                     request.resource.contentType.matches('image/.*') ||
+                     request.resource.contentType == 'application/pdf'
+                   );
+    }
+
+    // Todo lo demás: bloqueado por defecto.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

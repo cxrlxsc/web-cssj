@@ -12,9 +12,11 @@ import { db } from '../../firebase/config';
 import { accessCodeService } from '../../services/accessCodeService';
 import { admissionService } from '../../services/admissionService';
 import { admissionDocumentService, getRequiredDocumentsForGrade } from '../../services/admissionDocumentService';
+import { admissionFinanceService } from '../../services/admissionFinanceService';
 import { evaluationService } from '../../services/evaluationService';
 import { enrollmentService } from '../../services/enrollmentService';
 import { validateProfilePhoto } from '../../utils/imageValidation';
+import { compressImage } from '../../utils/imageCompression';
 
 // Tipos
 import type { 
@@ -101,11 +103,11 @@ export default function PortalAspirante() {
       const expGuardado = localStorage.getItem(`expediente_${admissionData.id}`);
       if (expGuardado) setExpedienteCompletado(true);
 
-      const pagoGuardado = localStorage.getItem(`pago_${admissionData.id}`);
-      if (pagoGuardado) setEstadoComprobante(pagoGuardado as ComprobanteEstado);
-
-      const contratoGuardado = localStorage.getItem(`contrato_${admissionData.id}`);
-      if (contratoGuardado) setEstadoContrato(contratoGuardado as ContratoEstado);
+      // Estado del pago y contrato: real, desde el documento de la admisión.
+      const mapEstado = (s?: string): ComprobanteEstado =>
+        s === 'approved' ? 'aprobado' : s === 'rejected' ? 'rechazado' : s === 'pending' ? 'revision' : 'pendiente';
+      setEstadoComprobante(mapEstado(admissionData.paymentReceipt?.status));
+      setEstadoContrato(mapEstado(admissionData.signedContract?.status));
     } catch (e) {
       console.error("Error cargando los detalles del portal:", e);
     }
@@ -183,7 +185,9 @@ export default function PortalAspirante() {
     }
 
     try {
-      await admissionDocumentService.uploadDocument(admission.id, uploadingType, file);
+      // Comprimimos las imágenes antes de subir (los PDF pasan sin cambios).
+      const fileToUpload = await compressImage(file);
+      await admissionDocumentService.uploadDocument(admission.id, uploadingType, fileToUpload);
       await loadPortalData(admission);
     } catch (err: any) {
       setError(err.message || 'Error al subir el archivo');
@@ -260,14 +264,21 @@ const handleGuardarExpediente = async (e: React.FormEvent<HTMLFormElement>) => {
     window.open(`/reingreso/talonario?${params}`, '_blank');
   };
 
-  const handleFileChangePago = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setIsUploadingPago(true);
-      setTimeout(() => {
-        setIsUploadingPago(false);
-        setEstadoComprobante('aprobado'); // Auto-aprobado para pruebas
-        localStorage.setItem(`pago_${admission?.id}`, 'aprobado');
-      }, 2000);
+  const handleFileChangePago = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !admission) return;
+    setError('');
+    setIsUploadingPago(true);
+    try {
+      const compressed = await compressImage(file);
+      const receipt = await admissionFinanceService.uploadPaymentReceipt(admission.id, compressed);
+      setAdmission(prev => (prev ? { ...prev, paymentReceipt: receipt } : prev));
+      setEstadoComprobante('revision');
+    } catch (err: any) {
+      setError(err?.message || 'Error al subir el comprobante.');
+    } finally {
+      setIsUploadingPago(false);
+      if (fileInputRefPago.current) fileInputRefPago.current.value = '';
     }
   };
 
@@ -282,14 +293,21 @@ const handleGuardarExpediente = async (e: React.FormEvent<HTMLFormElement>) => {
     navigate(`/imprimir-contrato?${params}`);
   };
 
-  const handleContratoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setIsUploadingContrato(true);
-      setTimeout(() => {
-        setIsUploadingContrato(false);
-        setEstadoContrato('aprobado'); // Auto-aprobado para pruebas
-        localStorage.setItem(`contrato_${admission?.id}`, 'aprobado');
-      }, 2500);
+  const handleContratoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !admission) return;
+    setError('');
+    setIsUploadingContrato(true);
+    try {
+      const compressed = await compressImage(file);
+      const contract = await admissionFinanceService.uploadSignedContract(admission.id, compressed);
+      setAdmission(prev => (prev ? { ...prev, signedContract: contract } : prev));
+      setEstadoContrato('revision');
+    } catch (err: any) {
+      setError(err?.message || 'Error al subir el contrato.');
+    } finally {
+      setIsUploadingContrato(false);
+      if (contratoInputRef.current) contratoInputRef.current.value = '';
     }
   };
 
@@ -474,6 +492,11 @@ const handleGuardarExpediente = async (e: React.FormEvent<HTMLFormElement>) => {
                     {estadoComprobante === 'aprobado' && <span style={{ background: '#dcfce7', color: '#166534', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>Pago Aprobado</span>}
                     {estadoComprobante === 'rechazado' && <span style={{ background: '#fef2f2', color: '#b91c1c', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>Pago Rechazado</span>}
                   </div>
+                  {estadoComprobante === 'rechazado' && admission?.paymentReceipt?.rejectionReason && (
+                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: '#b91c1c', background: '#fef2f2', padding: '0.4rem 0.6rem', borderRadius: '6px' }}>
+                      <strong>Motivo:</strong> {admission.paymentReceipt.rejectionReason}
+                    </p>
+                  )}
                 </div>
               </div>
               <div>
@@ -516,8 +539,15 @@ const handleGuardarExpediente = async (e: React.FormEvent<HTMLFormElement>) => {
                     {estadoComprobante === 'aprobado' ? 'Escanea o toma una fotografía legible del contrato ya firmado y súbelo para auditoría.' : 'Se habilitará tras confirmar tu pago.'}
                   </p>
                   <div style={{ marginTop: '0.5rem' }}>
+                    {estadoContrato === 'revision' && <span style={{ background: '#fef08a', color: '#854d0e', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>En auditoría legal</span>}
+                    {estadoContrato === 'rechazado' && <span style={{ background: '#fef2f2', color: '#b91c1c', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>Contrato Devuelto</span>}
                     {estadoContrato === 'aprobado' && <span style={{ background: '#dcfce7', color: '#166534', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>¡Matrícula Oficializada! 🎉</span>}
                   </div>
+                  {estadoContrato === 'rechazado' && admission?.signedContract?.rejectionReason && (
+                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: '#b91c1c', background: '#fef2f2', padding: '0.4rem 0.6rem', borderRadius: '6px' }}>
+                      <strong>Motivo:</strong> {admission.signedContract.rejectionReason}
+                    </p>
+                  )}
                 </div>
               </div>
               <div>
@@ -656,6 +686,26 @@ const handleGuardarExpediente = async (e: React.FormEvent<HTMLFormElement>) => {
                   <h3 style={{ margin: 0, color: '#0369a1', fontWeight: 800 }}>Documentos Pendientes</h3>
                   <p style={{ margin: '0.3rem 0 0', color: '#0c4a6e', fontSize: '0.95rem' }}>Para continuar, debes subir los documentos solicitados. Tienes <strong>{documentsStatus?.approved || 0} de {documentsStatus?.totalRequired || requiredDocs.length}</strong> aprobados.</p>
                 </div>
+              </div>
+            )}
+
+            {/* NOTIFICACIÓN: documentos rechazados que necesitan corrección */}
+            {(documentsStatus?.documents.filter(d => d.status === 'rejected').length ?? 0) > 0 && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '12px', padding: '1.2rem 1.5rem', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0, color: '#b91c1c', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Icons.X /> Documentos que necesitan corrección
+                </h3>
+                <p style={{ margin: '0.4rem 0 0.7rem', color: '#7f1d1d', fontSize: '0.9rem' }}>
+                  Un revisor marcó estos documentos. Por favor vuelve a subirlos con mejor calidad o legibilidad:
+                </p>
+                <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#7f1d1d', fontSize: '0.9rem' }}>
+                  {documentsStatus!.documents.filter(d => d.status === 'rejected').map(d => (
+                    <li key={d.id} style={{ marginBottom: '0.25rem' }}>
+                      <strong>{admissionDocumentService.getDocumentTypeName(d.type)}:</strong>{' '}
+                      {d.rejectionReason || 'Requiere una nueva versión.'}
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 

@@ -2,6 +2,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { mockStudentDB } from '../../data/mockStudent';
+import { reingresoFinanceService } from '../../services/reingresoFinanceService';
+import { compressImage } from '../../utils/imageCompression';
 
 type ComprobanteEstado = 'pendiente' | 'revision' | 'aprobado' | 'rechazado';
 type ContratoEstado = 'pendiente' | 'revision' | 'aprobado' | 'rechazado';
@@ -29,11 +31,16 @@ export const PasosReingreso = () => {
     } else {
       const studentData = mockStudentDB[sessionCarnet as keyof typeof mockStudentDB];
       setStudent(studentData);
-      
-      // Leer estados desde la memoria (Simulando Firebase)
-      const pagoGuardado = localStorage.getItem(`pago_${studentData.carnet}`);
-      if (pagoGuardado) setEstadoComprobante(pagoGuardado as ComprobanteEstado);
 
+      // Estado del pago: real, desde Firebase (colección reingresoPayments).
+      (async () => {
+        const pago = await reingresoFinanceService.getPayment(studentData.carnet);
+        const map = (s?: string): ComprobanteEstado =>
+          s === 'approved' ? 'aprobado' : s === 'rejected' ? 'rechazado' : s === 'pending' ? 'revision' : 'pendiente';
+        setEstadoComprobante(map(pago?.paymentReceipt?.status));
+      })();
+
+      // El contrato de reingreso aún es simulado (localStorage).
       const contratoGuardado = localStorage.getItem(`contrato_${studentData.carnet}`);
       if (contratoGuardado) setEstadoContrato(contratoGuardado as ContratoEstado);
     }
@@ -51,15 +58,25 @@ export const PasosReingreso = () => {
     window.open('/reingreso/talonario', '_blank');
   };
 
-  // Subida del recibo de pago
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setIsUploading(true);
-      setTimeout(() => {
-        setIsUploading(false);
-        setEstadoComprobante('revision');
-        localStorage.setItem(`pago_${student.carnet}`, 'revision');
-      }, 2000);
+  // Subida REAL del recibo de pago (Storage + Firestore).
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !student) return;
+    setIsUploading(true);
+    try {
+      const compressed = await compressImage(file);
+      await reingresoFinanceService.uploadPaymentReceipt(
+        student.carnet,
+        `${student.nombres} ${student.apellidos}`,
+        student.gradoMatricular,
+        compressed
+      );
+      setEstadoComprobante('revision');
+    } catch {
+      alert('Error al subir el comprobante. Intenta de nuevo.');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 

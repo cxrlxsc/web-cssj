@@ -75,14 +75,14 @@ export const TalonarioPrint = () => {
   if (!student || !datosTalonario) return <div style={{ padding: '2rem', textAlign: 'center' }}>Cargando comprobante seguro...</div>;
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100vh', padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
-      
+    <div className="talonario-screen" style={{ background: '#f8fafc', minHeight: '100vh', padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
+
       <div className="no-print" style={{ maxWidth: '800px', margin: '0 auto 2rem auto', display: 'flex', justifyContent: 'space-between' }}>
         <button onClick={() => window.close()} style={{ padding: '0.8rem 1.5rem', border: '1px solid #cbd5e1', background: 'white', borderRadius: '8px', cursor: 'pointer' }}>Cerrar</button>
         <button onClick={() => window.print()} style={{ padding: '0.8rem 1.5rem', background: '#0068B3', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>🖨️ Imprimir / Guardar PDF</button>
       </div>
 
-      <div style={{ maxWidth: '800px', margin: '0 auto', background: 'white', padding: '3rem', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' }}>
+      <div className="talonario-card" style={{ maxWidth: '800px', margin: '0 auto', background: 'white', padding: '3rem', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' }}>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #008C5A', paddingBottom: '1rem', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -159,9 +159,16 @@ export const TalonarioPrint = () => {
 
       <style>
         {`
+          @page { margin: 1cm; }
           @media print {
             .no-print { display: none !important; }
-            body { background: white; }
+            html, body { background: #ffffff !important; margin: 0 !important; padding: 0 !important; }
+            /* En impresión, neutralizamos el contenedor de pantalla para que el
+               contrato quepa en una sola página y no salga en blanco. */
+            .talonario-screen { background: #ffffff !important; min-height: 0 !important; padding: 0 !important; }
+            .talonario-card { box-shadow: none !important; border: none !important; margin: 0 auto !important; max-width: 100% !important; padding: 0 !important; }
+            /* Forzar impresión de colores/fondos (NPE, código de barras). */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           }
         `}
       </style>

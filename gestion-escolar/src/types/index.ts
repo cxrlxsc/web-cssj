@@ -16,6 +16,17 @@ export interface User {
 }
 
 // Admission interface
+// Archivo subido por la familia que requiere revisión del admin (pago, contrato)
+export interface AdmissionFileReview {
+  fileUrl: string;
+  fileName: string;
+  status: 'pending' | 'approved' | 'rejected';
+  uploadedAt: Date;
+  rejectionReason?: string | null;
+  reviewedBy?: string | null;
+  reviewedAt?: Date | null;
+}
+
 export interface Admission {
   id: string;
   institutionalPersonId?: string;
@@ -47,6 +58,8 @@ export interface Admission {
 status: 'pending' | 'evaluations' | 'interview' | 'approved' | 'rejected' | 'enrolled';
   applicationDate: Date;
   carnet?: string;                // Carnet institucional asignado al aprobar (8 dígitos, se usa en el NPE)
+  paymentReceipt?: AdmissionFileReview;   // Comprobante de pago subido por la familia (colecturía)
+  signedContract?: AdmissionFileReview;   // Contrato firmado subido por la familia (auditoría legal)
   documents: string[];
   accessCodeUsed?: string;
   enrollmentYear?: number;        // Año de matrícula (viene del código de acceso)

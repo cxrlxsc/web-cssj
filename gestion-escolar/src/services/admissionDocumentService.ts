@@ -4,8 +4,7 @@ import {
   addDoc, updateDoc, query, where,
   orderBy, Timestamp
 } from 'firebase/firestore';
-import { ref, getDownloadURL, deleteObject } from 'firebase/storage';
-import { getAuth } from 'firebase/auth';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // 1. Ajuste de ruta: apuntamos a config.ts
 import { db, storage } from '../firebase/config';
@@ -156,12 +155,11 @@ export const admissionDocumentService = {
     // Check if there's an existing document of this type
     const existing = await this.getDocumentByType(admissionId, type);
     
-    // Upload to Firebase Storage. Some environments can return HTTP 412 for
-    // object preconditions; retry once with an alternate object name.
-    const timestamp = Date.now();
+    // Subida a Firebase Storage con el SDK (usa el bucket y la auth de la config
+    // automáticamente). Reintenta una vez con otro nombre por si hay colisión (412).
     const originalExt = file.name.includes('.') ? file.name.split('.').pop()?.toLowerCase() : '';
     const safeExt = originalExt ? `.${originalExt}` : '';
-    const baseFileName = `${type}_${timestamp}_${Math.random().toString(36).slice(2, 8)}${safeExt}`;
+    const makeObjectName = () => `${type}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}${safeExt}`;
 
     const buildUploadErrorMessage = (error: unknown) => {
       if (typeof error === 'string') return error;
@@ -170,7 +168,7 @@ export const admissionDocumentService = {
       const message = String(errorRecord.message || '');
 
       if (code === 'storage/unauthorized') {
-        return 'No autorizado para subir archivos en este momento.';
+        return 'No autorizado para subir archivos. Revisa las reglas de Storage.';
       }
       if (code === 'storage/canceled') {
         return 'La subida del archivo fue cancelada.';
@@ -182,55 +180,23 @@ export const admissionDocumentService = {
         : 'Error desconocido al subir archivo en Firebase Storage.';
     };
 
-    // Upload using raw fetch() to bypass Firebase SDK issues and capture full error responses.
-    const uploadWithFetch = async (objectName: string): Promise<{ fileUrl: string; objectName: string }> => {
-      const bucket = 'sistema-adminacademica.firebasestorage.app';
+    const uploadToStorage = async (objectName: string): Promise<string> => {
       const objectPath = `admissions/${admissionId}/documents/${objectName}`;
-      const encodedPath = encodeURIComponent(objectPath);
-      const url = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?uploadType=media&name=${encodedPath}`;
-
-      // Get current user's auth token
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (!user) {
-        throw new Error('No hay usuario autenticado. Inicia sesión de nuevo.');
-      }
-      const token = await user.getIdToken(true);
-
-      const contentType = file.type || 'application/octet-stream';
-      const arrayBuffer = await file.arrayBuffer();
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Firebase ${token}`,
-          'Content-Type': contentType,
-        },
-        body: arrayBuffer,
-      });
-
-      if (!response.ok) {
-        const responseBody = await response.text();
-        console.error(`Storage upload failed [${response.status}]:`, responseBody);
-        throw new Error(
-          `Error de Storage HTTP ${response.status}: ${responseBody}`
-        );
-      }
-
-      // Get download URL using SDK (this is a simple GET, not affected by upload issues)
       const storageRef = ref(storage, objectPath);
-      const fileUrl = await getDownloadURL(storageRef);
-      return { fileUrl, objectName };
+      await uploadBytes(storageRef, file, { contentType: file.type || 'application/octet-stream' });
+      return getDownloadURL(storageRef);
     };
 
-    let uploadResult;
+    let fileUrl: string;
     try {
-      uploadResult = await uploadWithFetch(baseFileName);
-    } catch (error: unknown) {
-      throw new Error(buildUploadErrorMessage(error));
+      fileUrl = await uploadToStorage(makeObjectName());
+    } catch {
+      try {
+        fileUrl = await uploadToStorage(makeObjectName());
+      } catch (secondError) {
+        throw new Error(buildUploadErrorMessage(secondError));
+      }
     }
-
-    const fileUrl = uploadResult.fileUrl;
 
     const now = new Date();
     
