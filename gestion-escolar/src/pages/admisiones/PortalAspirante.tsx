@@ -224,9 +224,17 @@ const handleGuardarExpediente = async (e: React.FormEvent<HTMLFormElement>) => {
         expedienteCompletado: true // Marcamos como completado en la BD
       });
 
-      // 4. Guardamos localmente para los PDFs
-      localStorage.setItem(`contrato_datos_${admission.id}`, JSON.stringify(datosContrato));
+      // 4. Guardamos localmente el estado de completado
       localStorage.setItem(`expediente_${admission.id}`, 'true');
+
+      // 5. Refrescamos la admisión en memoria para que al reabrir "revisar datos"
+      //    el modal muestre lo que se acaba de guardar (sin recargar la página)
+      setAdmission({
+        ...(admission as any),
+        expedienteDigital: datosCompletos,
+        datosSostenedor: datosContrato,
+        expedienteCompletado: true,
+      });
 
       setExpedienteCompletado(true);
       setShowExpedienteModal(false);
@@ -245,7 +253,9 @@ const handleGuardarExpediente = async (e: React.FormEvent<HTMLFormElement>) => {
       nombre: admission?.studentFirstName || '',
       apellido: admission?.studentLastName || '',
       grado: admission?.gradeApplying || '',
-      codigo: accessCode?.code || 'N/A'
+      // Si el aspirante ya fue aprobado, el NPE usa su carnet institucional (8 dígitos);
+      // si aún no, cae al código de acceso como identificador temporal.
+      codigo: admission?.carnet || accessCode?.code || 'N/A'
     }).toString();
     window.open(`/reingreso/talonario?${params}`, '_blank');
   };
@@ -743,12 +753,14 @@ const handleGuardarExpediente = async (e: React.FormEvent<HTMLFormElement>) => {
       {/* =======================================================
           MODAL DE EXPEDIENTE (COMPONENTE EXTERNO)
           ======================================================= */}
-      <ExpedienteModal 
-        isOpen={showExpedienteModal} 
-        onClose={() => setShowExpedienteModal(false)} 
-        onSave={handleGuardarExpediente} 
-        admission={admission} 
-      />
+      {showExpedienteModal && (
+        <ExpedienteModal
+          isOpen={showExpedienteModal}
+          onClose={() => setShowExpedienteModal(false)}
+          onSave={handleGuardarExpediente}
+          admission={admission}
+        />
+      )}
 
       <Footer />
     </div>

@@ -44,7 +44,9 @@ export interface Admission {
   howDidYouHear?: string;
   comments?: string;
   // Status
-status: 'pending' | 'evaluations' | 'interview' | 'approved' | 'rejected' | 'enrolled';  applicationDate: Date;
+status: 'pending' | 'evaluations' | 'interview' | 'approved' | 'rejected' | 'enrolled';
+  applicationDate: Date;
+  carnet?: string;                // Carnet institucional asignado al aprobar (8 dígitos, se usa en el NPE)
   documents: string[];
   accessCodeUsed?: string;
   enrollmentYear?: number;        // Año de matrícula (viene del código de acceso)
@@ -94,8 +96,12 @@ status: 'pending' | 'evaluations' | 'interview' | 'approved' | 'rejected' | 'enr
     assignedAt?: Date;               // Cuándo se asignaron
     notes?: string;                  // Notas adicionales
     firebaseUserId?: string;         // ID del usuario creado en Firebase Auth
+    microsoftUserId?: string;        // ID (objectId) del usuario creado en Microsoft 365
     teamsEnabled?: boolean;          // Si ya tiene acceso a Teams
     welcomeEmailSent?: boolean;      // Si se envió email de bienvenida
+    // Estado de la provisión real en Microsoft 365 (Fase 2 - vía backend/Graph)
+    provisioningStatus?: 'not_started' | 'pending' | 'provisioned' | 'failed';
+    provisioningError?: string;      // Detalle del error si la provisión falló
     applyingForScholarship?: boolean; // Si el aspirante optó por aplicar a beca Fundación LYRA
     // Examen de nivelación de inglés (solo 7mo+)
     englishExam?: {

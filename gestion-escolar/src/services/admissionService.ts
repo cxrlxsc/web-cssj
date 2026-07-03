@@ -13,6 +13,7 @@ import {
 import { db } from '../firebase/config';
 import type { Admission } from '../types';
 import { personRegistryService } from './personRegistryService';
+import { buildInstitutionalEmail, buildUniqueEmail, buildTempPassword } from '../utils/credentialsGenerator';
 
 // Servicio base del expediente de admisión: guarda y actualiza la solicitud como tal.
 // Los estados derivados del proceso y la coordinación con otras áreas viven en
@@ -366,5 +367,75 @@ export const admissionService = {
         }
         return false;
       });
+  },
+
+  // ============================================
+  // APROBACIÓN FINAL Y MATRÍCULA
+  // ============================================
+
+  /**
+   * Aprueba a un aspirante para matrícula y genera sus credenciales institucionales.
+   * Genera: carnet (AÑOGRADOORDEN), correo (nombre.apellidoAÑO@dominio) y contraseña (Csj<carnet>!).
+   * Persiste status='approved', el carnet y assignedCredentials en la admisión.
+   *
+   * NOTA: esto NO crea la cuenta real en Microsoft 365 (eso es la Fase 2, vía backend/Graph).
+   * Deja provisioningStatus='not_started' para que el paso de provisión se haga aparte.
+   */
+  async approveForEnrollment(
+    admission: Admission,
+    adminName: string
+  ): Promise<{ carnet: string; email: string; password: string }> {
+    if (admission.status === 'approved' || admission.status === 'enrolled') {
+      throw new Error('Este aspirante ya fue aprobado anteriormente.');
+    }
+
+    // 1. Generar carnet institucional (8 dígitos)
+    const carnet = await this.generateStudentCarnet(admission.gradeApplying);
+
+    // 2. Año de ingreso para el correo (usa el del código de acceso o el próximo año lectivo)
+    const añoIngreso = admission.enrollmentYear || (new Date().getFullYear() + 1);
+
+    // 3. Correo institucional único (evita colisiones con correos ya asignados)
+    const all = await this.getAllAdmissions();
+    const existingEmails = all
+      .map(a => a.assignedCredentials?.microsoftEmail)
+      .filter((e): e is string => !!e);
+    const baseEmail = buildInstitutionalEmail(
+      admission.studentFirstName,
+      admission.studentLastName,
+      añoIngreso
+    );
+    const email = buildUniqueEmail(baseEmail, existingEmails);
+
+    // 4. Contraseña inicial temporal derivada del carnet
+    const password = buildTempPassword(carnet);
+
+    // 5. Persistir en la admisión
+    const now = new Date();
+    await this.updateAdmission(admission.id, {
+      status: 'approved',
+      carnet,
+      reviewedBy: adminName,
+      reviewedAt: now,
+      finalDecision: {
+        result: 'approved',
+        decidedBy: adminName,
+        decidedByName: adminName,
+        decidedAt: now,
+      },
+      assignedCredentials: {
+        microsoftEmail: email,
+        microsoftPassword: password,
+        studentCode: carnet,
+        assignedBy: adminName,
+        assignedByName: adminName,
+        assignedAt: now,
+        teamsEnabled: false,
+        welcomeEmailSent: false,
+        provisioningStatus: 'not_started',
+      },
+    });
+
+    return { carnet, email, password };
   }
 };

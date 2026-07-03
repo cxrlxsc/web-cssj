@@ -1,7 +1,7 @@
 // src/pages/shared/ContratoImpresion.tsx
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, type DocumentData } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { mockStudentDB } from '../../data/mockStudent';
 import './ContratoImpresion.css';
@@ -57,73 +57,86 @@ export default function ContratoImpresion() {
 
   useEffect(() => {
     const source = searchParams.get('source');
-    const todayStr = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 
-    if (source === 'nuevo_ingreso') {
-      // 1. LEEMOS LOS DATOS GUARDADOS
-      const admissionId = searchParams.get('id') || ''; 
-      const savedDataStr = localStorage.getItem(`contrato_datos_${admissionId}`);
-      const datosLegales = savedDataStr ? JSON.parse(savedDataStr) : null;
+    const loadData = async () => {
+      if (source === 'nuevo_ingreso') {
+        const admissionId = searchParams.get('id');
+        if (!admissionId) {
+          setTemplateText("Error: No se proporcionó un ID de admisión válido.");
+          setLoadingTemplate(false);
+          return;
+        }
 
-      const nombreUrl = searchParams.get('nombre') || '';
-      const apellidoUrl = searchParams.get('apellido') || '';
-      const gradoUrl = searchParams.get('grado') || '';
+        try {
+          const admissionRef = doc(db, 'admissions', admissionId);
+          const admissionSnap = await getDoc(admissionRef);
 
-      // 2. INYECTAMOS TODOS LOS DATOS
-      // 2. INYECTAMOS TODOS LOS DATOS
-      setStudentData({
-        nombre_responsable: datosLegales?.nombre ? datosLegales.nombre : '________________________',
-        nacionalidad_responsable: 'Salvadoreña',
-        profesion_responsable: datosLegales?.profesion ? datosLegales.profesion : '________________________',
-        dui_responsable: datosLegales?.dui ? datosLegales.dui : '________________________',
-        nit_responsable: datosLegales?.nit ? datosLegales.nit : '________________________',
-        domicilio_responsable: datosLegales?.direccion ? datosLegales.direccion : '________________________',
-        parentesco_responsable: datosLegales?.parentesco ? datosLegales.parentesco : 'PADRE O MADRE',
-        
-        edad_responsable: datosLegales?.edad_responsable ? datosLegales.edad_responsable : '__________', 
-        estado_civil_responsable: datosLegales?.estado_civil ? datosLegales.estado_civil : '_________________', 
-        edad_estudiante: datosLegales?.edad_estudiante ? datosLegales.edad_estudiante : '_____', 
-        
-        nombre_estudiante: `${nombreUrl} ${apellidoUrl}`.trim(),
-        grado_estudiante: gradoUrl,
-        nivel_estudiante: gradoUrl.includes('Parvularia') || gradoUrl.includes('Kinder') ? 'Parvularia' : 'Educación Básica / Media',
-        anio_lectivo: '2026',
-        cuota_matricula: '145.00',
-        cuota_mensual: '85.00',
-        fecha_emision: todayStr,
-        fecha_emision_letras: getFechaLetras()
-      });
-
-    } else {
-      // Es un alumno Antiguo (Reingreso)
-      const sessionCarnet = localStorage.getItem('studentSession');
-      
-      if (!sessionCarnet || !mockStudentDB[sessionCarnet as keyof typeof mockStudentDB]) {
-        navigate('/reingreso/login'); 
+          if (admissionSnap.exists()) {
+            const admission = admissionSnap.data() as DocumentData;
+            const expediente = admission.expedienteDigital || {};
+            
+            setStudentData({
+              nombre_responsable: expediente.sostenedor_nombre || '________________________',
+              nacionalidad_responsable: 'Salvadoreña',
+              profesion_responsable: expediente.sostenedor_profesion || '________________________',
+              dui_responsable: expediente.sostenedor_dui || '________________________',
+              nit_responsable: expediente.sostenedor_nit || '________________________',
+              domicilio_responsable: expediente.sostenedor_direccion || '________________________',
+              parentesco_responsable: expediente.sostenedor_parentesco || 'PADRE O MADRE',
+              edad_responsable: expediente.sostenedor_edad || '__________', 
+              estado_civil_responsable: expediente.sostenedor_estado_civil || '_________________', 
+              
+              nombre_estudiante: `${admission.studentFirstName} ${admission.studentLastName}`.trim(),
+              edad_estudiante: expediente.alumno_edad || '_____', 
+              grado_estudiante: admission.gradeApplying,
+              nivel_estudiante: admission.gradeApplying.includes('Parvularia') || admission.gradeApplying.includes('Kinder') ? 'Parvularia' : 'Educación Básica / Media',
+              
+              anio_lectivo: admission.enrollmentYear?.toString() || new Date().getFullYear().toString(),
+              cuota_matricula: '145.00', // Considerar obtener esto de la configuración de Firebase
+              cuota_mensual: '85.00',   // Considerar obtener esto de la configuración de Firebase
+              fecha_emision: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }),
+              fecha_emision_letras: getFechaLetras()
+            });
+          } else {
+            setTemplateText(`Error: No se encontró una solicitud de admisión con el ID ${admissionId}.`);
+          }
+        } catch (error) {
+          console.error("Error al cargar datos de admisión:", error);
+          setTemplateText("Error de conexión al cargar los datos del estudiante para el contrato.");
+        }
       } else {
-        const data = mockStudentDB[sessionCarnet as keyof typeof mockStudentDB];
-        setStudentData({
-          nombre_responsable: 'PADRE / MADRE / ENCARGADO',
-          nacionalidad_responsable: 'Salvadoreña',
-          profesion_responsable: '________________________',
-          dui_responsable: '________________________',
-          nit_responsable: '________________________',
-          domicilio_responsable: '________________________',
-          parentesco_responsable: '________________________',
-          edad_responsable: '_____',
-          estado_civil_responsable: '_________________',
-          edad_estudiante: '_____',
-          nombre_estudiante: `${data.nombres} ${data.apellidos}`,
-          grado_estudiante: data.gradoMatricular,
-          nivel_estudiante: 'BÁSICA / MEDIA',
-          anio_lectivo: '2026',
-          cuota_matricula: '145.00',
-          cuota_mensual: '85.00',
-          fecha_emision: todayStr,
-          fecha_emision_letras: getFechaLetras()
-        });
+        // Es un alumno Antiguo (Reingreso)
+        const sessionCarnet = localStorage.getItem('studentSession');
+        
+        if (!sessionCarnet || !mockStudentDB[sessionCarnet as keyof typeof mockStudentDB]) {
+          navigate('/reingreso/login'); 
+        } else {
+          const data = mockStudentDB[sessionCarnet as keyof typeof mockStudentDB];
+          setStudentData({
+            nombre_responsable: 'PADRE / MADRE / ENCARGADO',
+            nacionalidad_responsable: 'Salvadoreña',
+            profesion_responsable: '________________________',
+            dui_responsable: '________________________',
+            nit_responsable: '________________________',
+            domicilio_responsable: '________________________',
+            parentesco_responsable: '________________________',
+            edad_responsable: '_____',
+            estado_civil_responsable: '_________________',
+            edad_estudiante: '_____',
+            nombre_estudiante: `${data.nombres} ${data.apellidos}`,
+            grado_estudiante: data.gradoMatricular,
+            nivel_estudiante: 'BÁSICA / MEDIA',
+            anio_lectivo: '2026',
+            cuota_matricula: '145.00',
+            cuota_mensual: '85.00',
+            fecha_emision: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }),
+            fecha_emision_letras: getFechaLetras()
+          });
+        }
       }
-    }
+    };
+
+    loadData();
   }, [navigate, searchParams]);
 
   // MOTOR BLINDADO DE REEMPLAZO

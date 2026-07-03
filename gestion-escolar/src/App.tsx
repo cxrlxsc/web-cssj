@@ -15,6 +15,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminInstitucional from './pages/admin/AdminInstitucional';
 import AdminRecursosInternos from './pages/admin/AdminRecursosInternos'; 
 import AdminAdmisiones from './pages/admin/AdminAdmisiones';
+import AdminAprobacionMatricula from './pages/admin/AdminAprobacionMatricula';
 import { AdminPagosReingreso } from './pages/admin/AdminPagosReingreso';
 import AdminCodigos from './pages/admin/AdminCodigos'; 
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
@@ -169,6 +170,14 @@ function App() {
         element={
           <ProtectedRoute>
             <AdminEvaluacionesList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/aprobacion"
+        element={
+          <ProtectedRoute>
+            <AdminAprobacionMatricula />
           </ProtectedRoute>
         }
       />

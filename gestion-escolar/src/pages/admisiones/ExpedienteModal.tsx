@@ -19,11 +19,15 @@ export default function ExpedienteModal({ isOpen, onClose, onSave, admission }: 
   else if (rawRel.includes('AMBOS')) relacionNormalizada = 'AMBOS';
   else if (rawRel) relacionNormalizada = 'ENCARGADO';
 
-  // 2. ESTADOS DINÁMICOS
-  const [viveCon, setViveCon] = useState('AMBOS PADRES');
-  const [tipoTransporte, setTipoTransporte] = useState('VEHICULO PROPIO');
+  // 2. DATOS YA GUARDADOS EN FIREBASE (para cuando el aspirante vuelve a "revisar datos")
+  const saved: Record<string, any> = admission?.expedienteDigital || {};
+  const sv = (name: string, fallback: any = '') => (saved[name] ?? fallback);
+
+  // 3. ESTADOS DINÁMICOS (inicializados con lo ya guardado si existe)
+  const [viveCon, setViveCon] = useState(saved.alumno_vive_con || 'AMBOS PADRES');
+  const [tipoTransporte, setTipoTransporte] = useState(saved.transporte_tipo || 'VEHICULO PROPIO');
   // NUEVO ESTADO PARA ESCUCHAR EL SELECT DE RESPONSABLE
-  const [responsableLegal, setResponsableLegal] = useState(relacionNormalizada || 'PADRE'); 
+  const [responsableLegal, setResponsableLegal] = useState(saved.responsable_legal || relacionNormalizada || 'PADRE');
 
   if (!isOpen) return null;
 
@@ -120,30 +124,30 @@ export default function ExpedienteModal({ isOpen, onClose, onSave, admission }: 
                 <h3>1. Datos del Alumno</h3>
               </div>
               <div className="form-grid">
-                <label>Nombres: <input type="text" name="alumno_nombres" defaultValue={admission?.studentFirstName} required /></label>
-                <label>Apellidos: <input type="text" name="alumno_apellidos" defaultValue={admission?.studentLastName} required /></label>
-                <label>NIE: <input type="text" name="alumno_nie" required /></label>
-                <label>Sexo: 
+                <label>Nombres: <input type="text" name="alumno_nombres" defaultValue={sv('alumno_nombres', admission?.studentFirstName)} required /></label>
+                <label>Apellidos: <input type="text" name="alumno_apellidos" defaultValue={sv('alumno_apellidos', admission?.studentLastName)} required /></label>
+                <label>NIE: <input type="text" name="alumno_nie" defaultValue={sv('alumno_nie')} required /></label>
+                <label>Sexo:
                   <span className="custom-select-wrapper">
-                    <select name="alumno_sexo" required>
+                    <select name="alumno_sexo" defaultValue={sv('alumno_sexo')} required>
                       <option value="">Seleccione...</option>
                       <option value="MASCULINO">MASCULINO</option>
                       <option value="FEMENINO">FEMENINO</option>
                     </select>
                   </span>
                 </label>
-                <label>Fecha de Nac.: <input type="date" name="alumno_fecha_nacimiento" required /></label>
-                <label>Edad: <input type="number" name="alumno_edad" min="1" max="99" required /></label>
-                <label>Nacionalidad: <input type="text" name="alumno_nacionalidad" defaultValue="SALVADOREÑA" /></label>
-                <label>Zona Residencial: 
+                <label>Fecha de Nac.: <input type="date" name="alumno_fecha_nacimiento" defaultValue={sv('alumno_fecha_nacimiento')} required /></label>
+                <label>Edad: <input type="number" name="alumno_edad" min="1" max="99" defaultValue={sv('alumno_edad')} required /></label>
+                <label>Nacionalidad: <input type="text" name="alumno_nacionalidad" defaultValue={sv('alumno_nacionalidad', 'SALVADOREÑA')} /></label>
+                <label>Zona Residencial:
                   <span className="custom-select-wrapper">
-                    <select name="alumno_zona_residencial"><option>URBANA</option><option>RURAL</option></select>
+                    <select name="alumno_zona_residencial" defaultValue={sv('alumno_zona_residencial', 'URBANA')}><option>URBANA</option><option>RURAL</option></select>
                   </span>
                 </label>
-                <label>Departamento: <input type="text" name="alumno_departamento" required /></label>
-                <label>Municipio: <input type="text" name="alumno_municipio" defaultValue={admission?.municipio} required /></label>
-                <label className="full-width">Dirección Completa: <input type="text" name="alumno_direccion" required /></label>
-                <label>Teléfono: <input type="tel" name="alumno_telefono" /></label>
+                <label>Departamento: <input type="text" name="alumno_departamento" defaultValue={sv('alumno_departamento')} required /></label>
+                <label>Municipio: <input type="text" name="alumno_municipio" defaultValue={sv('alumno_municipio', admission?.municipio)} required /></label>
+                <label className="full-width">Dirección Completa: <input type="text" name="alumno_direccion" defaultValue={sv('alumno_direccion')} required /></label>
+                <label>Teléfono: <input type="tel" name="alumno_telefono" defaultValue={sv('alumno_telefono')} /></label>
                 
                 <label>Vive con: 
                   <span className="custom-select-wrapper">
@@ -156,17 +160,17 @@ export default function ExpedienteModal({ isOpen, onClose, onSave, admission }: 
                   </span>
                 </label>
 
-                <label>Religión: <input type="text" name="alumno_religion" defaultValue="CRISTIANO CATOLICO" /></label>
-                <label>Tipo de Sangre: <input type="text" name="alumno_tipo_sangre" /></label>
-                <label>Enfermedades: <input type="text" name="alumno_enfermedades" placeholder="Ninguna" /></label>
-                <label>Alergias: <input type="text" name="alumno_alergias" placeholder="Ninguna" /></label>
-                
+                <label>Religión: <input type="text" name="alumno_religion" defaultValue={sv('alumno_religion', 'CRISTIANO CATOLICO')} /></label>
+                <label>Tipo de Sangre: <input type="text" name="alumno_tipo_sangre" defaultValue={sv('alumno_tipo_sangre')} /></label>
+                <label>Enfermedades: <input type="text" name="alumno_enfermedades" defaultValue={sv('alumno_enfermedades')} placeholder="Ninguna" /></label>
+                <label>Alergias: <input type="text" name="alumno_alergias" defaultValue={sv('alumno_alergias')} placeholder="Ninguna" /></label>
+
                 {/* Sacramentos */}
                 <div className="sacramentos-row full-width">
-                  <label className="toggle-pill-label">Bautizado<input type="checkbox" name="alumno_bautizado" value="SI" className="toggle-pill-input" /><span className="toggle-pill">Sí</span></label>
-                  <label className="toggle-pill-label">Confirmado<input type="checkbox" name="alumno_confirmado" value="SI" className="toggle-pill-input" /><span className="toggle-pill">Sí</span></label>
-                  <label className="toggle-pill-label">Comunión<input type="checkbox" name="alumno_comunion" value="SI" className="toggle-pill-input" /><span className="toggle-pill">Sí</span></label>
-                  <label className="toggle-pill-label">¿Cursó Parvularia?<input type="checkbox" name="alumno_curso_parvularia" value="SI" className="toggle-pill-input" /><span className="toggle-pill">Sí</span></label>
+                  <label className="toggle-pill-label">Bautizado<input type="checkbox" name="alumno_bautizado" value="SI" defaultChecked={saved.alumno_bautizado === 'SI'} className="toggle-pill-input" /><span className="toggle-pill">Sí</span></label>
+                  <label className="toggle-pill-label">Confirmado<input type="checkbox" name="alumno_confirmado" value="SI" defaultChecked={saved.alumno_confirmado === 'SI'} className="toggle-pill-input" /><span className="toggle-pill">Sí</span></label>
+                  <label className="toggle-pill-label">Comunión<input type="checkbox" name="alumno_comunion" value="SI" defaultChecked={saved.alumno_comunion === 'SI'} className="toggle-pill-input" /><span className="toggle-pill">Sí</span></label>
+                  <label className="toggle-pill-label">¿Cursó Parvularia?<input type="checkbox" name="alumno_curso_parvularia" value="SI" defaultChecked={saved.alumno_curso_parvularia === 'SI'} className="toggle-pill-input" /><span className="toggle-pill">Sí</span></label>
                 </div>
               </div>
             </div>
@@ -179,15 +183,15 @@ export default function ExpedienteModal({ isOpen, onClose, onSave, admission }: 
                   <h3>2. Datos del Padre de Familia</h3>
                 </div>
                 <div className="form-grid">
-                  <label>Nombre: <input type="text" name="padre_nombre" defaultValue={relacionNormalizada === 'PADRE' ? parentFullName : ''} /></label>
-                  <label>Profesión/Oficio: <input type="text" name="padre_profesion" /></label>
-                  <label>Lugar de Trabajo: <input type="text" name="padre_lugar_trabajo" /></label>
-                  <label>Cargo: <input type="text" name="padre_cargo" /></label>
-                  <label>Teléfono Trabajo: <input type="tel" name="padre_tel_trabajo" /></label>
-                  <label>Teléfono Fijo: <input type="tel" name="padre_tel_fijo" /></label>
-                  <label>Teléfono Móvil: <input type="tel" name="padre_tel_movil" defaultValue={relacionNormalizada === 'PADRE' ? admission?.parentPhone : ''} /></label>
-                  <label>Correo Electrónico: <input type="email" name="padre_email" defaultValue={relacionNormalizada === 'PADRE' ? admission?.parentEmail : ''} /></label>
-                  <label>Religión: <input type="text" name="padre_religion" defaultValue="CRISTIANO CATOLICO" /></label>
+                  <label>Nombre: <input type="text" name="padre_nombre" defaultValue={sv('padre_nombre', relacionNormalizada === 'PADRE' ? parentFullName : '')} /></label>
+                  <label>Profesión/Oficio: <input type="text" name="padre_profesion" defaultValue={sv('padre_profesion')} /></label>
+                  <label>Lugar de Trabajo: <input type="text" name="padre_lugar_trabajo" defaultValue={sv('padre_lugar_trabajo')} /></label>
+                  <label>Cargo: <input type="text" name="padre_cargo" defaultValue={sv('padre_cargo')} /></label>
+                  <label>Teléfono Trabajo: <input type="tel" name="padre_tel_trabajo" defaultValue={sv('padre_tel_trabajo')} /></label>
+                  <label>Teléfono Fijo: <input type="tel" name="padre_tel_fijo" defaultValue={sv('padre_tel_fijo')} /></label>
+                  <label>Teléfono Móvil: <input type="tel" name="padre_tel_movil" defaultValue={sv('padre_tel_movil', relacionNormalizada === 'PADRE' ? admission?.parentPhone : '')} /></label>
+                  <label>Correo Electrónico: <input type="email" name="padre_email" defaultValue={sv('padre_email', relacionNormalizada === 'PADRE' ? admission?.parentEmail : '')} /></label>
+                  <label>Religión: <input type="text" name="padre_religion" defaultValue={sv('padre_religion', 'CRISTIANO CATOLICO')} /></label>
                 </div>
               </div>
             )}
@@ -200,15 +204,15 @@ export default function ExpedienteModal({ isOpen, onClose, onSave, admission }: 
                   <h3>{mostrarPadre ? '3' : '2'}. Datos de la Madre de Familia</h3>
                 </div>
                 <div className="form-grid">
-                  <label>Nombre: <input type="text" name="madre_nombre" defaultValue={relacionNormalizada === 'MADRE' ? parentFullName : ''} /></label>
-                  <label>Profesión/Oficio: <input type="text" name="madre_profesion" /></label>
-                  <label>Lugar de Trabajo: <input type="text" name="madre_lugar_trabajo" /></label>
-                  <label>Cargo: <input type="text" name="madre_cargo" /></label>
-                  <label>Teléfono Trabajo: <input type="tel" name="madre_tel_trabajo" /></label>
-                  <label>Teléfono Fijo: <input type="tel" name="madre_tel_fijo" /></label>
-                  <label>Teléfono Móvil: <input type="tel" name="madre_tel_movil" defaultValue={relacionNormalizada === 'MADRE' ? admission?.parentPhone : ''} /></label>
-                  <label>Correo Electrónico: <input type="email" name="madre_email" defaultValue={relacionNormalizada === 'MADRE' ? admission?.parentEmail : ''} /></label>
-                  <label>Religión: <input type="text" name="madre_religion" defaultValue="CRISTIANO CATOLICO" /></label>
+                  <label>Nombre: <input type="text" name="madre_nombre" defaultValue={sv('madre_nombre', relacionNormalizada === 'MADRE' ? parentFullName : '')} /></label>
+                  <label>Profesión/Oficio: <input type="text" name="madre_profesion" defaultValue={sv('madre_profesion')} /></label>
+                  <label>Lugar de Trabajo: <input type="text" name="madre_lugar_trabajo" defaultValue={sv('madre_lugar_trabajo')} /></label>
+                  <label>Cargo: <input type="text" name="madre_cargo" defaultValue={sv('madre_cargo')} /></label>
+                  <label>Teléfono Trabajo: <input type="tel" name="madre_tel_trabajo" defaultValue={sv('madre_tel_trabajo')} /></label>
+                  <label>Teléfono Fijo: <input type="tel" name="madre_tel_fijo" defaultValue={sv('madre_tel_fijo')} /></label>
+                  <label>Teléfono Móvil: <input type="tel" name="madre_tel_movil" defaultValue={sv('madre_tel_movil', relacionNormalizada === 'MADRE' ? admission?.parentPhone : '')} /></label>
+                  <label>Correo Electrónico: <input type="email" name="madre_email" defaultValue={sv('madre_email', relacionNormalizada === 'MADRE' ? admission?.parentEmail : '')} /></label>
+                  <label>Religión: <input type="text" name="madre_religion" defaultValue={sv('madre_religion', 'CRISTIANO CATOLICO')} /></label>
                 </div>
               </div>
             )}
@@ -235,15 +239,15 @@ export default function ExpedienteModal({ isOpen, onClose, onSave, admission }: 
                 {/* MAGIA: Si eligen AMBOS, mostramos 2 contactos de emergencia */}
                 {responsableLegal === 'AMBOS' ? (
                   <>
-                    <label className="fade-in">Llamar en Emergencia a (Padre): <input type="text" name="emergencia_nombre_padre" defaultValue={parentFullName} required /></label>
-                    <label className="fade-in">Teléfono Padre: <input type="tel" name="emergencia_telefono_padre" defaultValue={admission?.parentPhone} required /></label>
-                    <label className="fade-in">Llamar en Emergencia a (Madre): <input type="text" name="emergencia_nombre_madre" placeholder="Nombre de la Madre" required /></label>
-                    <label className="fade-in">Teléfono Madre: <input type="tel" name="emergencia_telefono_madre" placeholder="0000-0000" required /></label>
+                    <label className="fade-in">Llamar en Emergencia a (Padre): <input type="text" name="emergencia_nombre_padre" defaultValue={sv('emergencia_nombre_padre', parentFullName)} required /></label>
+                    <label className="fade-in">Teléfono Padre: <input type="tel" name="emergencia_telefono_padre" defaultValue={sv('emergencia_telefono_padre', admission?.parentPhone)} required /></label>
+                    <label className="fade-in">Llamar en Emergencia a (Madre): <input type="text" name="emergencia_nombre_madre" defaultValue={sv('emergencia_nombre_madre')} placeholder="Nombre de la Madre" required /></label>
+                    <label className="fade-in">Teléfono Madre: <input type="tel" name="emergencia_telefono_madre" defaultValue={sv('emergencia_telefono_madre')} placeholder="0000-0000" required /></label>
                   </>
                 ) : (
                   <>
-                    <label className="fade-in">Llamar en caso de Emergencia a: <input type="text" name="emergencia_nombre" defaultValue={parentFullName} required /></label>
-                    <label className="fade-in">Teléfono Emergencia: <input type="tel" name="emergencia_telefono" defaultValue={admission?.parentPhone} required /></label>
+                    <label className="fade-in">Llamar en caso de Emergencia a: <input type="text" name="emergencia_nombre" defaultValue={sv('emergencia_nombre', parentFullName)} required /></label>
+                    <label className="fade-in">Teléfono Emergencia: <input type="tel" name="emergencia_telefono" defaultValue={sv('emergencia_telefono', admission?.parentPhone)} required /></label>
                   </>
                 )}
               </div>
@@ -268,16 +272,16 @@ export default function ExpedienteModal({ isOpen, onClose, onSave, admission }: 
                   </span>
                 </label>
 
-                <label>Nombre: <input type="text" name="encargado_nombre" defaultValue={relacionNormalizada === 'ENCARGADO' ? parentFullName : ''} /></label>
-                <label>Parentesco: <input type="text" name="encargado_parentesco" defaultValue={relacionNormalizada === 'ENCARGADO' ? rawRel : ''} /></label>
-                <label>Profesión/Oficio: <input type="text" name="encargado_profesion" /></label>
-                <label>Lugar de Trabajo: <input type="text" name="encargado_lugar_trabajo" /></label>
-                <label>Cargo: <input type="text" name="encargado_cargo" /></label>
-                <label>Teléfono Trabajo: <input type="tel" name="encargado_tel_trabajo" /></label>
-                <label>Teléfono Fijo: <input type="tel" name="encargado_tel_fijo" /></label>
-                <label>Teléfono Móvil: <input type="tel" name="encargado_tel_movil" defaultValue={relacionNormalizada === 'ENCARGADO' ? admission?.parentPhone : ''} /></label>
-                <label>Correo Electrónico: <input type="email" name="encargado_email" defaultValue={relacionNormalizada === 'ENCARGADO' ? admission?.parentEmail : ''} /></label>
-                <label>Religión: <input type="text" name="encargado_religion" defaultValue="CRISTIANO CATOLICO" /></label>
+                <label>Nombre: <input type="text" name="encargado_nombre" defaultValue={sv('encargado_nombre', relacionNormalizada === 'ENCARGADO' ? parentFullName : '')} /></label>
+                <label>Parentesco: <input type="text" name="encargado_parentesco" defaultValue={sv('encargado_parentesco', relacionNormalizada === 'ENCARGADO' ? rawRel : '')} /></label>
+                <label>Profesión/Oficio: <input type="text" name="encargado_profesion" defaultValue={sv('encargado_profesion')} /></label>
+                <label>Lugar de Trabajo: <input type="text" name="encargado_lugar_trabajo" defaultValue={sv('encargado_lugar_trabajo')} /></label>
+                <label>Cargo: <input type="text" name="encargado_cargo" defaultValue={sv('encargado_cargo')} /></label>
+                <label>Teléfono Trabajo: <input type="tel" name="encargado_tel_trabajo" defaultValue={sv('encargado_tel_trabajo')} /></label>
+                <label>Teléfono Fijo: <input type="tel" name="encargado_tel_fijo" defaultValue={sv('encargado_tel_fijo')} /></label>
+                <label>Teléfono Móvil: <input type="tel" name="encargado_tel_movil" defaultValue={sv('encargado_tel_movil', relacionNormalizada === 'ENCARGADO' ? admission?.parentPhone : '')} /></label>
+                <label>Correo Electrónico: <input type="email" name="encargado_email" defaultValue={sv('encargado_email', relacionNormalizada === 'ENCARGADO' ? admission?.parentEmail : '')} /></label>
+                <label>Religión: <input type="text" name="encargado_religion" defaultValue={sv('encargado_religion', 'CRISTIANO CATOLICO')} /></label>
               </div>
             </div>
 
@@ -306,9 +310,9 @@ export default function ExpedienteModal({ isOpen, onClose, onSave, admission }: 
                 
                 {mostrarDatosMotorista && (
                   <>
-                    <label className="fade-in">Nombre del Motorista: <input type="text" name="transporte_motorista" /></label>
-                    <label className="fade-in">Placa del Vehículo: <input type="text" name="transporte_placa" /></label>
-                    <label className="fade-in">Teléfono del Motorista: <input type="tel" name="transporte_telefono" /></label>
+                    <label className="fade-in">Nombre del Motorista: <input type="text" name="transporte_motorista" defaultValue={sv('transporte_motorista')} /></label>
+                    <label className="fade-in">Placa del Vehículo: <input type="text" name="transporte_placa" defaultValue={sv('transporte_placa')} /></label>
+                    <label className="fade-in">Teléfono del Motorista: <input type="tel" name="transporte_telefono" defaultValue={sv('transporte_telefono')} /></label>
                   </>
                 )}
               </div>
@@ -322,18 +326,18 @@ export default function ExpedienteModal({ isOpen, onClose, onSave, admission }: 
               </div>
               <p className="facturacion-hint">Los siguientes datos aparecerán en los recibos del colegio y en el contrato de servicios educativos.</p>
               <div className="form-grid">
-                <label className="full-width">Nombre Completo Sostenedor Económico: <input type="text" name="sostenedor_nombre" defaultValue={parentFullName} required /></label>
-                <label className="full-width">Dirección: <input type="text" name="sostenedor_direccion" required /></label>
-                <label>DUI: <input type="text" name="sostenedor_dui" placeholder="00000000-0" required /></label>
-                <label>NIT: <input type="text" name="sostenedor_nit" placeholder="0000-000000-000-0" /></label>
-                <label>Teléfono: <input type="tel" name="sostenedor_telefono" defaultValue={admission?.parentPhone} required /></label>
-                <label>E-Mail: <input type="email" name="sostenedor_email" defaultValue={admission?.parentEmail} required /></label>
-                <label>Profesión u Oficio: <input type="text" name="sostenedor_profesion" required /></label>
-                <label>Parentesco: <input type="text" name="sostenedor_parentesco" defaultValue={relacionNormalizada} required /></label>
-                <label>Edad (Sostenedor): <input type="number" name="sostenedor_edad" min="18" max="99" required /></label>
-                <label>Estado Civil: 
+                <label className="full-width">Nombre Completo Sostenedor Económico: <input type="text" name="sostenedor_nombre" defaultValue={sv('sostenedor_nombre', parentFullName)} required /></label>
+                <label className="full-width">Dirección: <input type="text" name="sostenedor_direccion" defaultValue={sv('sostenedor_direccion')} required /></label>
+                <label>DUI: <input type="text" name="sostenedor_dui" defaultValue={sv('sostenedor_dui')} placeholder="00000000-0" required /></label>
+                <label>NIT: <input type="text" name="sostenedor_nit" defaultValue={sv('sostenedor_nit')} placeholder="0000-000000-000-0" /></label>
+                <label>Teléfono: <input type="tel" name="sostenedor_telefono" defaultValue={sv('sostenedor_telefono', admission?.parentPhone)} required /></label>
+                <label>E-Mail: <input type="email" name="sostenedor_email" defaultValue={sv('sostenedor_email', admission?.parentEmail)} required /></label>
+                <label>Profesión u Oficio: <input type="text" name="sostenedor_profesion" defaultValue={sv('sostenedor_profesion')} required /></label>
+                <label>Parentesco: <input type="text" name="sostenedor_parentesco" defaultValue={sv('sostenedor_parentesco', relacionNormalizada)} required /></label>
+                <label>Edad (Sostenedor): <input type="number" name="sostenedor_edad" min="18" max="99" defaultValue={sv('sostenedor_edad')} required /></label>
+                <label>Estado Civil:
                   <span className="custom-select-wrapper">
-                    <select name="sostenedor_estado_civil" required>
+                    <select name="sostenedor_estado_civil" defaultValue={sv('sostenedor_estado_civil', 'Casado/a')} required>
                       <option value="Casado/a">Casado/a</option>
                       <option value="Soltero/a">Soltero/a</option>
                       <option value="Divorciado/a">Divorciado/a</option>
