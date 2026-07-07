@@ -1,7 +1,7 @@
 // src/pages/reingreso/PasosReingreso.tsx
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockStudentDB } from '../../data/mockStudent';
+import { alumnoService } from '../../services/alumnoService';
 import { reingresoFinanceService } from '../../services/reingresoFinanceService';
 import { compressImage } from '../../utils/imageCompression';
 
@@ -26,24 +26,31 @@ export const PasosReingreso = () => {
 
   useEffect(() => {
     const sessionCarnet = localStorage.getItem('studentSession');
-    if (!sessionCarnet || !mockStudentDB[sessionCarnet as keyof typeof mockStudentDB]) {
-      navigate('/reingreso/login'); 
-    } else {
-      const studentData = mockStudentDB[sessionCarnet as keyof typeof mockStudentDB];
+    if (!sessionCarnet) {
+      navigate('/reingreso/login');
+      return;
+    }
+
+    // Expediente real desde Firebase (colección 'alumnos').
+    (async () => {
+      const studentData = await alumnoService.getAlumno(sessionCarnet);
+      if (!studentData) {
+        localStorage.removeItem('studentSession');
+        navigate('/reingreso/login');
+        return;
+      }
       setStudent(studentData);
 
       // Estado del pago: real, desde Firebase (colección reingresoPayments).
-      (async () => {
-        const pago = await reingresoFinanceService.getPayment(studentData.carnet);
-        const map = (s?: string): ComprobanteEstado =>
-          s === 'approved' ? 'aprobado' : s === 'rejected' ? 'rechazado' : s === 'pending' ? 'revision' : 'pendiente';
-        setEstadoComprobante(map(pago?.paymentReceipt?.status));
-      })();
+      const pago = await reingresoFinanceService.getPayment(studentData.carnet);
+      const map = (s?: string): ComprobanteEstado =>
+        s === 'approved' ? 'aprobado' : s === 'rejected' ? 'rechazado' : s === 'pending' ? 'revision' : 'pendiente';
+      setEstadoComprobante(map(pago?.paymentReceipt?.status));
 
       // El contrato de reingreso aún es simulado (localStorage).
       const contratoGuardado = localStorage.getItem(`contrato_${studentData.carnet}`);
       if (contratoGuardado) setEstadoContrato(contratoGuardado as ContratoEstado);
-    }
+    })().catch(() => navigate('/reingreso/login'));
   }, [navigate]);
 
   if (!student) return <div style={{ textAlign: 'center', marginTop: '3rem' }}>Cargando panel...</div>;

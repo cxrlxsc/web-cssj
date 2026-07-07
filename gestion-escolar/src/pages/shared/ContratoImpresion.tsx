@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { doc, getDoc, type DocumentData } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { mockStudentDB } from '../../data/mockStudent';
+import { alumnoService } from '../../services/alumnoService';
 import './ContratoImpresion.css';
 
 export default function ContratoImpresion() {
@@ -110,33 +110,46 @@ export default function ContratoImpresion() {
           setTemplateText("Error de conexión al cargar los datos del estudiante para el contrato.");
         }
       } else {
-        // Es un alumno Antiguo (Reingreso)
+        // Es un alumno Antiguo (Reingreso): expediente real desde Firebase (colección 'alumnos')
         const sessionCarnet = localStorage.getItem('studentSession');
-        
-        if (!sessionCarnet || !mockStudentDB[sessionCarnet as keyof typeof mockStudentDB]) {
-          navigate('/reingreso/login'); 
-        } else {
-          const data = mockStudentDB[sessionCarnet as keyof typeof mockStudentDB];
+
+        if (!sessionCarnet) {
+          navigate('/reingreso/login');
+          return;
+        }
+
+        try {
+          const data = await alumnoService.getAlumno(sessionCarnet);
+          if (!data) {
+            localStorage.removeItem('studentSession');
+            navigate('/reingreso/login');
+            return;
+          }
+
+          const fact = data.facturacion;
           setStudentData({
-            nombre_responsable: 'PADRE / MADRE / ENCARGADO',
+            nombre_responsable: fact?.nombreCompleto || 'PADRE / MADRE / ENCARGADO',
             nacionalidad_responsable: 'Salvadoreña',
-            profesion_responsable: '________________________',
-            dui_responsable: '________________________',
-            nit_responsable: '________________________',
-            domicilio_responsable: '________________________',
-            parentesco_responsable: '________________________',
+            profesion_responsable: fact?.profesion || '________________________',
+            dui_responsable: fact?.dui || '________________________',
+            nit_responsable: fact?.nit || '________________________',
+            domicilio_responsable: fact?.direccion || data.direccion || '________________________',
+            parentesco_responsable: fact?.parentesco || '________________________',
             edad_responsable: '_____',
             estado_civil_responsable: '_________________',
             edad_estudiante: '_____',
             nombre_estudiante: `${data.nombres} ${data.apellidos}`,
             grado_estudiante: data.gradoMatricular,
-            nivel_estudiante: 'BÁSICA / MEDIA',
+            nivel_estudiante: data.gradoMatricular.includes('Kinder') || data.gradoMatricular.includes('Preparatoria') ? 'Parvularia' : 'BÁSICA / MEDIA',
             anio_lectivo: '2026',
             cuota_matricula: '145.00',
             cuota_mensual: '85.00',
             fecha_emision: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }),
             fecha_emision_letras: getFechaLetras()
           });
+        } catch (error) {
+          console.error("Error al cargar datos del alumno de reingreso:", error);
+          setTemplateText("Error de conexión al cargar los datos del estudiante para el contrato.");
         }
       }
     };

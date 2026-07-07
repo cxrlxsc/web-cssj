@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Barcode from 'react-barcode';
-import { mockStudentDB } from '../../data/mockStudent';
+import { alumnoService } from '../../services/alumnoService';
 import { generarTalonario, type TalonarioInfo } from '../../utils/npeGenerator';
 import logoImg from '../../assets/logo.png'; 
 
@@ -48,15 +48,21 @@ export const TalonarioPrint = () => {
       setDatosTalonario(talonarioGenerado);
 
     } else {
-      // 2. Si no es Nuevo Ingreso, buscamos si es un alumno Antiguo (Reingreso)
+      // 2. Si no es Nuevo Ingreso, buscamos si es un alumno Antiguo (Reingreso) en Firebase
       const sessionCarnet = localStorage.getItem('studentSession');
-      
-      if (!sessionCarnet || !mockStudentDB[sessionCarnet as keyof typeof mockStudentDB]) {
+
+      if (!sessionCarnet) {
         // Si no tiene pase VIP ni sesión de antiguo, lo expulsamos al login
-        navigate('/reingreso/login'); 
-      } else {
-        // Es un alumno antiguo, cargamos sus datos de la base simulada
-        const studentData = mockStudentDB[sessionCarnet as keyof typeof mockStudentDB];
+        navigate('/reingreso/login');
+        return;
+      }
+
+      alumnoService.getAlumno(sessionCarnet).then(studentData => {
+        if (!studentData) {
+          localStorage.removeItem('studentSession');
+          navigate('/reingreso/login');
+          return;
+        }
         setStudent(studentData);
 
         const talonarioGenerado = generarTalonario(
@@ -64,11 +70,11 @@ export const TalonarioPrint = () => {
           `${studentData.nombres} ${studentData.apellidos}`,
           studentData.gradoMatricular,
           "Matrícula 2026 y Primera Cuota",
-          145.00, 
-          new Date(2026, 6, 31) 
+          145.00,
+          new Date(2026, 6, 31)
         );
         setDatosTalonario(talonarioGenerado);
-      }
+      }).catch(() => navigate('/reingreso/login'));
     }
   }, [navigate, searchParams]);
 

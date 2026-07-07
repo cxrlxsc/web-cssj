@@ -1,24 +1,34 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockStudentDB } from '../../data/mockStudent';
+import { alumnoService } from '../../services/alumnoService';
 
 export const LoginReingreso = () => {
   const [carnet, setCarnet] = useState('');
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Verificamos si el carnet existe en nuestra "DB" falsa y si el PIN es correcto
-    if (mockStudentDB[carnet as keyof typeof mockStudentDB] && pin === '1234') {
-      // Guardamos el carnet en el navegador
-      localStorage.setItem('studentSession', carnet);
-      // Redirigimos a la nueva ruta de la carpeta reingreso
-      navigate('/reingreso/formulario');
-    } else {
-      setError('Credenciales incorrectas. (Pista: Carnet 20261507, PIN 1234)');
+    setError('');
+    setLoading(true);
+
+    try {
+      // Validamos contra Firebase (colección 'alumnos', importada desde SQL Server)
+      const alumno = await alumnoService.loginReingreso(carnet.trim(), pin);
+      if (alumno) {
+        // Guardamos el carnet en el navegador
+        localStorage.setItem('studentSession', alumno.carnet);
+        // Redirigimos a la nueva ruta de la carpeta reingreso
+        navigate('/reingreso/formulario');
+      } else {
+        setError('Credenciales incorrectas. Verifica tu carnet y PIN (tu PIN inicial es tu NIE).');
+      }
+    } catch {
+      setError('No se pudo conectar con el servidor. Intenta de nuevo.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -33,8 +43,8 @@ export const LoginReingreso = () => {
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div>
             <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#334155' }}>Carnet del Estudiante</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={carnet}
               onChange={(e) => setCarnet(e.target.value)}
               placeholder="Ej: 20261507"
@@ -45,8 +55,8 @@ export const LoginReingreso = () => {
 
           <div>
             <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#334155' }}>PIN / Contraseña</label>
-            <input 
-              type="password" 
+            <input
+              type="password"
               value={pin}
               onChange={(e) => setPin(e.target.value)}
               placeholder="Ingresa tu PIN"
@@ -55,8 +65,8 @@ export const LoginReingreso = () => {
             />
           </div>
 
-          <button type="submit" style={{ background: '#FAB529', color: 'white', padding: '1rem', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', marginTop: '1rem' }}>
-            Iniciar Sesión
+          <button type="submit" disabled={loading} style={{ background: loading ? '#cbd5e1' : '#FAB529', color: 'white', padding: '1rem', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: loading ? 'wait' : 'pointer', marginTop: '1rem' }}>
+            {loading ? 'Verificando…' : 'Iniciar Sesión'}
           </button>
         </form>
       </div>

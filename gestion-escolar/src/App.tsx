@@ -22,6 +22,7 @@ import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import ContratoImpresion from './pages/shared/ContratoImpresion';
 import AdminContrato from './pages/admin/AdminContrato';
 import AdminContratosFirmados from './pages/admin/AdminContratosFirmados';
+import AdminImportarAlumnos from './pages/admin/AdminImportarAlumnos';
 import ExamTemplateBuilder from './pages/admin/evaluaciones/ExamTemplateBuilder'; // <-- NUEVO: Importación del constructor de exámenes
 
 // Páginas Públicas Adicionales
@@ -125,6 +126,16 @@ function App() {
         element={
           <ProtectedRoute>
             <AdminPagosReingreso />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* IMPORTAR ALUMNOS DE ANTIGUO INGRESO (MIGRACIÓN SQL -> FIREBASE) */}
+      <Route
+        path="/admin/importar-alumnos"
+        element={
+          <ProtectedRoute>
+            <AdminImportarAlumnos />
           </ProtectedRoute>
         }
       />
