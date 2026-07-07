@@ -365,3 +365,4 @@ export default function ExpedienteModal({ isOpen, onClose, onSave, admission }: 
     </div>
   );
 }
+

@@ -24,37 +24,34 @@ import type { AlumnoReingreso, AlumnoSqlRow, ContactoFamiliar } from '../types/r
 const COLECCION_ALUMNOS = 'alumnos';
 
 // ============================================
-// GRADOS: código (id_grado de SQL) <-> nombre legible
-// Mismos códigos que usa el NPE (src/utils/npeGenerator.ts)
+// GRADOS: catálogo OFICIAL del colegio (mismos códigos en la tabla grado de
+// cssj_db y en los carnets del sistema nuevo — ver CARNET_GRADE_CODES en
+// admissionService). OJO: NO son los códigos del NPE (npeGenerator usa otros).
 // ============================================
 const GRADO_NOMBRES: Record<string, string> = {
-  '01': 'Kinder 4', '02': 'Kinder 5', '03': 'Preparatoria',
-  '11': '1° Grado', '12': '2° Grado', '13': '3° Grado',
-  '14': '4° Grado', '15': '5° Grado', '16': '6° Grado',
-  '17': '7° Grado', '18': '8° Grado', '19': '9° Grado',
-  '21': '1° Bachillerato', '22': '2° Bachillerato',
+  '14': 'Kinder 4', '15': 'Kinder 5', '16': 'Preparatoria',
+  '01': '1° Grado', '02': '2° Grado', '03': '3° Grado',
+  '04': '4° Grado', '05': '5° Grado', '06': '6° Grado',
+  '07': '7° Grado', '08': '8° Grado', '09': '9° Grado',
+  '10': '1° Bachillerato', '11': '2° Bachillerato',
   '31': '1° Diseño Gráfico', '32': '2° Diseño Gráfico', '33': '3° Diseño Gráfico',
   '41': '1° Sistemas Eléctricos', '42': '2° Sistemas Eléctricos', '43': '3° Sistemas Eléctricos',
   '51': '1° Desarrollo de Software', '52': '2° Desarrollo de Software', '53': '3° Desarrollo de Software',
 };
 
-// Progresión de grados por código. 9° (19) avanza por defecto a Bachillerato General (21);
-// si el alumno pasa a un técnico se corrige con el campo grado_actual al importar.
-const SIGUIENTE_GRADO: Record<string, string> = {
-  '01': '02', '02': '03', '03': '11',
-  '11': '12', '12': '13', '13': '14', '14': '15', '15': '16', '16': '17',
-  '17': '18', '18': '19', '19': '21',
-  '21': '22',
-  '31': '32', '32': '33',
-  '41': '42', '42': '43',
-  '51': '52', '52': '53',
-};
+// Cadena de promoción del plan general: Kinder 4 -> ... -> 2° Bachillerato.
+// Los técnicos (31-33, 41-43, 51-53) avanzan dentro de su propia carrera de 3 años.
+const CADENA_GENERAL = ['14', '15', '16', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'];
 
-/** Devuelve el código de grado a partir de un código ('12') o de un nombre ('2° Grado'). */
+export const GRADUADO = 'Graduado';
+
+/** Año lectivo que se está matriculando en el portal de reingreso. */
+export const ANIO_MATRICULA = 2026;
+
+/** Devuelve el código de grado a partir de un código ('02') o de un nombre ('2° Grado'). */
 export function normalizarCodigoGrado(grado: string | null | undefined): string {
   const valor = (grado || '').trim();
   if (!valor) return '';
-  // Ya es un código conocido (con o sin cero a la izquierda: '2' -> '02' no aplica, códigos son de 2 dígitos)
   const codigo = valor.padStart(2, '0');
   if (GRADO_NOMBRES[codigo]) return codigo;
   // Es un nombre: lo buscamos de forma tolerante
@@ -74,12 +71,30 @@ export function nombreGrado(grado: string | null | undefined): string {
   return codigo ? GRADO_NOMBRES[codigo] : (grado || '').trim();
 }
 
-/** Calcula el grado al que debe matricularse (el siguiente al actual). */
-export function calcularGradoMatricular(gradoActual: string | null | undefined): string {
-  const codigo = normalizarCodigoGrado(gradoActual);
-  if (!codigo) return 'No definido';
-  const siguiente = SIGUIENTE_GRADO[codigo];
-  return siguiente ? GRADO_NOMBRES[siguiente] : 'Graduado';
+/** Avanza un código de grado N años dentro del plan. Devuelve el código destino o 'GRAD'. */
+function avanzarCodigo(codigo: string, anios: number): string {
+  if (anios <= 0) return codigo;
+  // Carreras técnicas: 31-33, 41-43, 51-53 (3 años cada una)
+  const tec = /^([345])([123])$/.exec(codigo);
+  if (tec) {
+    const anioCarrera = parseInt(tec[2], 10) + anios;
+    return anioCarrera <= 3 ? `${tec[1]}${anioCarrera}` : 'GRAD';
+  }
+  const idx = CADENA_GENERAL.indexOf(codigo);
+  if (idx === -1) return codigo; // código desconocido: no se avanza
+  const destino = idx + anios;
+  return destino < CADENA_GENERAL.length ? CADENA_GENERAL[destino] : 'GRAD';
+}
+
+/**
+ * Grado que le corresponde cursar en el año `anio` a un alumno que ingresó en
+ * `anhoIngreso` al grado `gradoIngreso` (asume promoción continua, sin repitencias).
+ */
+export function gradoEnAnio(gradoIngreso: string | null | undefined, anhoIngreso: number, anio: number): string {
+  const codigo = normalizarCodigoGrado(gradoIngreso);
+  if (!codigo) return '';
+  const resultado = avanzarCodigo(codigo, Math.max(0, anio - anhoIngreso));
+  return resultado === 'GRAD' ? GRADUADO : (GRADO_NOMBRES[resultado] ?? resultado);
 }
 
 // ============================================
@@ -135,15 +150,28 @@ function contacto(
 
 /** Convierte una fila de la tabla [dbo].[alumno] al documento de Firestore. */
 export function mapSqlRowToAlumno(row: AlumnoSqlRow): AlumnoReingreso {
-  const gradoActualRaw = s(row.grado_actual) || s(row.grado_ingreso);
-  const gradoActual = nombreGrado(gradoActualRaw);
   const siNo = (v?: string | null) => (s(v).toUpperCase() === 'SI' ? 'SI' : 'NO');
+
+  // Grado actual y grado a matricular:
+  // - Si la fila trae grado_actual explícito, se usa ese y se avanza 1 año.
+  // - Si no, se calcula desde grado_ingreso avanzando los años transcurridos
+  //   hasta el año de matrícula (los que ya terminaron quedan como 'Graduado').
+  const anhoIngreso = parseInt(s(row.anho_ingreso), 10) || ANIO_MATRICULA;
+  let gradoActual: string;
+  let gradoMatricular: string;
+  if (s(row.grado_actual)) {
+    gradoActual = nombreGrado(row.grado_actual);
+    gradoMatricular = gradoEnAnio(row.grado_actual, ANIO_MATRICULA - 1, ANIO_MATRICULA);
+  } else {
+    gradoActual = gradoEnAnio(row.grado_ingreso, anhoIngreso, Math.max(anhoIngreso, ANIO_MATRICULA - 1));
+    gradoMatricular = gradoEnAnio(row.grado_ingreso, anhoIngreso, ANIO_MATRICULA);
+  }
 
   return {
     // Ingreso
     anioIngreso: s(row.anho_ingreso),
     gradoActual,
-    gradoMatricular: calcularGradoMatricular(gradoActualRaw),
+    gradoMatricular,
 
     // Acceso
     pin: pinPorDefecto(row),

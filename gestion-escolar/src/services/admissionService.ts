@@ -8,6 +8,7 @@ import {
   query,
   orderBy,
   where,
+  documentId,
   Timestamp
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -346,7 +347,9 @@ export const admissionService = {
     const gradeCode = getCarnetGradeCode(gradeApplying);
     const prefix = `${añoMatricula}${gradeCode}`;
 
-    // Correlativo: cuántos carnets ya existen con el mismo prefijo (año + grado)
+    // Correlativo: carnets ya existentes con el mismo prefijo (año + grado),
+    // tanto de admisiones aprobadas como de alumnos de ANTIGUO INGRESO migrados
+    // desde SQL (colección 'alumnos', donde el ID del documento es el carnet).
     const admissionsRef = collection(db, 'admissions');
     const q = query(
       admissionsRef,
@@ -361,7 +364,19 @@ export const admissionService = {
       })
       .filter(carnet => carnet.startsWith(prefix));
 
-    const orderCode = (usados.length + 1).toString().padStart(2, '0');
+    const alumnosSnap = await getDocs(query(
+      collection(db, 'alumnos'),
+      where(documentId(), '>=', prefix + '00'),
+      where(documentId(), '<=', prefix + '99')
+    ));
+    usados.push(...alumnosSnap.docs.map(d => d.id));
+
+    // Siguiente correlativo = mayor correlativo usado + 1 (tolera huecos y duplicados)
+    const maxCorrelativo = usados.reduce((max, carnet) => {
+      const n = parseInt(carnet.slice(prefix.length), 10);
+      return Number.isFinite(n) && n > max ? n : max;
+    }, 0);
+    const orderCode = (maxCorrelativo + 1).toString().padStart(2, '0');
     return `${prefix}${orderCode}`;
   },
 
