@@ -384,6 +384,7 @@ const handleGuardarExpediente = async (e: React.FormEvent<HTMLFormElement>) => {
 
   const evalAcademica = evaluations.find(e => e.phaseType === 'academic');
   const evalPsicologica = evaluations.find(e => e.phaseType === 'psychological');
+  const evalEntrevista = evaluations.find(e => e.phaseType === 'psychological_interview' || e.phaseType === 'interview');
 
   return (
     <div className="portal-page">
@@ -656,7 +657,22 @@ const handleGuardarExpediente = async (e: React.FormEvent<HTMLFormElement>) => {
             </div>
             <div style={{ background: '#e0f2fe', border: '1px solid #bae6fd', padding: '1.5rem', borderRadius: '8px', color: '#0369a1' }}>
               <h3 style={{ margin: '0 0 0.5rem 0' }}>Has llegado a la fase final</h3>
-              <p style={{ margin: 0, fontSize: '1rem' }}>Has completado satisfactoriamente tus evaluaciones. En los próximos días se te asignará una cita para realizar la entrevista con nuestras autoridades educativas.</p>
+              <p style={{ margin: 0, fontSize: '1rem' }}>
+                Has completado satisfactoriamente tus evaluaciones.
+                {evalEntrevista?.scheduledDate
+                  ? ' Tu entrevista ya tiene cita asignada:'
+                  : ' En los próximos días se te asignará una cita para realizar la entrevista con nuestras autoridades educativas.'}
+              </p>
+              {evalEntrevista?.scheduledDate && (
+                <div style={{ marginTop: '1rem', background: 'white', border: '1px solid #bae6fd', borderRadius: '8px', padding: '1rem', color: '#0f172a' }}>
+                  <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    <Icons.Calendar />
+                    <strong>{formatearFecha(evalEntrevista.scheduledDate)}</strong>
+                    a las <strong>{evalEntrevista.scheduledTime || 'hora por definir'}</strong>
+                    · {evalEntrevista.location || 'Oficina de Psicología'}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

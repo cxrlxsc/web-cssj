@@ -38,6 +38,7 @@ import CalendarioAcademico from './pages/home/CalendarioAcademico';
 
 // Módulo de Reingreso Estudiantes
 import PortalAspirante from './pages/admisiones/PortalAspirante';
+import ExamenAspirante from './pages/admisiones/ExamenAspirante';
 import { LoginReingreso } from './pages/reingreso/LoginReingreso';
 import { FormularioReingreso } from './pages/reingreso/FormularioReingreso';
 import { PasosReingreso } from './pages/reingreso/PasosReingreso';
@@ -69,6 +70,8 @@ function App() {
       <Route path="/calendario-academico" element={<CalendarioAcademico />} />
       <Route path="/proceso-inscripcion" element={<ProcesoInscripcion />} />
       <Route path="/mi-solicitud" element={<PortalAspirante />} />
+      {/* Examen académico en línea (habilitado por el admin en /admin/evaluaciones) */}
+      <Route path="/portal/examen/:evaluationId" element={<ExamenAspirante />} />
 
       {/* RUTAS DE REINGRESO (ANTIGUOS ALUMNOS) */}
       <Route path="/reingreso/login" element={<LoginReingreso />} />

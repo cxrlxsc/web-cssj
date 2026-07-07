@@ -460,15 +460,18 @@ export interface BulkGradeEntry {
 export interface EvaluationQuestion {
   id: string;
   question: string;
+  subject?: string;   // Materia/sección a la que pertenece la pregunta (Ej: "Matemática", "Ciencias Naturales")
+  imageUrl?: string;  // Imagen opcional de apoyo (Ej: foto de la ecuación en lugar de escribirla)
   options: string[]; // Ej: ["2", "4", "6", "8"]
-  correctAnswer: string; 
+  correctAnswer: string;
 }
 
 export interface EvaluationTemplate {
   id: string;
   title: string;
   grade: string; // Ej: "Kinder 5"
-  type: 'academic'; 
+  subject?: string; // Resumen de las materias que componen el examen (Ej: "Matemática, Ciencias Naturales")
+  type: 'academic';
   isActive: boolean;
   questions: EvaluationQuestion[];
   createdBy: string;

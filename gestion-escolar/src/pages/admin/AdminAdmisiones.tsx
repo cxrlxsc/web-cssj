@@ -85,10 +85,13 @@ export default function AdminAdmisiones() {
 
     try {
       await evaluationService.createEvaluationsForAdmission(
-        selectedAdmission.id, 
-        `${selectedAdmission.studentFirstName} ${selectedAdmission.studentLastName}`
+        selectedAdmission.id,
+        `${selectedAdmission.studentFirstName} ${selectedAdmission.studentLastName}`,
+        selectedAdmission.gradeApplying
       );
-      alert("Exámenes habilitados con éxito.");
+      // La solicitud pasa a fase de evaluaciones: así el aspirante ve sus citas en el portal
+      await admissionService.updateAdmissionStatus(selectedAdmission.id, 'evaluations', 'Admin_Registro');
+      alert("Exámenes habilitados con éxito. El aspirante ya puede ver sus evaluaciones en su portal.");
       loadAdmissions(); 
       setSelectedAdmission(null); 
     } catch (error) {

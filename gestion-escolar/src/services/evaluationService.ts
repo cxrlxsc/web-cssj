@@ -14,8 +14,10 @@ import {
   writeBatch
 } from 'firebase/firestore';
 
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
 // 1. Ajuste a la ruta correcta de tu configuración
-import { db } from '../firebase/config';
+import { db, storage } from '../firebase/config';
 
 // 2. Ajuste para importar tipos correctamente usando 'type'
 import type { 
@@ -28,8 +30,7 @@ import type {
   EvaluationResult,
   GlobalEvaluationSchedule,
   BulkGradeEntry,
-  EvaluationTemplate, // Nuevo tipo agregado
-  EvaluationQuestion // Nuevo tipo agregado
+  EvaluationTemplate // Nuevo tipo agregado
 } from '../types';
 
 // ============================================
@@ -102,8 +103,15 @@ export const evaluationService = {
   async getPhases(): Promise<EvaluationPhase[]> {
     const phasesRef = collection(db, 'evaluationPhases');
     const q = query(phasesRef, orderBy('order', 'asc'));
-    const snapshot = await getDocs(q);
-    
+    let snapshot = await getDocs(q);
+
+    // Auto-siembra: si la colección nunca fue configurada, se crean las fases
+    // predeterminadas. Sin esto, "Habilitar exámenes" creaba CERO evaluaciones.
+    if (snapshot.empty) {
+      await this.createDefaultPhases();
+      snapshot = await getDocs(q);
+    }
+
     return snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
@@ -243,17 +251,27 @@ export const evaluationService = {
 
   // Create evaluations for an approved admission
   async createEvaluationsForAdmission(
-    admissionId: string, 
-    studentName: string
+    admissionId: string,
+    studentName: string,
+    gradeApplying?: string
   ): Promise<AdmissionEvaluation[]> {
     const phases = await this.getPhases();
-    const activePhases = this.getUniquePhasesByType(phases.filter(p => p.isActive));
+
+    // Al habilitar exámenes solo se generan los EXÁMENES iniciales: académico y
+    // psicológico. El inglés NO es una prueba aparte: se evalúa como una materia
+    // más del banco de exámenes académicos. La entrevista tampoco se crea aquí:
+    // se genera automáticamente al completar los exámenes.
+    const tiposIniciales: EvaluationType[] = ['academic', 'psychological'];
+
+    const activePhases = this.getUniquePhasesByType(
+      phases.filter(p => p.isActive && tiposIniciales.includes(p.type))
+    );
     const existingEvaluations = await this.getEvaluationsForAdmission(admissionId);
     const existingTypes = new Set(existingEvaluations.map(e => e.phaseType));
     const now = new Date();
-    
+
     const evaluations: AdmissionEvaluation[] = [];
-    
+
     for (const phase of activePhases) {
       if (existingTypes.has(phase.type)) {
         continue;
@@ -269,19 +287,20 @@ export const evaluationService = {
         createdAt: now,
         updatedAt: now,
       };
-      
+
       const docRef = await addDoc(collection(db, 'admissionEvaluations'), {
         ...evalData,
+        gradeApplying: gradeApplying || '', // para filtrar por grado en el panel admin
         createdAt: Timestamp.fromDate(now),
         updatedAt: Timestamp.fromDate(now),
       });
-      
+
       evaluations.push({
         id: docRef.id,
         ...evalData
       });
     }
-    
+
     return evaluations;
   },
 
@@ -696,6 +715,50 @@ export const evaluationService = {
     return { allComplete, allPassed, summary };
   },
 
+  /**
+   * Avanza la admisión a la fase de ENTREVISTA cuando los exámenes están completos.
+   *
+   * Reglas:
+   * - Solo cuentan los exámenes (academic, psychological, english); la entrevista
+   *   (psychological_interview / interview) es la fase SIGUIENTE, no un requisito.
+   * - Solo avanza si la admisión sigue en estado 'evaluations' (no pisa estados posteriores).
+   * - Al avanzar, se asegura de que exista la evaluación de Entrevista Psicológica
+   *   para que el admin pueda agendarle fecha en /admin/evaluaciones.
+   */
+  async advanceToInterviewIfComplete(admissionId: string, studentName?: string): Promise<boolean> {
+    const evaluations = await this.getEvaluationsForAdmission(admissionId);
+    // El inglés no cuenta como prueba aparte (se evalúa como materia del examen académico)
+    const examTypes: EvaluationType[] = ['academic', 'psychological'];
+    const examenes = evaluations.filter(e => examTypes.includes(e.phaseType));
+
+    if (examenes.length === 0) return false;
+    const todosCompletos = examenes.every(e => e.status === 'completed');
+    if (!todosCompletos) return false;
+
+    const admissionRef = doc(db, 'admissions', admissionId);
+    const admissionSnap = await getDoc(admissionRef);
+    if (!admissionSnap.exists() || admissionSnap.data().status !== 'evaluations') return false;
+
+    await updateDoc(admissionRef, {
+      status: 'interview',
+      reviewedAt: Timestamp.fromDate(new Date()),
+    });
+
+    // Creamos/aseguramos la evaluación de entrevista (sin fecha forzada: el admin la agenda)
+    const nombre = studentName || (evaluations[0]?.studentName ?? '');
+    try {
+      await this.ensurePsychologicalInterviewScheduled(admissionId, nombre, {
+        scheduledBy: 'system',
+        autoScheduled: true,
+        notes: 'Generada automáticamente al completar los exámenes. Confirmar fecha y hora con la familia.',
+      });
+    } catch (e) {
+      console.error('No se pudo crear la evaluación de entrevista automáticamente:', e);
+    }
+
+    return true;
+  },
+
   // ============================================
   // GLOBAL EVALUATION SCHEDULE (Fechas Globales)
   // ============================================
@@ -955,6 +1018,9 @@ export const evaluationService = {
         result: data.result,
         observations: data.observations,
         recommendations: data.recommendations,
+        templateId: data.templateId,
+        manualAccessEnabled: data.manualAccessEnabled,
+        attendanceStatus: data.attendanceStatus,
         createdAt: data.createdAt?.toDate?.() || data.createdAt,
         updatedAt: data.updatedAt?.toDate?.() || data.updatedAt,
         completedAt: data.completedAt?.toDate?.() || data.completedAt,
@@ -1080,6 +1146,21 @@ export const evaluationService = {
       id: doc.id, 
       ...doc.data() 
     } as EvaluationTemplate));
+  },
+
+  // Subir la imagen de apoyo de una pregunta (ej: foto de una ecuación matemática)
+  async uploadExamQuestionImage(file: File): Promise<string> {
+    const ext = file.name.includes('.') ? `.${file.name.split('.').pop()?.toLowerCase()}` : '.jpg';
+    const objectName = `question_${Date.now()}_${Math.random().toString(36).slice(2, 8)}${ext}`;
+    const storageRef = ref(storage, `evaluationTemplates/images/${objectName}`);
+    await uploadBytes(storageRef, file, { contentType: file.type || 'image/jpeg' });
+    return getDownloadURL(storageRef);
+  },
+
+  // Obtener una plantilla por su ID (para que el aspirante rinda el examen)
+  async getExamTemplate(templateId: string): Promise<EvaluationTemplate | null> {
+    const snap = await getDoc(doc(db, 'evaluationTemplates', templateId));
+    return snap.exists() ? ({ id: snap.id, ...snap.data() } as EvaluationTemplate) : null;
   },
 
   // Crear una nueva plantilla (Admin)
