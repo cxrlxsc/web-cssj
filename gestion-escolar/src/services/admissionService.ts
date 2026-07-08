@@ -15,6 +15,7 @@ import { db } from '../firebase/config';
 import type { Admission } from '../types';
 import { personRegistryService } from './personRegistryService';
 import { buildInstitutionalEmail, buildUniqueEmail, buildTempPassword } from '../utils/credentialsGenerator';
+import { configService } from './configService';
 
 // Servicio base del expediente de admisión: guarda y actualiza la solicitud como tal.
 // Los estados derivados del proceso y la coordinación con otras áreas viven en
@@ -343,7 +344,8 @@ export const admissionService = {
   // Generar número de carnet.
   // Formato: <añoMatrícula><códigoGrado><correlativo>  ->  ej: 2026 + 11 + 01 = 20261101
   async generateStudentCarnet(gradeApplying: string, enrollmentYear?: number): Promise<string> {
-    const añoMatricula = enrollmentYear || new Date().getFullYear();
+    // Si la admisión no trae año, se usa el ciclo escolar activo de la configuración
+    const añoMatricula = enrollmentYear || await configService.getAnioMatricula();
     const gradeCode = getCarnetGradeCode(gradeApplying);
     const prefix = `${añoMatricula}${gradeCode}`;
 
@@ -422,8 +424,9 @@ export const admissionService = {
       throw new Error('Este aspirante ya fue aprobado anteriormente.');
     }
 
-    // 1. Año de matrícula (usa el del código de acceso o el año actual). Se usa en carnet y correo.
-    const añoMatricula = admission.enrollmentYear || new Date().getFullYear();
+    // 1. Año de matrícula (usa el del código de acceso o el ciclo activo de la configuración).
+    //    Se usa en carnet y correo.
+    const añoMatricula = admission.enrollmentYear || await configService.getAnioMatricula();
 
     // 2. Generar carnet institucional (8 dígitos): añoMatricula + códigoGrado + correlativo
     const carnet = await this.generateStudentCarnet(admission.gradeApplying, añoMatricula);

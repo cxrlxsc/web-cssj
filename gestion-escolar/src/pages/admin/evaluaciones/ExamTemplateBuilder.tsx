@@ -8,17 +8,18 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { evaluationService } from '../../../services/evaluationService';
 import { compressImage } from '../../../utils/imageCompression';
+import logoImg from '../../../assets/logo.png';
 import type { EvaluationQuestion } from '../../../types';
+import './AdminEvaluacionesList.css'; // Navbar institucional compartida del módulo
 
 const estilos = `
-  .etb-page { min-height: 100vh; background: linear-gradient(180deg, #eef7f2 0%, #f1f5f9 420px); font-family: system-ui, sans-serif; padding-bottom: 8rem; }
-  .etb-hero { background: linear-gradient(135deg, #002a4a 0%, #0068B3 60%, #008C5A 130%); color: white; padding: 2.4rem 1.5rem 4.5rem; }
-  .etb-hero-inner { max-width: 860px; margin: 0 auto; display: flex; align-items: flex-start; gap: 1.2rem; flex-wrap: wrap; }
-  .etb-back { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.6rem 1.1rem; background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.35); border-radius: 999px; font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: background 0.2s; }
-  .etb-back:hover { background: rgba(255,255,255,0.24); }
-  .etb-hero h1 { margin: 0.9rem 0 0.4rem; font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; }
-  .etb-hero p { margin: 0; opacity: 0.85; font-size: 0.95rem; max-width: 560px; line-height: 1.5; }
-  .etb-main { max-width: 860px; margin: -2.6rem auto 0; padding: 0 1.5rem; }
+  .etb-page { min-height: 100vh; background: #f1f5f9; font-family: system-ui, sans-serif; padding-bottom: 8rem; }
+  .etb-header { max-width: 860px; margin: 2rem auto 0; padding: 0 1.5rem; }
+  .etb-back { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.6rem 1.1rem; background: white; color: #002a4a; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: background 0.2s, border-color 0.2s; }
+  .etb-back:hover { background: #f8fafc; border-color: #94a3b8; }
+  .etb-header h1 { margin: 1.1rem 0 0.4rem; font-size: 1.9rem; font-weight: 800; letter-spacing: -0.02em; color: #0f172a; }
+  .etb-header p { margin: 0; color: #64748b; font-size: 0.95rem; max-width: 620px; line-height: 1.5; }
+  .etb-main { max-width: 860px; margin: 1.6rem auto 0; padding: 0 1.5rem; }
   .etb-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 8px 24px -12px rgba(2, 42, 74, 0.18); padding: 1.8rem; margin-bottom: 1.4rem; }
   .etb-card-title { margin: 0 0 0.3rem; color: #0f172a; font-size: 1.05rem; font-weight: 800; }
   .etb-card-sub { margin: 0 0 1.4rem; color: #64748b; font-size: 0.85rem; line-height: 1.5; }
@@ -49,7 +50,8 @@ const estilos = `
   .etb-toast.error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
   .etb-toast.success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
   @media (max-width: 640px) {
-    .etb-hero h1 { font-size: 1.5rem; }
+    .etb-header h1 { font-size: 1.5rem; }
+    .etb-header { padding: 0 1rem; }
     .etb-main { padding: 0 1rem; }
     .etb-card, .etb-question { padding: 1.2rem; }
     .etb-fab { right: 1rem; bottom: 1rem; padding: 0.9rem 1.3rem; font-size: 0.92rem; }
@@ -233,25 +235,37 @@ export default function ExamTemplateBuilder() {
   // RENDERIZADO
   // ==========================================
 
+  const handleLogout = () => {
+    localStorage.removeItem('adminSession');
+    navigate('/admin/login');
+  };
+
   return (
     <div className="etb-page">
       <style>{estilos}</style>
 
-      {/* ENCABEZADO CON DEGRADADO INSTITUCIONAL */}
-      <header className="etb-hero">
-        <div className="etb-hero-inner">
-          <div style={{ flex: 1, minWidth: '260px' }}>
-            <button className="etb-back" onClick={() => navigate('/admin/evaluaciones')}>
-              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
-              Volver al Control de Evaluaciones
-            </button>
-            <h1>Constructor de Examen</h1>
-            <p>
-              Crea el examen integral del grado: agrega secciones por materia (ej: 10 de Ciencias y 10 de Matemática),
-              adjunta imágenes para las ecuaciones y deja que el sistema califique automáticamente.
-            </p>
-          </div>
+      {/* NAVBAR VERDE INSTITUCIONAL */}
+      <nav className="admin-navbar">
+        <div className="navbar-brand">
+          <img src={logoImg} alt="Logotipo Institucional" className="navbar-logo" />
+          <span className="navbar-title">Colegio Salesiano San José</span>
         </div>
+        <button onClick={handleLogout} className="btn-logout">
+          Cerrar Sesión
+        </button>
+      </nav>
+
+      {/* ENCABEZADO */}
+      <header className="etb-header">
+        <button className="etb-back" onClick={() => navigate('/admin/evaluaciones')}>
+          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+          Volver al Control de Evaluaciones
+        </button>
+        <h1>Constructor de Examen</h1>
+        <p>
+          Crea el examen integral del grado: agrega secciones por materia (ej: 10 de Ciencias y 10 de Matemática),
+          adjunta imágenes para las ecuaciones y deja que el sistema califique automáticamente.
+        </p>
       </header>
 
       <main className="etb-main">

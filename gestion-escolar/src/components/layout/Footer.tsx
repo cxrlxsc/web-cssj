@@ -61,7 +61,7 @@ export default function Footer() {
       
       {/* Derechos de Autor */}
       <div className="footer-bottom">
-        <p>© 2026 Colegio Salesiano San José. Todos los derechos reservados.</p>
+        <p>© {new Date().getFullYear()} Colegio Salesiano San José. Todos los derechos reservados.</p>
       </div>
     </footer>
   );

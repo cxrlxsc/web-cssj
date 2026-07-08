@@ -39,6 +39,8 @@ export interface AlumnoReingreso {
   anioIngreso: string;       // Año en que ingresó al colegio (anho_ingreso)
   gradoActual: string;       // Grado que cursó/cursa actualmente (nombre legible)
   gradoMatricular: string;   // Grado al que se matricula (calculado: siguiente al actual)
+  anioCalculo?: number;      // Año de matrícula para el que se calcularon los grados;
+                             // al leer, si el ciclo activo es mayor, se avanzan automáticamente
 
   // === ACCESO AL PORTAL ===
   pin: string;               // PIN de acceso al portal de reingreso

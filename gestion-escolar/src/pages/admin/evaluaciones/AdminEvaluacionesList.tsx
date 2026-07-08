@@ -3,12 +3,26 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { evaluationService } from '../../../services/evaluationService';
 import { admissionService } from '../../../services/admissionService';
+import { useAdminDialogs } from '../../../components/admin/useAdminDialogs';
 import logoImg from '../../../assets/logo.png';
 import type { Admission, AdmissionEvaluation, EvaluationTemplate } from '../../../types';
 import './AdminEvaluacionesList.css'; // <-- IMPORTAMOS EL CSS
 
+// Formulario del informe de entrevista (se guarda en la evaluación y en la
+// admisión para que Aprobación y Matrícula lo tenga a la vista)
+interface InformeEntrevista {
+  satisfactoria: boolean;
+  fortalezas: string;
+  areasMejorar: string;
+  recomendaciones: string;
+  observaciones: string;
+}
+
+const INFORME_VACIO: InformeEntrevista = { satisfactoria: true, fortalezas: '', areasMejorar: '', recomendaciones: '', observaciones: '' };
+
 export default function AdminEvaluacionesList() {
   const navigate = useNavigate();
+  const { confirm, alert: mostrarAlerta, dialogs } = useAdminDialogs();
   const [evaluations, setEvaluations] = useState<(AdmissionEvaluation & { gradeApplying?: string })[]>([]);
   const [templates, setTemplates] = useState<EvaluationTemplate[]>([]);
   const [postulantesSinPruebas, setPostulantesSinPruebas] = useState<Admission[]>([]);
@@ -16,6 +30,11 @@ export default function AdminEvaluacionesList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Modal del informe de entrevista
+  const [informeDe, setInformeDe] = useState<AdmissionEvaluation | null>(null);
+  const [informe, setInforme] = useState<InformeEntrevista>(INFORME_VACIO);
+  const [guardandoInforme, setGuardandoInforme] = useState(false);
 
   const [dates, setDates] = useState<Record<string, string>>({});
   const [times, setTimes] = useState<Record<string, string>>({});
@@ -71,36 +90,95 @@ export default function AdminEvaluacionesList() {
     }
   };
 
-  // Registrar el resultado de una prueba presencial (psicológica o entrevista).
-  // Al completarse todos los exámenes, el aspirante avanza automáticamente a la fase de entrevista.
-  const handleRegistrarResultado = async (evaluacion: AdmissionEvaluation) => {
+  // EXAMEN PSICOLÓGICO: solo se registra la ASISTENCIA del aspirante.
+  // Al marcarla, la prueba queda realizada y (si el examen académico también
+  // está completo) se activa automáticamente la fase de entrevista.
+  const handleMarcarAsistencia = async (evaluacion: AdmissionEvaluation) => {
     setError('');
     setSuccess('');
-
-    const observaciones = window.prompt(
-      `Registrar resultado de "${evaluacion.phaseName}" de ${evaluacion.studentName}.\n\nObservaciones del evaluador (opcional):`
-    );
-    if (observaciones === null) return; // canceló
-
-    const satisfactoria = window.confirm(
-      'Resultado de la prueba:\n\nAceptar = SATISFACTORIA (aprobada)\nCancelar = REQUIERE SEGUIMIENTO (se revisará en el dictamen)'
-    );
+    const ok = await confirm({
+      title: 'Confirmar asistencia',
+      message: `¿${evaluacion.studentName} se presentó a su ${evaluacion.phaseName}?\n\nAl confirmar, la prueba queda registrada como realizada.`,
+      confirmLabel: 'Sí, asistió',
+      tone: 'verde',
+    });
+    if (!ok) return;
 
     try {
       await evaluationService.completeEvaluation(evaluacion.id, {
-        result: satisfactoria ? 'approved' : 'needs-review',
-        observations: observaciones.trim() || 'Sin observaciones.',
+        result: 'approved',
+        observations: 'El aspirante asistió a la evaluación psicológica presencial.',
       });
-
       const avanzo = await evaluationService.advanceToInterviewIfComplete(evaluacion.admissionId, evaluacion.studentName);
       setSuccess(
         avanzo
-          ? 'Resultado registrado. El aspirante completó sus exámenes y pasó a la FASE DE ENTREVISTA (agenda la cita en la fila nueva).'
-          : 'Resultado registrado correctamente.'
+          ? 'Asistencia registrada. El aspirante completó sus pruebas y pasó a la FASE DE ENTREVISTA: agenda la cita en la fila nueva.'
+          : 'Asistencia registrada correctamente.'
       );
       cargarEvaluaciones();
     } catch {
-      setError('No se pudo registrar el resultado.');
+      setError('No se pudo registrar la asistencia.');
+    }
+  };
+
+  // ENTREVISTA: se registra el INFORME COMPLETO del alumno. Queda guardado en
+  // la evaluación y en la admisión (interviewResolution), visible en la
+  // pantalla de Aprobación y Matrícula para la decisión final.
+  const abrirInforme = (evaluacion: AdmissionEvaluation) => {
+    setInforme(INFORME_VACIO);
+    setInformeDe(evaluacion);
+  };
+
+  const handleGuardarInforme = async () => {
+    if (!informeDe) return;
+    if (!informe.observaciones.trim() && !informe.fortalezas.trim()) {
+      await mostrarAlerta({
+        title: 'Informe incompleto',
+        message: 'Escribe al menos las observaciones generales sobre el alumno antes de guardar.',
+        tone: 'info',
+      });
+      return;
+    }
+
+    setGuardandoInforme(true);
+    try {
+      const resumen = [
+        `Resultado: ${informe.satisfactoria ? 'Satisfactoria' : 'Requiere seguimiento'}.`,
+        informe.fortalezas.trim() && `Fortalezas: ${informe.fortalezas.trim()}`,
+        informe.areasMejorar.trim() && `Áreas a mejorar: ${informe.areasMejorar.trim()}`,
+        informe.recomendaciones.trim() && `Recomendaciones: ${informe.recomendaciones.trim()}`,
+        informe.observaciones.trim() && `Observaciones: ${informe.observaciones.trim()}`,
+      ].filter(Boolean).join('\n');
+
+      await evaluationService.completeEvaluation(informeDe.id, {
+        result: informe.satisfactoria ? 'approved' : 'needs-review',
+        observations: resumen,
+        ...(informe.recomendaciones.trim() ? { recommendations: informe.recomendaciones.trim() } : {}),
+      });
+
+      // Informe estructurado en la admisión (visible en Aprobación y Matrícula)
+      await admissionService.updateAdmission(informeDe.admissionId, {
+        interviewResolution: {
+          decision: informe.satisfactoria ? 'approved' : 'pending',
+          message: informe.observaciones.trim(),
+          strengths: informe.fortalezas.split('\n').map(s => s.trim()).filter(Boolean),
+          areasToImprove: informe.areasMejorar.split('\n').map(s => s.trim()).filter(Boolean),
+          recommendations: informe.recomendaciones.trim(),
+          nextSteps: '',
+          notifyParent: false,
+          resolvedBy: 'Admin_Evaluaciones',
+          resolvedByName: 'Departamento de Psicología',
+          resolvedAt: new Date(),
+        },
+      });
+
+      setInformeDe(null);
+      setSuccess('Informe de entrevista guardado. Ya está disponible en "Aprobación y Matrícula" para la decisión final.');
+      cargarEvaluaciones();
+    } catch {
+      setError('No se pudo guardar el informe.');
+    } finally {
+      setGuardandoInforme(false);
     }
   };
 
@@ -453,15 +531,22 @@ export default function AdminEvaluacionesList() {
                         {e.phaseType === 'academic' && e.manualAccessEnabled && e.status !== 'completed' && (
                           <span className="exam-active-badge">Examen Activo en Pantalla</span>
                         )}
-                        {e.phaseType !== 'academic' && (e.status === 'scheduled' || e.status === 'pending') && (
-                          <button onClick={() => handleRegistrarResultado(e)} className="btn-enable-exam" style={{ background: '#7c3aed' }}>
-                            Registrar Resultado
+                        {e.phaseType === 'psychological' && (e.status === 'scheduled' || e.status === 'pending') && (
+                          <button onClick={() => handleMarcarAsistencia(e)} className="btn-enable-exam" style={{ background: '#0068B3' }}>
+                            Marcar Asistencia
+                          </button>
+                        )}
+                        {(e.phaseType === 'psychological_interview' || e.phaseType === 'interview') && (e.status === 'scheduled' || e.status === 'pending') && (
+                          <button onClick={() => abrirInforme(e)} className="btn-enable-exam" style={{ background: '#7c3aed' }}>
+                            Registrar Informe
                           </button>
                         )}
                         {e.status === 'completed' && (
                           e.phaseType === 'academic'
                             ? <span className="score-badge">Nota: {e.score ?? 0}</span>
-                            : <span className="score-badge">{e.result === 'approved' ? 'Satisfactoria' : 'Con seguimiento'}</span>
+                            : e.phaseType === 'psychological'
+                              ? <span className="score-badge">Asistió</span>
+                              : <span className="score-badge">{e.result === 'approved' ? 'Satisfactoria' : 'Con seguimiento'}</span>
                         )}
                       </div>
 
@@ -473,6 +558,87 @@ export default function AdminEvaluacionesList() {
           })
         )}
       </main>
+
+      {/* MODAL: INFORME DE ENTREVISTA */}
+      {informeDe && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 100 }}>
+          <div style={{ background: 'white', borderRadius: '16px', maxWidth: '600px', width: '100%', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 20px 45px rgba(0,0,0,0.25)' }}>
+
+            {/* Encabezado */}
+            <div style={{ background: '#002a4a', color: 'white', padding: '1.3rem 1.8rem', borderRadius: '16px 16px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>Informe de Entrevista</h2>
+                <p style={{ margin: '0.2rem 0 0', opacity: 0.8, fontSize: '0.88rem' }}>{informeDe.studentName}</p>
+              </div>
+              <button onClick={() => setInformeDe(null)} style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.35)', color: 'white', borderRadius: '8px', width: '34px', height: '34px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <div style={{ padding: '1.6rem 1.8rem', display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+
+              {/* Resultado */}
+              <div>
+                <label style={etiquetaInforme}>Resultado de la entrevista</label>
+                <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => setInforme({ ...informe, satisfactoria: true })}
+                    style={{ flex: 1, minWidth: '160px', padding: '0.7rem 1rem', borderRadius: '10px', fontWeight: 800, cursor: 'pointer', border: informe.satisfactoria ? '2px solid #008C5A' : '1.5px solid #e2e8f0', background: informe.satisfactoria ? '#f0fdf4' : 'white', color: informe.satisfactoria ? '#166534' : '#64748b' }}
+                  >
+                    Satisfactoria
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInforme({ ...informe, satisfactoria: false })}
+                    style={{ flex: 1, minWidth: '160px', padding: '0.7rem 1rem', borderRadius: '10px', fontWeight: 800, cursor: 'pointer', border: !informe.satisfactoria ? '2px solid #d97706' : '1.5px solid #e2e8f0', background: !informe.satisfactoria ? '#fffbeb' : 'white', color: !informe.satisfactoria ? '#92400e' : '#64748b' }}
+                  >
+                    Requiere seguimiento
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label style={etiquetaInforme}>Fortalezas observadas <span style={{ color: '#94a3b8', textTransform: 'none', fontWeight: 500 }}>(una por línea)</span></label>
+                <textarea value={informe.fortalezas} onChange={(e) => setInforme({ ...informe, fortalezas: e.target.value })} rows={3} placeholder={'Ej:\nBuena comunicación con los padres\nMotivación por aprender'} style={areaInforme} />
+              </div>
+
+              <div>
+                <label style={etiquetaInforme}>Áreas a mejorar <span style={{ color: '#94a3b8', textTransform: 'none', fontWeight: 500 }}>(una por línea)</span></label>
+                <textarea value={informe.areasMejorar} onChange={(e) => setInforme({ ...informe, areasMejorar: e.target.value })} rows={3} placeholder={'Ej:\nHábitos de estudio\nManejo de la frustración'} style={areaInforme} />
+              </div>
+
+              <div>
+                <label style={etiquetaInforme}>Recomendaciones</label>
+                <textarea value={informe.recomendaciones} onChange={(e) => setInforme({ ...informe, recomendaciones: e.target.value })} rows={2} placeholder="Ej: Refuerzo en lectura comprensiva durante el primer trimestre." style={areaInforme} />
+              </div>
+
+              <div>
+                <label style={etiquetaInforme}>Observaciones generales del alumno</label>
+                <textarea value={informe.observaciones} onChange={(e) => setInforme({ ...informe, observaciones: e.target.value })} rows={4} placeholder="Resumen general de la entrevista con el alumno y su familia..." style={areaInforme} />
+              </div>
+
+              <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8' }}>
+                Este informe quedará disponible en "Aprobación y Matrícula" para tomar la decisión final del aspirante.
+              </p>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.6rem', borderTop: '1px solid #f1f5f9', paddingTop: '1.1rem' }}>
+                <button onClick={() => setInformeDe(null)} style={{ background: 'transparent', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '10px', padding: '0.7rem 1.3rem', fontWeight: 700, cursor: 'pointer' }}>
+                  Cancelar
+                </button>
+                <button onClick={handleGuardarInforme} disabled={guardandoInforme} style={{ background: guardandoInforme ? '#94a3b8' : '#008C5A', color: 'white', border: 'none', borderRadius: '10px', padding: '0.7rem 1.6rem', fontWeight: 800, cursor: guardandoInforme ? 'wait' : 'pointer' }}>
+                  {guardandoInforme ? 'Guardando…' : 'Guardar Informe'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {dialogs}
     </div>
   );
 }
+
+const etiquetaInforme: React.CSSProperties = { display: 'block', fontWeight: 800, color: '#475569', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.4rem' };
+const areaInforme: React.CSSProperties = { width: '100%', padding: '0.7rem 0.9rem', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '0.92rem', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' };

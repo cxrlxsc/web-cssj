@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { alumnoService } from '../../services/alumnoService';
+import { configService } from '../../services/configService';
 import { reingresoFinanceService } from '../../services/reingresoFinanceService';
 import { compressImage } from '../../utils/imageCompression';
 
@@ -16,6 +17,11 @@ export const PasosReingreso = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [student, setStudent] = useState<any>(null);
   const [talonarioGenerado, setTalonarioGenerado] = useState(false);
+  const [anioMatricula, setAnioMatricula] = useState<number | null>(null);
+
+  useEffect(() => {
+    configService.getAnioMatricula().then(setAnioMatricula).catch(() => setAnioMatricula(new Date().getFullYear()));
+  }, []);
   
   const [estadoComprobante, setEstadoComprobante] = useState<ComprobanteEstado>('pendiente');
   const [isUploading, setIsUploading] = useState(false);
@@ -110,7 +116,7 @@ export const PasosReingreso = () => {
       {/* HEADER DEL ALUMNO */}
       <div style={{ background: '#008C5A', color: 'white', padding: '2rem', borderRadius: '12px', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.8rem' }}>Panel de Matrícula 2026</h1>
+          <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.8rem' }}>Panel de Matrícula {anioMatricula ?? ''}</h1>
           <p style={{ margin: 0, opacity: 0.9 }}>{student.nombres} {student.apellidos} • {student.gradoMatricular}</p>
         </div>
         <button onClick={handleLogout} style={{ padding: '0.6rem 1.2rem', background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>

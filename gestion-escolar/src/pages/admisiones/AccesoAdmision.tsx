@@ -12,6 +12,7 @@ import './Admisiones.css';
 import { accessCodeService } from '../../services/accessCodeService';
 import { admissionService } from '../../services/admissionService';
 import { formatPhone } from '../../utils/formatters';
+import { useAnioMatricula } from '../../hooks/useAnioMatricula';
 import type { AccessCode } from '../../types'; // <-- Con el 'type' para evitar el error
 import { departamentosElSalvador, getMunicipiosByDepartamento, getDistritosByMunicipio } from '../../data/elSalvadorGeo';
 
@@ -22,6 +23,7 @@ function parseDateInput(dateInput: string): Date {
 
 export default function AccesoAdmision() {
   const navigate = useNavigate();
+  const anioMatricula = useAnioMatricula();
   const [step, setStep] = useState<'code' | 'form' | 'success'>('code');
   const [accessCode, setAccessCode] = useState('');
   const [validatedCode, setValidatedCode] = useState<AccessCode | null>(null);
@@ -119,7 +121,7 @@ export default function AccesoAdmision() {
 
       <section className="hero-admission" data-aos="fade-in">
         <span className="badge-premium" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}>
-          Admisiones {validatedCode?.year || '2026'}
+          Admisiones {validatedCode?.year || anioMatricula}
         </span>
         <h1 className="titulo-admission">
           Portal de <span style={{ color: '#FAB529' }}>Aspirantes</span>

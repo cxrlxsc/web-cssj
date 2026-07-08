@@ -1,7 +1,8 @@
 // src/pages/admin/AdminCodigos.tsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { accessCodeService } from '../../services/accessCodeService'; 
+import { accessCodeService } from '../../services/accessCodeService';
+import { configService } from '../../services/configService';
 import logoImg from '../../assets/logo.png'; // Asegúrate de que esta ruta sea correcta
 import './adminStyles/AdminCodigos.css';
 
@@ -9,6 +10,26 @@ export default function AdminCodigos() {
   const navigate = useNavigate();
   const [codigoGenerado, setCodigoGenerado] = useState('');
   const [generandoCodigo, setGenerandoCodigo] = useState(false);
+
+  // Año de matrícula del código: permite matrícula ordinaria (ciclo configurado)
+  // o extraordinaria (un alumno que llega a mitad de año a matricularse al ciclo
+  // en curso, o incluso adelantarse al siguiente). El año viaja con el código
+  // hasta la admisión, el carnet (AÑO+GRADO+ORDEN) y el contrato.
+  const [anioCodigo, setAnioCodigo] = useState<number>(new Date().getFullYear());
+  const [aniosDisponibles, setAniosDisponibles] = useState<number[]>([]);
+
+  useEffect(() => {
+    configService.getAnioMatricula().then(anioCiclo => {
+      const anioActual = new Date().getFullYear();
+      const opciones = Array.from(new Set([anioActual, anioCiclo, anioCiclo + 1])).sort();
+      setAniosDisponibles(opciones);
+      setAnioCodigo(anioCiclo); // por defecto, el ciclo configurado (matrícula ordinaria)
+    }).catch(() => {
+      const anioActual = new Date().getFullYear();
+      setAniosDisponibles([anioActual, anioActual + 1]);
+      setAnioCodigo(anioActual);
+    });
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('adminSession'); 
@@ -23,8 +44,8 @@ export default function AdminCodigos() {
 
       await accessCodeService.createCode({
         code: nuevoCodigo,
-        description: 'Código generado desde admin académico',
-        year: 2026,
+        description: `Código generado desde admin académico (matrícula ${anioCodigo})`,
+        year: anioCodigo,
         maxUses: 1, 
         currentUses: 0,
         isActive: true,
@@ -83,13 +104,34 @@ export default function AdminCodigos() {
             <p>
               Utiliza este botón para generar un código de acceso válido para 1 solo uso, necesario para que los aspirantes ingresen al formulario de admisiones.
             </p>
-            
-            <button 
+
+            {/* AÑO DE MATRÍCULA DEL CÓDIGO (ordinaria o extraordinaria) */}
+            <div style={{ margin: '0 0 1.5rem 0', textAlign: 'left', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1rem 1.2rem' }}>
+              <label style={{ display: 'block', fontWeight: 800, color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+                ¿Para qué año se matriculará el aspirante?
+              </label>
+              <select
+                value={anioCodigo}
+                onChange={(e) => setAnioCodigo(parseInt(e.target.value, 10))}
+                style={{ width: '100%', padding: '0.7rem 0.9rem', borderRadius: '10px', border: '1.5px solid #cbd5e1', fontSize: '1rem', fontWeight: 700, color: '#002a4a', background: 'white' }}
+              >
+                {aniosDisponibles.map(anio => (
+                  <option key={anio} value={anio}>
+                    {anio}{anio === new Date().getFullYear() ? ' — ciclo en curso (matrícula extraordinaria)' : ''}
+                  </option>
+                ))}
+              </select>
+              <p style={{ margin: '0.6rem 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                El año elegido define el ciclo de la admisión, el carnet del alumno (ej: {anioCodigo}1601) y el año lectivo del contrato.
+              </p>
+            </div>
+
+            <button
               className="btn-primary-gold"
-              onClick={handleGenerarCodigoPrueba} 
+              onClick={handleGenerarCodigoPrueba}
               disabled={generandoCodigo}
             >
-              {generandoCodigo ? 'Generando en Firebase...' : 'Generar Nuevo Código'}
+              {generandoCodigo ? 'Generando en Firebase...' : `Generar Código para Matrícula ${anioCodigo}`}
             </button>
 
             {/* CAJA DE ÉXITO ANIMADA */}

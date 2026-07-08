@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { admissionService } from '../../services/admissionService';
 import { admissionFinanceService } from '../../services/admissionFinanceService';
+import { alumnoService } from '../../services/alumnoService';
 import { useAdminDialogs } from '../../components/admin/useAdminDialogs';
 import logoImg from '../../assets/logo.png';
 import type { Admission } from '../../types';
@@ -53,9 +54,22 @@ export default function AdminContratosFirmados() {
     if (!ok) return;
     try {
       await admissionFinanceService.reviewContract(adm.id, 'approved', 'Admin_Registro');
+
+      // MATRÍCULA OFICIAL: el aspirante pasa a la colección 'alumnos'.
+      // Desde el siguiente ciclo iniciará sesión como ANTIGUO INGRESO (reingreso)
+      // con su carnet + PIN (últimos 4 dígitos del carnet).
+      const carnet = await alumnoService.crearAlumnoDesdeAdmision(adm);
+      await admissionService.updateAdmissionStatus(adm.id, 'enrolled', 'Admin_Registro');
+
       setSelected(null);
       await loadContratos();
-      await alert({ title: '¡Contrato aprobado!', message: 'El alumno queda matriculado oficialmente.', tone: 'success' });
+      await alert({
+        title: '¡Contrato aprobado!',
+        message: carnet
+          ? `El alumno queda matriculado oficialmente y ya forma parte del registro de alumnos.\n\nCarnet: ${carnet}\nPIN del portal de reingreso (próximos ciclos): ${carnet.slice(-4)}`
+          : 'El alumno queda matriculado, pero no tiene carnet asignado: apruébalo primero en "Aprobación y Matrícula" y vuelve a aprobar el contrato.',
+        tone: 'success',
+      });
     } catch {
       await alert({ title: 'Error', message: 'No se pudo aprobar el contrato.', tone: 'error' });
     }

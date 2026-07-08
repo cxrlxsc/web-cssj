@@ -2,9 +2,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { admissionService } from '../../services/admissionService';
+import { evaluationService } from '../../services/evaluationService';
 import { microsoftProvisioningService } from '../../services/microsoftProvisioningService';
 import logoImg from '../../assets/logo.png';
-import type { Admission } from '../../types';
+import type { Admission, AdmissionEvaluation } from '../../types';
 
 const VERDE = '#008C5A';
 const NAVY = '#002a4a';
@@ -16,6 +17,8 @@ type AlertData = { title: string; message: string; tone: 'success' | 'error' | '
 export default function AdminAprobacionMatricula() {
   const navigate = useNavigate();
   const [admissions, setAdmissions] = useState<Admission[]>([]);
+  const [evaluacionesPorAdmision, setEvaluacionesPorAdmision] = useState<Record<string, AdmissionEvaluation[]>>({});
+  const [informeAbierto, setInformeAbierto] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [provisioningId, setProvisioningId] = useState<string | null>(null);
@@ -34,8 +37,18 @@ export default function AdminAprobacionMatricula() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await admissionService.getAllAdmissions();
+      const [data, evals] = await Promise.all([
+        admissionService.getAllAdmissions(),
+        evaluationService.getAllEvaluations(),
+      ]);
       setAdmissions(data);
+
+      // Agrupamos las evaluaciones por aspirante para mostrar nota e informe
+      const porAdmision: Record<string, AdmissionEvaluation[]> = {};
+      for (const ev of evals) {
+        (porAdmision[ev.admissionId] ||= []).push(ev);
+      }
+      setEvaluacionesPorAdmision(porAdmision);
     } catch (e) {
       console.error('Error cargando admisiones:', e);
     } finally {
@@ -156,25 +169,90 @@ export default function AdminAprobacionMatricula() {
               <p style={{ color: '#94a3b8', padding: '1rem 0' }}>No hay aspirantes pendientes de aprobación.</p>
             ) : (
               <div style={{ display: 'grid', gap: '1rem', marginBottom: '2.5rem' }}>
-                {porAprobar.map(adm => (
-                  <div key={adm.id} style={cardStyle}>
-                    <div>
-                      <div style={{ fontWeight: 700, color: NAVY, fontSize: '1.05rem' }}>
-                        {adm.studentFirstName} {adm.studentLastName}
+                {porAprobar.map(adm => {
+                  const evals = evaluacionesPorAdmision[adm.id] || [];
+                  const academico = evals.find(e => e.phaseType === 'academic');
+                  const psicologico = evals.find(e => e.phaseType === 'psychological');
+                  const informe = adm.interviewResolution;
+                  const hayDetalle = !!informe || !!academico?.observations;
+                  const abierto = informeAbierto === adm.id;
+
+                  return (
+                    <div key={adm.id} style={{ ...cardStyle, flexDirection: 'column', alignItems: 'stretch' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                        <div>
+                          <div style={{ fontWeight: 700, color: NAVY, fontSize: '1.05rem' }}>
+                            {adm.studentFirstName} {adm.studentLastName}
+                          </div>
+                          <div style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.2rem' }}>
+                            {adm.gradeApplying} · Estado: <strong>{traducirEstado(adm.status)}</strong>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleAprobar(adm)}
+                          disabled={processingId === adm.id}
+                          style={{ ...btnPrimario, opacity: processingId === adm.id ? 0.6 : 1 }}
+                        >
+                          {processingId === adm.id ? 'Generando...' : 'Aprobar y Matricular'}
+                        </button>
                       </div>
-                      <div style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.2rem' }}>
-                        {adm.gradeApplying} · Estado: <strong>{traducirEstado(adm.status)}</strong>
+
+                      {/* RESUMEN DE EVALUACIONES (nota académica, asistencia y entrevista) */}
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', marginTop: '0.9rem' }}>
+                        {academico?.status === 'completed'
+                          ? <ChipResultado texto={`Examen Académico: ${academico.score ?? 0}/100`} tono={(academico.score ?? 0) >= 60 ? 'verde' : 'ambar'} />
+                          : <ChipResultado texto="Examen Académico: pendiente" tono="gris" />}
+                        {psicologico?.status === 'completed'
+                          ? <ChipResultado texto="Psicológica: Asistió" tono="verde" />
+                          : <ChipResultado texto="Psicológica: pendiente" tono="gris" />}
+                        {informe
+                          ? <ChipResultado texto={`Entrevista: ${informe.decision === 'approved' ? 'Satisfactoria' : 'Con seguimiento'}`} tono={informe.decision === 'approved' ? 'verde' : 'ambar'} />
+                          : <ChipResultado texto="Entrevista: sin informe" tono="gris" />}
+                        {hayDetalle && (
+                          <button
+                            onClick={() => setInformeAbierto(abierto ? null : adm.id)}
+                            style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: '#0068B3', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+                          >
+                            {abierto ? 'Ocultar informe' : 'Ver informe completo'}
+                          </button>
+                        )}
                       </div>
+
+                      {/* INFORME COMPLETO (entrevista + detalle académico) */}
+                      {abierto && (
+                        <div style={{ marginTop: '0.9rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '1.1rem 1.3rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                          {academico?.observations && (
+                            <SeccionInforme titulo="Examen Académico">
+                              <p style={parrafoInforme}>{academico.observations}</p>
+                            </SeccionInforme>
+                          )}
+                          {informe && (
+                            <SeccionInforme titulo="Informe de Entrevista (Psicología)">
+                              {informe.strengths?.length > 0 && (
+                                <div>
+                                  <strong style={subtituloInforme}>Fortalezas:</strong>
+                                  <ul style={listaInforme}>{informe.strengths.map((s, i) => <li key={i}>{s}</li>)}</ul>
+                                </div>
+                              )}
+                              {informe.areasToImprove?.length > 0 && (
+                                <div>
+                                  <strong style={subtituloInforme}>Áreas a mejorar:</strong>
+                                  <ul style={listaInforme}>{informe.areasToImprove.map((s, i) => <li key={i}>{s}</li>)}</ul>
+                                </div>
+                              )}
+                              {informe.recommendations && (
+                                <p style={parrafoInforme}><strong style={subtituloInforme}>Recomendaciones:</strong> {informe.recommendations}</p>
+                              )}
+                              {informe.message && (
+                                <p style={parrafoInforme}><strong style={subtituloInforme}>Observaciones:</strong> {informe.message}</p>
+                              )}
+                            </SeccionInforme>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <button
-                      onClick={() => handleAprobar(adm)}
-                      disabled={processingId === adm.id}
-                      style={{ ...btnPrimario, opacity: processingId === adm.id ? 0.6 : 1 }}
-                    >
-                      {processingId === adm.id ? 'Generando...' : 'Aprobar y Matricular'}
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -334,6 +412,34 @@ const btnGhost: React.CSSProperties = {
 };
 
 // ---------- Subcomponentes / estilos ----------
+
+function ChipResultado({ texto, tono }: { texto: string; tono: 'verde' | 'ambar' | 'gris' }) {
+  const colores = tono === 'verde'
+    ? { bg: '#dcfce7', fg: '#166534' }
+    : tono === 'ambar'
+      ? { bg: '#fef3c7', fg: '#92400e' }
+      : { bg: '#f1f5f9', fg: '#64748b' };
+  return (
+    <span style={{ background: colores.bg, color: colores.fg, padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 700 }}>
+      {texto}
+    </span>
+  );
+}
+
+function SeccionInforme({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div style={{ fontWeight: 800, color: NAVY, fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.4rem' }}>
+        {titulo}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>{children}</div>
+    </div>
+  );
+}
+
+const parrafoInforme: React.CSSProperties = { margin: 0, color: '#475569', fontSize: '0.9rem', lineHeight: 1.55, whiteSpace: 'pre-line' };
+const subtituloInforme: React.CSSProperties = { color: '#334155' };
+const listaInforme: React.CSSProperties = { margin: '0.2rem 0 0', paddingLeft: '1.3rem', color: '#475569', fontSize: '0.9rem', lineHeight: 1.55 };
 
 function CampoCredencial({ label, valor, onCopy }: { label: string; valor: string; onCopy: (v: string) => void }) {
   return (

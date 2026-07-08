@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { alumnoService } from '../../services/alumnoService';
+import { configService } from '../../services/configService';
 import type { AlumnoReingreso } from '../../types/reingreso';
 
 // Estilos reutilizables para mantener el código limpio
@@ -16,6 +17,11 @@ export const FormularioReingreso = () => {
   const [student, setStudent] = useState<AlumnoReingreso | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [anioMatricula, setAnioMatricula] = useState<number | null>(null);
+
+  useEffect(() => {
+    configService.getAnioMatricula().then(setAnioMatricula).catch(() => setAnioMatricula(new Date().getFullYear()));
+  }, []);
 
   useEffect(() => {
     const sessionCarnet = localStorage.getItem('studentSession');
@@ -150,7 +156,7 @@ export const FormularioReingreso = () => {
       {/* HEADER PRINCIPAL */}
       <div style={{ background: '#008C5A', color: 'white', padding: '2rem', borderRadius: '12px', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.8rem' }}>Ratificación de Matrícula 2026</h1>
+          <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.8rem' }}>Ratificación de Matrícula {anioMatricula ?? ''}</h1>
           <p style={{ margin: 0, opacity: 0.9 }}>Verifica y actualiza tu información</p>
         </div>
         <div style={{ background: 'white', color: '#008C5A', padding: '1rem 1.5rem', borderRadius: '8px', textAlign: 'center' }}>

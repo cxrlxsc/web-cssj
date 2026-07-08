@@ -76,7 +76,7 @@ export default function AdminRecursosInternos() {
               </div>
               <div className="recurso-text">
                 <h3>Colecturía y Aranceles</h3>
-                <p>Comprobación bancaria de recibos de matrícula cargados por alumnos de Reingreso y Nuevo Ingreso.</p>
+                <p>Revisión de recibos de matrícula, historial de pagos, cuotas por grado y configuración del ciclo escolar.</p>
               </div>
             </div>
             <Link to="/admin/colecturia" className="btn-recurso btn-green">

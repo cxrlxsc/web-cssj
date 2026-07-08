@@ -7,17 +7,23 @@
 //      parsea en el navegador — es la vía para importar los ~2196 alumnos de una vez.
 //   2. src/data/alumnosParaImportar.ts: filas corregidas a mano (p. ej. las que el
 //      volcado trae con tabuladores rotos). Estas tienen prioridad sobre el archivo.
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { alumnosParaImportar } from '../../data/alumnosParaImportar';
 import { parseAlumnosSqlDump, type ErrorParseo } from '../../utils/alumnoSqlParser';
 import { alumnoService, mapSqlRowToAlumno, pinPorDefecto, GRADUADO, type ResultadoImportacion } from '../../services/alumnoService';
+import { configService } from '../../services/configService';
 import type { AlumnoSqlRow } from '../../types/reingreso';
 
 export const AdminImportarAlumnos = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [anioMatricula, setAnioMatricula] = useState<number>(new Date().getFullYear());
   const [importando, setImportando] = useState(false);
+
+  useEffect(() => {
+    configService.getAnioMatricula().then(setAnioMatricula).catch(() => { /* usa el año actual */ });
+  }, []);
   const [resultado, setResultado] = useState<ResultadoImportacion | null>(null);
   const [rowsArchivo, setRowsArchivo] = useState<AlumnoSqlRow[]>([]);
   const [erroresParseo, setErroresParseo] = useState<ErrorParseo[]>([]);
@@ -36,15 +42,15 @@ export const AdminImportarAlumnos = () => {
   const resumen = useMemo(() => {
     let graduados = 0, activos = 0, inactivos = 0;
     for (const row of rows) {
-      const alumno = mapSqlRowToAlumno(row);
+      const alumno = mapSqlRowToAlumno(row, anioMatricula);
       if (alumno.gradoMatricular === GRADUADO) graduados++;
       if (alumno.estado === 'ACTIVO') activos++; else inactivos++;
     }
     return { graduados, activos, inactivos, matriculables: rows.length - graduados };
-  }, [rows]);
+  }, [rows, anioMatricula]);
 
   const preview = useMemo(() => rows.slice(0, 10).map(row => {
-    const alumno = mapSqlRowToAlumno(row);
+    const alumno = mapSqlRowToAlumno(row, anioMatricula);
     return {
       carnet: alumno.carnet,
       nombre: `${alumno.nombres} ${alumno.apellidos}`.trim(),
@@ -54,7 +60,7 @@ export const AdminImportarAlumnos = () => {
       pin: pinPorDefecto(row),
       estado: alumno.estado,
     };
-  }), [rows]);
+  }), [rows, anioMatricula]);
 
   const handleArchivo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -183,7 +189,7 @@ export const AdminImportarAlumnos = () => {
           <>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
               {statBox(rows.length, 'Total a importar', '#0f172a')}
-              {statBox(resumen.matriculables, 'Con grado 2026 asignable', '#008C5A')}
+              {statBox(resumen.matriculables, `Con grado ${anioMatricula} asignable`, '#008C5A')}
               {statBox(resumen.graduados, 'Ya graduados', '#64748b')}
               {statBox(resumen.activos, 'Estado ACTIVO', '#0068B3')}
               {statBox(resumen.inactivos, 'Estado INACTIVO', '#b91c1c')}

@@ -344,6 +344,7 @@ export default function AdminInstitucional() {
                         <option value="Institucional">Institucional</option>
                         <option value="Pastoral">Pastoral</option>
                         <option value="Deportes">Deportes</option>
+                        <option value="Asueto">Asueto / Receso</option>
                       </select>
                     </div>
                   </div>

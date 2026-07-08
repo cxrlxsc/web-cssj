@@ -12,6 +12,7 @@
 import {
   doc,
   getDoc,
+  setDoc,
   updateDoc,
   writeBatch,
   Timestamp,
@@ -19,7 +20,9 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { configService } from './configService';
 import type { AlumnoReingreso, AlumnoSqlRow, ContactoFamiliar } from '../types/reingreso';
+import type { Admission } from '../types';
 
 const COLECCION_ALUMNOS = 'alumnos';
 
@@ -45,8 +48,13 @@ const CADENA_GENERAL = ['14', '15', '16', '01', '02', '03', '04', '05', '06', '0
 
 export const GRADUADO = 'Graduado';
 
-/** Año lectivo que se está matriculando en el portal de reingreso. */
-export const ANIO_MATRICULA = 2026;
+/**
+ * Año base de la migración inicial desde SQL Server. Los documentos de alumnos
+ * que no tengan 'anioCalculo' (importados antes de existir ese campo) se asumen
+ * calculados para este año. El año de matrícula ACTIVO vive en la configuración
+ * del ciclo escolar (configService) y puede cambiar año con año.
+ */
+const ANIO_BASE_IMPORTACION = 2026;
 
 /** Devuelve el código de grado a partir de un código ('02') o de un nombre ('2° Grado'). */
 export function normalizarCodigoGrado(grado: string | null | undefined): string {
@@ -95,6 +103,32 @@ export function gradoEnAnio(gradoIngreso: string | null | undefined, anhoIngreso
   if (!codigo) return '';
   const resultado = avanzarCodigo(codigo, Math.max(0, anio - anhoIngreso));
   return resultado === 'GRAD' ? GRADUADO : (GRADO_NOMBRES[resultado] ?? resultado);
+}
+
+/** Avanza un grado (por NOMBRE) N años. 'Graduado' y nombres desconocidos quedan igual. */
+function avanzarNombreGrado(nombre: string, anios: number): string {
+  if (!nombre || nombre === GRADUADO || anios <= 0) return nombre;
+  const codigo = normalizarCodigoGrado(nombre);
+  if (!codigo) return nombre;
+  const resultado = avanzarCodigo(codigo, anios);
+  return resultado === 'GRAD' ? GRADUADO : (GRADO_NOMBRES[resultado] ?? nombre);
+}
+
+/**
+ * Ajusta los grados del alumno al ciclo escolar ACTIVO.
+ * Los grados guardados se calcularon para 'anioCalculo' (ej: 2026); si el colegio
+ * ya está matriculando un año posterior (ej: 2027), se avanzan automáticamente
+ * sin necesidad de re-importar ni modificar los documentos.
+ */
+function ajustarGradosAlCiclo(alumno: AlumnoReingreso, anioActivo: number): AlumnoReingreso {
+  const anioCalculo = alumno.anioCalculo || ANIO_BASE_IMPORTACION;
+  const diferencia = anioActivo - anioCalculo;
+  if (diferencia <= 0) return alumno;
+  return {
+    ...alumno,
+    gradoActual: avanzarNombreGrado(alumno.gradoActual, diferencia),
+    gradoMatricular: avanzarNombreGrado(alumno.gradoMatricular, diferencia),
+  };
 }
 
 // ============================================
@@ -148,23 +182,24 @@ function contacto(
   };
 }
 
-/** Convierte una fila de la tabla [dbo].[alumno] al documento de Firestore. */
-export function mapSqlRowToAlumno(row: AlumnoSqlRow): AlumnoReingreso {
+/** Convierte una fila de la tabla [dbo].[alumno] al documento de Firestore.
+ *  `anioMatricula` es el ciclo que se está matriculando (viene de la configuración). */
+export function mapSqlRowToAlumno(row: AlumnoSqlRow, anioMatricula: number = ANIO_BASE_IMPORTACION): AlumnoReingreso {
   const siNo = (v?: string | null) => (s(v).toUpperCase() === 'SI' ? 'SI' : 'NO');
 
   // Grado actual y grado a matricular:
   // - Si la fila trae grado_actual explícito, se usa ese y se avanza 1 año.
   // - Si no, se calcula desde grado_ingreso avanzando los años transcurridos
   //   hasta el año de matrícula (los que ya terminaron quedan como 'Graduado').
-  const anhoIngreso = parseInt(s(row.anho_ingreso), 10) || ANIO_MATRICULA;
+  const anhoIngreso = parseInt(s(row.anho_ingreso), 10) || anioMatricula;
   let gradoActual: string;
   let gradoMatricular: string;
   if (s(row.grado_actual)) {
     gradoActual = nombreGrado(row.grado_actual);
-    gradoMatricular = gradoEnAnio(row.grado_actual, ANIO_MATRICULA - 1, ANIO_MATRICULA);
+    gradoMatricular = gradoEnAnio(row.grado_actual, anioMatricula - 1, anioMatricula);
   } else {
-    gradoActual = gradoEnAnio(row.grado_ingreso, anhoIngreso, Math.max(anhoIngreso, ANIO_MATRICULA - 1));
-    gradoMatricular = gradoEnAnio(row.grado_ingreso, anhoIngreso, ANIO_MATRICULA);
+    gradoActual = gradoEnAnio(row.grado_ingreso, anhoIngreso, Math.max(anhoIngreso, anioMatricula - 1));
+    gradoMatricular = gradoEnAnio(row.grado_ingreso, anhoIngreso, anioMatricula);
   }
 
   return {
@@ -172,6 +207,7 @@ export function mapSqlRowToAlumno(row: AlumnoSqlRow): AlumnoReingreso {
     anioIngreso: s(row.anho_ingreso),
     gradoActual,
     gradoMatricular,
+    anioCalculo: anioMatricula, // para poder avanzar los grados en ciclos futuros
 
     // Acceso
     pin: pinPorDefecto(row),
@@ -251,12 +287,15 @@ export interface ResultadoImportacion {
 }
 
 export const alumnoService = {
-  /** Obtiene un alumno por carnet (o null si no existe). */
+  /** Obtiene un alumno por carnet (o null si no existe).
+   *  Los grados se ajustan automáticamente al ciclo escolar activo. */
   async getAlumno(carnet: string): Promise<AlumnoReingreso | null> {
     const limpio = (carnet || '').trim();
     if (!limpio) return null;
     const snap = await getDoc(doc(db, COLECCION_ALUMNOS, limpio));
-    return snap.exists() ? (snap.data() as AlumnoReingreso) : null;
+    if (!snap.exists()) return null;
+    const anioActivo = await configService.getAnioMatricula();
+    return ajustarGradosAlCiclo(snap.data() as AlumnoReingreso, anioActivo);
   },
 
   /**
@@ -296,18 +335,132 @@ export const alumnoService = {
     });
   },
 
-  /** Lista completa (para paneles administrativos). */
+  /** Lista completa (para paneles administrativos), con grados ajustados al ciclo activo. */
   async getAllAlumnos(): Promise<AlumnoReingreso[]> {
-    const snap = await getDocs(collection(db, COLECCION_ALUMNOS));
-    return snap.docs.map(d => d.data() as AlumnoReingreso);
+    const [snap, anioActivo] = await Promise.all([
+      getDocs(collection(db, COLECCION_ALUMNOS)),
+      configService.getAnioMatricula(),
+    ]);
+    return snap.docs.map(d => ajustarGradosAlCiclo(d.data() as AlumnoReingreso, anioActivo));
+  },
+
+  /**
+   * MATRÍCULA OFICIAL DE NUEVO INGRESO: convierte una admisión (con contrato
+   * firmado y aprobado) en un documento de la colección 'alumnos'.
+   * A partir del siguiente ciclo, el alumno inicia sesión en el portal de
+   * REINGRESO con su carnet + PIN (últimos 4 dígitos del carnet) y sigue el
+   * mismo proceso que los alumnos antiguos.
+   * Devuelve el carnet, o null si la admisión aún no tiene carnet asignado.
+   */
+  async crearAlumnoDesdeAdmision(admission: Admission): Promise<string | null> {
+    const carnet = (admission.carnet || '').trim();
+    if (!carnet) return null;
+
+    const anio = admission.enrollmentYear || await configService.getAnioMatricula();
+    const grado = nombreGrado(admission.gradeApplying) || admission.gradeApplying;
+
+    const nacimiento = admission.dateOfBirth instanceof Date && !isNaN(admission.dateOfBirth.getTime())
+      ? admission.dateOfBirth.toISOString().split('T')[0]
+      : '';
+
+    // El responsable registrado en la admisión se coloca como padre, madre o
+    // encargado según el parentesco declarado; el resto se completa al ratificar.
+    const contactoVacio: ContactoFamiliar = { nombre: '', profesion: '', lugarTrabajo: '', cargo: '', telefonoFijo: '', telefonoTrabajo: '', telefonoMovil: '', email: '', religion: '' };
+    const responsable: ContactoFamiliar = {
+      ...contactoVacio,
+      nombre: `${admission.parentFirstName} ${admission.parentLastName}`.trim(),
+      telefonoMovil: admission.parentPhone || '',
+      email: admission.parentEmail || '',
+    };
+    const parentesco = (admission.parentRelationship || '').toLowerCase();
+    const esMadre = parentesco.includes('madre') || parentesco.includes('mam');
+    const esPadre = parentesco.includes('padre') || parentesco.includes('pap');
+
+    const alumno: AlumnoReingreso = {
+      // Ingreso
+      anioIngreso: String(anio),
+      gradoActual: grado,
+      gradoMatricular: grado, // se matricula a este grado en su año de ingreso
+      anioCalculo: anio,      // en ciclos futuros, los grados avanzan solos
+
+      // Acceso al portal de reingreso
+      pin: carnet.slice(-4),
+      estado: 'ACTIVO',
+
+      // Alumno
+      carnet,
+      nie: '',
+      nombres: admission.studentFirstName || '',
+      apellidos: admission.studentLastName || '',
+      sexo: admission.gender === 'F' ? 'FEMENINO' : 'MASCULINO',
+      fechaNac: nacimiento,
+      nacionalidad: 'SALVADOREÑA',
+      zona: '',
+      departamento: admission.departamento || '',
+      municipio: [admission.municipio, admission.distrito].filter(Boolean).join(', '),
+      telefono: admission.parentPhone || '',
+      direccion: admission.direccion || '',
+      viveCon: '',
+      religion: '',
+      tipoSangre: '',
+      enfermedades: 'Ninguna',
+      alergias: 'Ninguna',
+      bautizado: 'NO',
+      comunion: 'NO',
+      confirmado: 'NO',
+      cursoParvularia: 'NO',
+      centroProcedencia: admission.previousSchool || '',
+
+      // Familia
+      padre: esPadre ? responsable : contactoVacio,
+      madre: esMadre ? responsable : contactoVacio,
+      encargado: (!esPadre && !esMadre) ? responsable : contactoVacio,
+      responsable: (admission.parentRelationship || 'ENCARGADO').toUpperCase(),
+
+      emergencia: {
+        llamarA: responsable.nombre,
+        telefono: admission.parentPhone || '',
+      },
+
+      transporte: { tipo: 'VEHICULO PROPIO', nombreMotorista: '', placa: '', telefonoMotorista: '' },
+
+      facturacion: {
+        nombreCompleto: responsable.nombre,
+        direccion: admission.direccion || '',
+        telefono: admission.parentPhone || '',
+        email: admission.parentEmail || '',
+        dui: '',
+        nit: '',
+        profesion: '',
+        parentesco: (admission.parentRelationship || '').toUpperCase(),
+      },
+
+      importadoDesdeSql: false,
+    };
+
+    await setDoc(
+      doc(db, COLECCION_ALUMNOS, carnet),
+      {
+        ...alumno,
+        origen: 'nuevo_ingreso',
+        admissionId: admission.id,
+        createdAt: Timestamp.fromDate(new Date()),
+        updatedAt: Timestamp.fromDate(new Date()),
+      },
+      { merge: true }
+    );
+
+    return carnet;
   },
 
   /**
    * Importación masiva desde la tabla [dbo].[alumno] de SQL Server.
    * Sube en lotes de 400 (límite de Firestore: 500 operaciones por batch).
    * Usa merge para no borrar campos ya existentes si se re-ejecuta.
+   * Los grados se calculan para el año de matrícula ACTIVO (configuración del ciclo).
    */
-  async importAlumnosDesdeSql(rows: AlumnoSqlRow[]): Promise<ResultadoImportacion> {
+  async importAlumnosDesdeSql(rows: AlumnoSqlRow[], anioMatricula?: number): Promise<ResultadoImportacion> {
+    const anio = anioMatricula ?? await configService.getAnioMatricula();
     const resultado: ResultadoImportacion = { total: rows.length, importados: 0, errores: [] };
     const TAMANO_LOTE = 400;
 
@@ -320,7 +473,7 @@ export const alumnoService = {
         try {
           const carnet = s(row.carnet);
           if (!carnet) throw new Error('Fila sin carnet');
-          const alumno = mapSqlRowToAlumno(row);
+          const alumno = mapSqlRowToAlumno(row, anio);
           batch.set(
             doc(db, COLECCION_ALUMNOS, carnet),
             { ...alumno, createdAt: Timestamp.fromDate(new Date()), updatedAt: Timestamp.fromDate(new Date()) },

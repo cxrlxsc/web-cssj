@@ -1,10 +1,12 @@
 // src/components/home/CallToAction.tsx
 import { Link } from 'react-router-dom';
-import Img2 from '../../../public/img2.jpeg'; 
+import Img2 from '../../../public/img2.jpeg';
+import { useAnioMatricula } from '../../hooks/useAnioMatricula';
 
 
 export const CallToAction = () => {
   const imagenEjemplo = Img2;
+  const anioMatricula = useAnioMatricula();
 
   return (
     <div className="seccion-inscripcion-premium">
@@ -13,7 +15,7 @@ export const CallToAction = () => {
         {/* COLUMNA IZQUIERDA: TEXTO */}
         <div className="inscripcion-info">
           <span className="eyebrow">Asegura tu futuro hoy</span>
-          <h2 className="titulo-seccion">Inscripciones<br/>Abiertas 2026</h2>
+          <h2 className="titulo-seccion">Inscripciones<br/>Abiertas {anioMatricula}</h2>
           <p>
             Comienza tu solicitud en línea y únete a la Familia Salesiana del Colegio San José. ¡Cupos Limitados!
           </p>

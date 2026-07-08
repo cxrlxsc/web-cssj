@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { doc, getDoc, type DocumentData } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { alumnoService } from '../../services/alumnoService';
+import { configService } from '../../services/configService';
 import './ContratoImpresion.css';
 
 export default function ContratoImpresion() {
@@ -25,15 +26,24 @@ export default function ContratoImpresion() {
     const d = new Date();
     const dia = numeros[d.getDate()] || d.getDate().toString();
     const mes = meses[d.getMonth()];
-    
-    // Diccionario simple para los años próximos
-    const aniosLetras: Record<number, string> = {
-      2024: 'dos mil veinticuatro',
-      2025: 'dos mil veinticinco',
-      2026: 'dos mil veintiséis',
-      2027: 'dos mil veintisiete'
+
+    // Año en letras de forma genérica (2000-2099), para que sirva en cualquier ciclo futuro
+    const decenas: Record<number, string> = { 30: 'treinta', 40: 'cuarenta', 50: 'cincuenta', 60: 'sesenta', 70: 'setenta', 80: 'ochenta', 90: 'noventa' };
+    const dosDigitosEnLetras = (n: number): string => {
+      if (n === 0) return '';
+      if (n <= 29) {
+        const especiales: Record<number, string> = { 1: 'uno', 21: 'veintiuno', 31: 'treinta y uno' };
+        return especiales[n] || numeros[n];
+      }
+      const decena = Math.floor(n / 10) * 10;
+      const unidad = n % 10;
+      const unidadTexto = unidad === 1 ? 'uno' : numeros[unidad];
+      return unidad === 0 ? decenas[decena] : `${decenas[decena]} y ${unidadTexto}`;
     };
-    const anio = aniosLetras[d.getFullYear()] || d.getFullYear().toString();
+    const anioNum = d.getFullYear();
+    const anio = anioNum >= 2000 && anioNum <= 2099
+      ? `dos mil ${dosDigitosEnLetras(anioNum - 2000)}`.trim()
+      : anioNum.toString();
 
     return `${dia} días del mes de ${mes} del año ${anio}`;
   };
@@ -64,6 +74,14 @@ export default function ContratoImpresion() {
     const source = searchParams.get('source');
 
     const loadData = async () => {
+      // Año lectivo del ciclo activo. Las cuotas dependen del GRADO del alumno
+      // (aranceles por grado administrados en la colecturía).
+      const config = await configService.getConfigMatricula();
+      const cuotasDelGrado = async (grado: string) => {
+        const arancel = await configService.getArancelParaGrado(grado);
+        return { matricula: arancel.cuotaMatricula.toFixed(2), mensualidad: arancel.cuotaMensualidad.toFixed(2) };
+      };
+
       if (source === 'nuevo_ingreso') {
         const admissionId = searchParams.get('id');
         if (!admissionId) {
@@ -79,7 +97,8 @@ export default function ContratoImpresion() {
           if (admissionSnap.exists()) {
             const admission = admissionSnap.data() as DocumentData;
             const expediente = admission.expedienteDigital || {};
-            
+            const cuotas = await cuotasDelGrado(admission.gradeApplying);
+
             setStudentData({
               nombre_responsable: expediente.sostenedor_nombre || '________________________',
               nacionalidad_responsable: 'Salvadoreña',
@@ -96,9 +115,9 @@ export default function ContratoImpresion() {
               grado_estudiante: admission.gradeApplying,
               nivel_estudiante: admission.gradeApplying.includes('Parvularia') || admission.gradeApplying.includes('Kinder') ? 'Parvularia' : 'Educación Básica / Media',
               
-              anio_lectivo: admission.enrollmentYear?.toString() || new Date().getFullYear().toString(),
-              cuota_matricula: '145.00', // Considerar obtener esto de la configuración de Firebase
-              cuota_mensual: '85.00',   // Considerar obtener esto de la configuración de Firebase
+              anio_lectivo: admission.enrollmentYear?.toString() || config.anioMatricula.toString(),
+              cuota_matricula: cuotas.matricula,
+              cuota_mensual: cuotas.mensualidad,
               fecha_emision: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }),
               fecha_emision_letras: getFechaLetras()
             });
@@ -127,6 +146,7 @@ export default function ContratoImpresion() {
           }
 
           const fact = data.facturacion;
+          const cuotas = await cuotasDelGrado(data.gradoMatricular);
           setStudentData({
             nombre_responsable: fact?.nombreCompleto || 'PADRE / MADRE / ENCARGADO',
             nacionalidad_responsable: 'Salvadoreña',
@@ -141,9 +161,9 @@ export default function ContratoImpresion() {
             nombre_estudiante: `${data.nombres} ${data.apellidos}`,
             grado_estudiante: data.gradoMatricular,
             nivel_estudiante: data.gradoMatricular.includes('Kinder') || data.gradoMatricular.includes('Preparatoria') ? 'Parvularia' : 'BÁSICA / MEDIA',
-            anio_lectivo: '2026',
-            cuota_matricula: '145.00',
-            cuota_mensual: '85.00',
+            anio_lectivo: config.anioMatricula.toString(),
+            cuota_matricula: cuotas.matricula,
+            cuota_mensual: cuotas.mensualidad,
             fecha_emision: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }),
             fecha_emision_letras: getFechaLetras()
           });

@@ -4,38 +4,62 @@ import { Link } from 'react-router-dom';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/config'; // Asegúrate de que la ruta sea correcta
 
-export const NewsPreview = () => {
-  
-  // 1. Estado para guardar las noticias reales de Firebase
-  const [publicaciones, setPublicaciones] = useState<any[]>([]);
+interface NoticiaPublica {
+  id: string;
+  titulo?: string;
+  fecha?: string;
+  extracto?: string;
+  imagen?: string;
+  tag?: string;
+  visitas?: string;
+}
 
-  // 2. Fetch para ir a buscar las noticias cuando carga la página
+interface EventoAgenda {
+  id: string;
+  titulo?: string;
+  fecha?: string;      // 'YYYY-MM-DD'
+  categoria?: string;
+  tag?: string;
+  dia?: string;
+  mes?: string;
+}
+
+export const NewsPreview = () => {
+
+  // 1. Estados para las noticias y la agenda de eventos reales de Firebase
+  //    (ambos se administran desde /admin/institucional: Gestor de Noticias y Agenda de Eventos)
+  const [publicaciones, setPublicaciones] = useState<NoticiaPublica[]>([]);
+  const [agenda, setAgenda] = useState<EventoAgenda[]>([]);
+  const [cargando, setCargando] = useState(true);
+
+  // 2. Fetch de noticias y eventos cuando carga la página
   useEffect(() => {
-    const obtenerNoticias = async () => {
+    const obtenerContenido = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "noticias"));
-        const listaNoticias: any[] = [];
-        querySnapshot.forEach((doc) => {
-          listaNoticias.push({ id: doc.id, ...doc.data() });
-        });
-        
-        // Guardamos las noticias en el estado
-        setPublicaciones(listaNoticias);
+        const [noticiasSnap, eventosSnap] = await Promise.all([
+          getDocs(collection(db, "noticias")),
+          getDocs(collection(db, "eventos")),
+        ]);
+
+        const listaNoticias: NoticiaPublica[] = noticiasSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Mostramos las más recientes primero (las últimas agregadas) y máximo 4 en el home
+        setPublicaciones(listaNoticias.reverse().slice(0, 4));
+
+        const listaEventos: EventoAgenda[] = eventosSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Agenda: próximos eventos primero (por fecha), máximo 4 en el home
+        listaEventos.sort((a, b) => new Date(a.fecha || 0).getTime() - new Date(b.fecha || 0).getTime());
+        const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+        const proximos = listaEventos.filter(e => new Date(`${e.fecha}T23:59:59`) >= hoy);
+        setAgenda((proximos.length > 0 ? proximos : listaEventos).slice(0, 4));
       } catch (error) {
-        console.error("Error al cargar las noticias:", error);
+        console.error("Error al cargar noticias y eventos:", error);
+      } finally {
+        setCargando(false);
       }
     };
 
-    obtenerNoticias();
+    obtenerContenido();
   }, []);
-
-  // Datos para la columna derecha (Agenda) - Los mantenemos estáticos por ahora
-  const agenda = [
-    { dia: "25", mes: "May", tag: "Académico", titulo: "Trámite de reingreso para Ciclo 02-2026. Excepto las especialidades a distancia." },
-    { dia: "27", mes: "May", tag: "Evento", titulo: "Misa de graduandos de Bachillerato General y Técnico." },
-    { dia: "27", mes: "May", tag: "Evento", titulo: "Tech Challenge (Todas las especialidades) para Instituciones de Educación." },
-    { dia: "01", mes: "Jun", tag: "Evento", titulo: "Ceremonias de graduación promoción 2026." }
-  ];
 
   return (
     <section id="noticias" className="seccion-portal-noticias">
@@ -67,7 +91,9 @@ export const NewsPreview = () => {
           <div className="publicaciones-grid">
             {/* Si no hay noticias, mostramos un mensaje */}
             {publicaciones.length === 0 ? (
-              <p style={{ color: '#64748b', fontStyle: 'italic' }}>Cargando publicaciones recientes...</p>
+              <p style={{ color: '#64748b', fontStyle: 'italic' }}>
+                {cargando ? 'Cargando publicaciones recientes...' : 'Aún no hay publicaciones. El colegio compartirá novedades pronto.'}
+              </p>
             ) : (
               // Si hay noticias, las mapeamos
               publicaciones.map((pub, index) => (
@@ -104,18 +130,24 @@ export const NewsPreview = () => {
           </div>
 
           <div className="agenda-list">
-            {agenda.map((item, index) => (
-              <div key={index} className="agenda-item" data-aos="fade-left" data-aos-delay={400 + (index * 100)}>
-                <div className="agenda-fecha-box">
-                  <span className="dia">{item.dia}</span>
-                  <span className="mes">{item.mes}</span>
+            {agenda.length === 0 ? (
+              <p style={{ color: '#64748b', fontStyle: 'italic' }}>
+                {cargando ? 'Cargando agenda...' : 'No hay eventos programados por el momento.'}
+              </p>
+            ) : (
+              agenda.map((item, index) => (
+                <div key={item.id || index} className="agenda-item" data-aos="fade-left" data-aos-delay={400 + (index * 100)}>
+                  <div className="agenda-fecha-box">
+                    <span className="dia">{item.dia}</span>
+                    <span className="mes">{item.mes}</span>
+                  </div>
+                  <div className="agenda-content">
+                    <span className="agenda-tag">{item.categoria || item.tag || 'Evento'}</span>
+                    <p className="agenda-titulo">{item.titulo}</p>
+                  </div>
                 </div>
-                <div className="agenda-content">
-                  <span className="agenda-tag">{item.tag}</span>
-                  <p className="agenda-titulo">{item.titulo}</p>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
           <div style={{ marginTop: '2.5rem' }} data-aos="zoom-in" data-aos-delay="800">

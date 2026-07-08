@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
+import { configService } from '../../services/configService';
 import logoImg from '../../assets/logo.png';
 import './adminStyles/AdminContrato.css';
 
@@ -131,6 +132,18 @@ export default function AdminContrato() {
     localStorage.removeItem('adminSession'); 
     navigate('/admin/login');
   };
+
+  // Los datos de muestra de la vista previa usan el ciclo escolar activo
+  useEffect(() => {
+    configService.getConfigMatricula().then(config => {
+      setStudentData(prev => ({
+        ...prev,
+        anio_lectivo: config.anioMatricula.toString(),
+        cuota_matricula: config.cuotaMatricula.toFixed(2),
+        cuota_mensual: config.cuotaMensualidad.toFixed(2),
+      }));
+    }).catch(() => { /* se queda la muestra por defecto */ });
+  }, []);
 
   useEffect(() => {
     const fetchTemplate = async () => {

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Barcode from 'react-barcode';
 import { alumnoService } from '../../services/alumnoService';
+import { configService } from '../../services/configService';
 import { generarTalonario, type TalonarioInfo } from '../../utils/npeGenerator';
 import logoImg from '../../assets/logo.png'; 
 
@@ -15,67 +16,72 @@ export const TalonarioPrint = () => {
   const [datosTalonario, setDatosTalonario] = useState<TalonarioInfo | null>(null);
 
   useEffect(() => {
-    // 1. Verificamos primero si viene con un PASE VIP de Nuevo Ingreso por la URL
-    const source = searchParams.get('source');
-    
-    if (source === 'nuevo_ingreso') {
-      // Es un aspirante de Nuevo Ingreso. Armamos sus datos desde la URL.
-      const nombreUrl = searchParams.get('nombre') || '';
-      const apellidoUrl = searchParams.get('apellido') || '';
-      const gradoUrl = searchParams.get('grado') || '';
-      const codigoAspirante = searchParams.get('codigo') || 'ASP-0000';
-      // El NPE exige un carnet numérico de 8 dígitos; el código trae letras y guion (ej: CSSJ-0042)
-      const carnetNumerico = (codigoAspirante.match(/\d+/g)?.join('') || '0').padStart(8, '0').slice(-8);
+    (async () => {
+      // Datos del ciclo escolar activo (año y fecha límite). El monto depende
+      // del GRADO del alumno (aranceles por grado en la colecturía).
+      const config = await configService.getConfigMatricula();
+      const concepto = `Matrícula ${config.anioMatricula} y Primera Cuota`;
+      const fechaLimite = new Date(`${config.fechaLimitePago}T00:00:00`);
 
-      const aspiranteData = {
-        carnet: carnetNumerico, // Carnet temporal numérico derivado del código del aspirante
-        nie: 'PENDIENTE',
-        nombres: nombreUrl,
-        apellidos: apellidoUrl,
-        gradoMatricular: gradoUrl
-      };
-      
-      setStudent(aspiranteData);
+      // 1. Verificamos primero si viene con un PASE VIP de Nuevo Ingreso por la URL
+      const source = searchParams.get('source');
 
-      const talonarioGenerado = generarTalonario(
-        aspiranteData.carnet,
-        `${aspiranteData.nombres} ${aspiranteData.apellidos}`,
-        aspiranteData.gradoMatricular,
-        "Matrícula 2026 y Primera Cuota",
-        145.00, 
-        new Date(2026, 6, 31) 
-      );
-      setDatosTalonario(talonarioGenerado);
+      if (source === 'nuevo_ingreso') {
+        // Es un aspirante de Nuevo Ingreso. Armamos sus datos desde la URL.
+        const nombreUrl = searchParams.get('nombre') || '';
+        const apellidoUrl = searchParams.get('apellido') || '';
+        const gradoUrl = searchParams.get('grado') || '';
+        const codigoAspirante = searchParams.get('codigo') || 'ASP-0000';
+        // El NPE exige un carnet numérico de 8 dígitos; el código trae letras y guion (ej: CSSJ-0042)
+        const carnetNumerico = (codigoAspirante.match(/\d+/g)?.join('') || '0').padStart(8, '0').slice(-8);
 
-    } else {
-      // 2. Si no es Nuevo Ingreso, buscamos si es un alumno Antiguo (Reingreso) en Firebase
-      const sessionCarnet = localStorage.getItem('studentSession');
+        const aspiranteData = {
+          carnet: carnetNumerico, // Carnet temporal numérico derivado del código del aspirante
+          nie: 'PENDIENTE',
+          nombres: nombreUrl,
+          apellidos: apellidoUrl,
+          gradoMatricular: gradoUrl
+        };
 
-      if (!sessionCarnet) {
-        // Si no tiene pase VIP ni sesión de antiguo, lo expulsamos al login
-        navigate('/reingreso/login');
-        return;
-      }
+        setStudent(aspiranteData);
+        const arancel = await configService.getArancelParaGrado(aspiranteData.gradoMatricular);
+        setDatosTalonario(generarTalonario(
+          aspiranteData.carnet,
+          `${aspiranteData.nombres} ${aspiranteData.apellidos}`,
+          aspiranteData.gradoMatricular,
+          concepto,
+          arancel.cuotaMatricula,
+          fechaLimite
+        ));
 
-      alumnoService.getAlumno(sessionCarnet).then(studentData => {
+      } else {
+        // 2. Si no es Nuevo Ingreso, buscamos si es un alumno Antiguo (Reingreso) en Firebase
+        const sessionCarnet = localStorage.getItem('studentSession');
+
+        if (!sessionCarnet) {
+          // Si no tiene pase VIP ni sesión de antiguo, lo expulsamos al login
+          navigate('/reingreso/login');
+          return;
+        }
+
+        const studentData = await alumnoService.getAlumno(sessionCarnet);
         if (!studentData) {
           localStorage.removeItem('studentSession');
           navigate('/reingreso/login');
           return;
         }
         setStudent(studentData);
-
-        const talonarioGenerado = generarTalonario(
+        const arancel = await configService.getArancelParaGrado(studentData.gradoMatricular);
+        setDatosTalonario(generarTalonario(
           studentData.carnet,
           `${studentData.nombres} ${studentData.apellidos}`,
           studentData.gradoMatricular,
-          "Matrícula 2026 y Primera Cuota",
-          145.00,
-          new Date(2026, 6, 31)
-        );
-        setDatosTalonario(talonarioGenerado);
-      }).catch(() => navigate('/reingreso/login'));
-    }
+          concepto,
+          arancel.cuotaMatricula,
+          fechaLimite
+        ));
+      }
+    })().catch(() => navigate('/reingreso/login'));
   }, [navigate, searchParams]);
 
   if (!student || !datosTalonario) return <div style={{ padding: '2rem', textAlign: 'center' }}>Cargando comprobante seguro...</div>;
@@ -100,7 +106,9 @@ export const TalonarioPrint = () => {
           </div>
           <div style={{ textAlign: 'right' }}>
             <h1 style={{ margin: 0, color: '#0f172a', fontSize: '1.5rem' }}>MANDAMIENTO DE PAGO</h1>
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#dc2626', fontWeight: 'bold' }}>Vence: 31/07/2026</p>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: '#dc2626', fontWeight: 'bold' }}>
+              Vence: {datosTalonario.fechaLimite.split('-').reverse().join('/')}
+            </p>
           </div>
         </div>
 

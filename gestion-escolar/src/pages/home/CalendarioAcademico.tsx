@@ -1,14 +1,58 @@
 // src/pages/CalendarioAcademico.tsx
-import { useEffect } from 'react';
+// Calendario académico PÚBLICO. Los hitos se administran desde el Gestor de
+// Página Web (/admin/institucional → Agenda de Eventos) y se agrupan aquí
+// automáticamente por trimestre según su fecha. La categoría "Asueto" se
+// muestra en la tarjeta de Periodos de Receso.
+import { useEffect, useState } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../firebase/config';
 import { Navbar } from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import { useAnioMatricula } from '../../hooks/useAnioMatricula';
 import './CalendarioAcademico.css';
 
+interface EventoCalendario {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+  fecha: string;      // 'YYYY-MM-DD'
+  categoria?: string;
+  dia: string;
+  mes: string;
+}
+
 export default function CalendarioAcademico() {
-  
+  const anioMatricula = useAnioMatricula();
+  const [eventos, setEventos] = useState<EventoCalendario[]>([]);
+  const [cargando, setCargando] = useState(true);
+
   useEffect(() => {
     window.scrollTo(0, 0);
+
+    (async () => {
+      try {
+        const snap = await getDocs(collection(db, 'eventos'));
+        const lista = snap.docs.map(d => ({ id: d.id, ...d.data() } as EventoCalendario));
+        lista.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+        setEventos(lista);
+      } catch (error) {
+        console.error('Error al cargar el calendario:', error);
+      } finally {
+        setCargando(false);
+      }
+    })();
   }, []);
+
+  // Agrupación por trimestre según el mes de la fecha (los asuetos van aparte)
+  const mesDe = (e: EventoCalendario) => new Date(`${e.fecha}T12:00:00`).getMonth();
+  const esAsueto = (e: EventoCalendario) => (e.categoria || '').toLowerCase().includes('asueto') || (e.categoria || '').toLowerCase().includes('receso');
+  const lectivos = eventos.filter(e => !esAsueto(e));
+  const trimestres = [
+    { clase: 't1', nombre: 'Primer Trimestre', meses: 'Ene - Abr', items: lectivos.filter(e => mesDe(e) <= 3), delay: 0 },
+    { clase: 't2', nombre: 'Segundo Trimestre', meses: 'May - Ago', items: lectivos.filter(e => mesDe(e) >= 4 && e && mesDe(e) <= 7), delay: 100 },
+    { clase: 't3', nombre: 'Tercer Trimestre', meses: 'Sep - Dic', items: lectivos.filter(e => mesDe(e) >= 8), delay: 200 },
+  ];
+  const asuetos = eventos.filter(esAsueto);
 
   return (
     <div className="calendario-acad-page">
@@ -20,7 +64,7 @@ export default function CalendarioAcademico() {
           Planificación Anual
         </span>
         <h1 className="titulo-calendario-acad" data-aos="fade-up" data-aos-delay="100">
-          Calendario <span style={{ color: '#FAB529' }}>Académico 2026</span>
+          Calendario <span style={{ color: '#FAB529' }}>Académico {anioMatricula}</span>
         </h1>
         <p style={{ maxWidth: '650px', margin: '0 auto', color: 'rgba(255,255,255,0.9)', fontSize: '1.15rem' }} data-aos="fade-up" data-aos-delay="200">
           Conoce las fechas clave, periodos de evaluación y actividades institucionales programadas para el ciclo escolar vigente.
@@ -41,152 +85,61 @@ export default function CalendarioAcademico() {
 
       {/* Cuadrícula de Trimestres y Periodos */}
       <section className="layout-trimestres">
-        
-        {/* PRIMER TRIMESTRE */}
-        <div className="trimestre-card t1" data-aos="fade-up">
-          <div className="trimestre-header">
-            <h3>Primer Trimestre</h3>
-            <span className="trimestre-meses">Ene - Abr</span>
-          </div>
-          <div className="hito-lista">
-            <div className="hito-item destacado">
-              <div className="hito-fecha-circulo">
-                <span className="hito-dia">19</span>
-                <span className="hito-mes">Ene</span>
-              </div>
-              <div className="hito-info">
-                <h4>Inicio de Clases</h4>
-                <p>Inauguración del Año Escolar 2026 para todos los niveles académicos.</p>
-              </div>
-            </div>
-            <div className="hito-item">
-              <div className="hito-fecha-circulo">
-                <span className="hito-dia">31</span>
-                <span className="hito-mes">Ene</span>
-              </div>
-              <div className="hito-info">
-                <h4>Fiesta de San Juan Bosco</h4>
-                <p>Eucaristía solemne y actividades recreativas institucionales.</p>
-              </div>
-            </div>
-            <div className="hito-item">
-              <div className="hito-fecha-circulo">
-                <span className="hito-dia">23</span>
-                <span className="hito-mes">Mar</span>
-              </div>
-              <div className="hito-info">
-                <h4>Exámenes de Trimestre</h4>
-                <p>Inicio del periodo de evaluaciones finales del primer trimestre.</p>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* SEGUNDO TRIMESTRE */}
-        <div className="trimestre-card t2" data-aos="fade-up" data-aos-delay="100">
-          <div className="trimestre-header">
-            <h3>Segundo Trimestre</h3>
-            <span className="trimestre-meses">May - Ago</span>
-          </div>
-          <div className="hito-lista">
-            <div className="hito-item">
-              <div className="hito-fecha-circulo">
-                <span className="hito-dia">04</span>
-                <span className="hito-mes">May</span>
-              </div>
-              <div className="hito-info">
-                <h4>Inicio Segundo Trimestre</h4>
-                <p>Retorno a clases y entrega de boletas de notas a padres de familia.</p>
-              </div>
+        {trimestres.map(trimestre => (
+          <div key={trimestre.clase} className={`trimestre-card ${trimestre.clase}`} data-aos="fade-up" data-aos-delay={trimestre.delay}>
+            <div className="trimestre-header">
+              <h3>{trimestre.nombre}</h3>
+              <span className="trimestre-meses">{trimestre.meses}</span>
             </div>
-            <div className="hito-item destacado">
-              <div className="hito-fecha-circulo" style={{ background: '#008C5A', borderColor: '#008C5A' }}>
-                <span className="hito-dia">24</span>
-                <span className="hito-mes">May</span>
-              </div>
-              <div className="hito-info">
-                <h4>Día de María Auxiliadora</h4>
-                <p>Celebración magna institucional, procesión y consagración de estudiantes.</p>
-              </div>
-            </div>
-            <div className="hito-item">
-              <div className="hito-fecha-circulo">
-                <span className="hito-dia">20</span>
-                <span className="hito-mes">Jul</span>
-              </div>
-              <div className="hito-info">
-                <h4>Exámenes de Trimestre</h4>
-                <p>Periodo de evaluaciones correspondientes al segundo trimestre.</p>
-              </div>
+            <div className="hito-lista">
+              {trimestre.items.length === 0 ? (
+                <p style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.9rem', margin: '0.5rem 0' }}>
+                  {cargando ? 'Cargando actividades…' : 'Sin actividades publicadas para este trimestre.'}
+                </p>
+              ) : (
+                trimestre.items.map((evento, i) => (
+                  <div key={evento.id} className={`hito-item ${i === 0 ? 'destacado' : ''}`}>
+                    <div className="hito-fecha-circulo">
+                      <span className="hito-dia">{evento.dia}</span>
+                      <span className="hito-mes">{evento.mes}</span>
+                    </div>
+                    <div className="hito-info">
+                      <h4>{evento.titulo}</h4>
+                      <p>{evento.descripcion || evento.categoria || 'Actividad institucional.'}</p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
-        </div>
+        ))}
 
-        {/* TERCER TRIMESTRE */}
-        <div className="trimestre-card t3" data-aos="fade-up" data-aos-delay="200">
-          <div className="trimestre-header">
-            <h3>Tercer Trimestre</h3>
-            <span className="trimestre-meses">Sep - Nov</span>
-          </div>
-          <div className="hito-lista">
-            <div className="hito-item">
-              <div className="hito-fecha-circulo">
-                <span className="hito-dia">15</span>
-                <span className="hito-mes">Sep</span>
-              </div>
-              <div className="hito-info">
-                <h4>Día de la Independencia</h4>
-                <p>Acto Cívico Institucional y asueto nacional.</p>
-              </div>
-            </div>
-            <div className="hito-item">
-              <div className="hito-fecha-circulo">
-                <span className="hito-dia">26</span>
-                <span className="hito-mes">Oct</span>
-              </div>
-              <div className="hito-info">
-                <h4>Exámenes Finales</h4>
-                <p>Último bloque de evaluaciones generales del año escolar.</p>
-              </div>
-            </div>
-            <div className="hito-item destacado">
-              <div className="hito-fecha-circulo" style={{ background: '#FAB529', borderColor: '#FAB529' }}>
-                <span className="hito-dia">12</span>
-                <span className="hito-mes">Nov</span>
-              </div>
-              <div className="hito-info">
-                <h4>Clausura Escolar</h4>
-                <p>Misa de acción de gracias y acto de entrega de reconocimientos.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* PERIODOS VACACIONALES */}
+        {/* PERIODOS VACACIONALES (eventos con categoría "Asueto / Receso") */}
         <div className="trimestre-card vacaciones" data-aos="fade-up" data-aos-delay="300">
           <div className="trimestre-header">
             <h3>Periodos de Receso</h3>
             <span className="trimestre-meses" style={{ backgroundColor: '#fee2e2', color: '#b91c1c' }}>Asuetos</span>
           </div>
           <div className="hito-lista">
-            <div className="hito-item">
-              <div className="hito-fecha-circulo" style={{ color: '#ef4444' }}>
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
-              </div>
-              <div className="hito-info">
-                <h4>Semana Santa</h4>
-                <p>Del 30 de marzo al 06 de abril. Retorno el martes 07 de abril.</p>
-              </div>
-            </div>
-            <div className="hito-item">
-              <div className="hito-fecha-circulo" style={{ color: '#ef4444' }}>
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" /></svg>
-              </div>
-              <div className="hito-info">
-                <h4>Fiestas Agostinas</h4>
-                <p>Del 01 al 06 de agosto en honor al Divino Salvador del Mundo.</p>
-              </div>
-            </div>
+            {asuetos.length === 0 ? (
+              <p style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.9rem', margin: '0.5rem 0' }}>
+                {cargando ? 'Cargando…' : 'Los periodos de receso se anunciarán próximamente.'}
+              </p>
+            ) : (
+              asuetos.map(evento => (
+                <div key={evento.id} className="hito-item">
+                  <div className="hito-fecha-circulo" style={{ color: '#ef4444' }}>
+                    <span className="hito-dia">{evento.dia}</span>
+                    <span className="hito-mes">{evento.mes}</span>
+                  </div>
+                  <div className="hito-info">
+                    <h4>{evento.titulo}</h4>
+                    <p>{evento.descripcion || 'Receso institucional.'}</p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
