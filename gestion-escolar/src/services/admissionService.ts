@@ -315,6 +315,26 @@ export const admissionService = {
     await updateDoc(docRef, stripUndefinedDeep(data));
   },
 
+  // Rechazar definitivamente a un aspirante (decisión final de admisión).
+  // El portal del aspirante mostrará "Proceso Finalizado" con el motivo.
+  async rejectAdmission(id: string, reviewedBy: string, reason: string): Promise<void> {
+    const now = new Date();
+    await updateDoc(doc(db, 'admissions', id), stripUndefinedDeep({
+      status: 'rejected',
+      reviewedBy,
+      reviewedAt: Timestamp.fromDate(now),
+      reviewNotes: reason,
+      finalDecision: {
+        result: 'rejected',
+        decidedBy: reviewedBy,
+        decidedByName: reviewedBy,
+        decidedAt: now,
+        rejectionMessage: reason,
+        canViewResults: false,
+      },
+    }));
+  },
+
   // Get admissions by access code
   async getAdmissionsByAccessCode(code: string): Promise<Admission[]> {
     const admissionsRef = collection(db, 'admissions');

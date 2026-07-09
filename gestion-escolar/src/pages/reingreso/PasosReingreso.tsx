@@ -53,9 +53,8 @@ export const PasosReingreso = () => {
         s === 'approved' ? 'aprobado' : s === 'rejected' ? 'rechazado' : s === 'pending' ? 'revision' : 'pendiente';
       setEstadoComprobante(map(pago?.paymentReceipt?.status));
 
-      // El contrato de reingreso aún es simulado (localStorage).
-      const contratoGuardado = localStorage.getItem(`contrato_${studentData.carnet}`);
-      if (contratoGuardado) setEstadoContrato(contratoGuardado as ContratoEstado);
+      // Estado del contrato firmado: real, desde Firebase (colección reingresoPayments).
+      setEstadoContrato(map(pago?.signedContract?.status) as ContratoEstado);
     })().catch(() => navigate('/reingreso/login'));
   }, [navigate]);
 
@@ -97,16 +96,25 @@ export const PasosReingreso = () => {
     navigate('/imprimir-contrato');
   };
 
-  // Subida del contrato físico firmado (Paso 4)
-  const handleContratoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setIsUploadingContrato(true);
-      setTimeout(() => {
-        setIsUploadingContrato(false);
-        setEstadoContrato('revision');
-        // Al guardar en revisión, aparecerá en el panel "AdminContratosFirmados"
-        localStorage.setItem(`contrato_${student.carnet}`, 'revision');
-      }, 2500);
+  // Subida REAL del contrato físico firmado (Paso 4): Storage + Firestore.
+  const handleContratoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !student) return;
+    setIsUploadingContrato(true);
+    try {
+      const compressed = await compressImage(file);
+      await reingresoFinanceService.uploadSignedContract(
+        student.carnet,
+        `${student.nombres} ${student.apellidos}`,
+        student.gradoMatricular,
+        compressed
+      );
+      setEstadoContrato('revision');
+    } catch {
+      alert('Error al subir el contrato. Intenta de nuevo.');
+    } finally {
+      setIsUploadingContrato(false);
+      if (contratoInputRef.current) contratoInputRef.current.value = '';
     }
   };
 

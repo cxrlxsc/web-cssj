@@ -13,6 +13,7 @@ import { accessCodeService } from '../../services/accessCodeService';
 import { admissionService } from '../../services/admissionService';
 import { formatPhone } from '../../utils/formatters';
 import { useAnioMatricula } from '../../hooks/useAnioMatricula';
+import PoliticaPrivacidadContenido, { POLITICA_VERSION } from '../../components/admisiones/PoliticaPrivacidadContenido';
 import type { AccessCode } from '../../types'; // <-- Con el 'type' para evitar el error
 import { departamentosElSalvador, getMunicipiosByDepartamento, getDistritosByMunicipio } from '../../data/elSalvadorGeo';
 
@@ -24,11 +25,12 @@ function parseDateInput(dateInput: string): Date {
 export default function AccesoAdmision() {
   const navigate = useNavigate();
   const anioMatricula = useAnioMatricula();
-  const [step, setStep] = useState<'code' | 'form' | 'success'>('code');
+  const [step, setStep] = useState<'code' | 'privacy' | 'form' | 'success'>('code');
   const [accessCode, setAccessCode] = useState('');
   const [validatedCode, setValidatedCode] = useState<AccessCode | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [aceptaPolitica, setAceptaPolitica] = useState(false);
   const [familyWarning, setFamilyWarning] = useState('');
   const [, setCheckingFamilyWarning] = useState(false);
 
@@ -57,7 +59,8 @@ export default function AccesoAdmision() {
       const result = await accessCodeService.validateCode(accessCode);
       if (result.valid && result.codeData) {
         setValidatedCode(result.codeData);
-        setStep('form');
+        // Antes del formulario, la familia debe aceptar la política de datos.
+        setStep('privacy');
       } else {
         setError(result.message);
       }
@@ -98,6 +101,13 @@ export default function AccesoAdmision() {
         ...formData, gender: formData.gender as 'M' | 'F', dateOfBirth: parseDateInput(formData.dateOfBirth),
         status: 'pending', applicationDate: new Date(), documents: [],
         accessCodeUsed: validatedCode?.code, enrollmentYear: validatedCode?.year,
+        // Consentimiento de tratamiento de datos aceptado en el paso previo
+        privacyConsent: {
+          accepted: true,
+          acceptedAt: new Date(),
+          policyVersion: POLITICA_VERSION,
+          acceptedByEmail: formData.parentEmail.trim().toLowerCase(),
+        },
       });
       if (validatedCode) {
         await accessCodeService.useCode(validatedCode.id, {
@@ -165,7 +175,58 @@ export default function AccesoAdmision() {
             </div>
           )}
 
-          {/* PASO 2: FORMULARIO DE ADMISIÓN */}
+          {/* PASO 2: ACEPTACIÓN DE POLÍTICA DE PRIVACIDAD */}
+          {step === 'privacy' && (
+            <div>
+              <div style={{ textAlign: 'center', marginBottom: '1.2rem' }}>
+                <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#f0fdf4', color: '#008C5A', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                  <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <h2 style={{ color: '#002a4a', fontSize: '1.6rem', fontWeight: 800, margin: '0 0 0.4rem' }}>Política de Privacidad y Tratamiento de Datos</h2>
+                <p style={{ color: '#64748b', margin: 0 }}>Lea y acepte antes de continuar con la solicitud. Manejamos datos sensibles del aspirante.</p>
+              </div>
+
+              {/* Texto de la política (con scroll) */}
+              <div style={{ maxHeight: '320px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.2rem 1.4rem', background: '#f8fafc', marginBottom: '1.3rem' }}>
+                <PoliticaPrivacidadContenido />
+              </div>
+
+              {/* Casilla de aceptación */}
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.7rem', cursor: 'pointer', background: aceptaPolitica ? '#f0fdf4' : 'white', border: `1.5px solid ${aceptaPolitica ? '#008C5A' : '#cbd5e1'}`, borderRadius: '10px', padding: '0.9rem 1.1rem', marginBottom: '1.3rem' }}>
+                <input
+                  type="checkbox"
+                  checked={aceptaPolitica}
+                  onChange={(e) => setAceptaPolitica(e.target.checked)}
+                  style={{ width: '20px', height: '20px', marginTop: '0.1rem', accentColor: '#008C5A', flexShrink: 0, cursor: 'pointer' }}
+                />
+                <span style={{ color: '#334155', fontSize: '0.92rem', lineHeight: 1.5 }}>
+                  He leído y <strong>acepto</strong> la Política de Privacidad, y otorgo mi consentimiento libre e
+                  informado para el tratamiento de los datos personales del aspirante y su grupo familiar, en mi
+                  calidad de padre, madre o representante legal.
+                </span>
+              </label>
+
+              <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => { setStep('code'); setAceptaPolitica(false); }}
+                  style={{ flex: '1 1 140px', padding: '0.9rem', background: 'white', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem' }}
+                >
+                  Volver
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep('form')}
+                  disabled={!aceptaPolitica}
+                  style={{ flex: '2 1 220px', padding: '0.9rem', background: aceptaPolitica ? '#008C5A' : '#cbd5e1', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 800, cursor: aceptaPolitica ? 'pointer' : 'not-allowed', fontSize: '0.95rem' }}
+                >
+                  Acepto y Continuar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* PASO 3: FORMULARIO DE ADMISIÓN */}
           {step === 'form' && (
             <form onSubmit={handleSubmit}>
               <div style={{ textAlign: 'center', marginBottom: '2rem' }}>

@@ -1,6 +1,6 @@
 // src/components/home/CallToAction.tsx
 import { Link } from 'react-router-dom';
-import Img2 from '../../../public/img2.jpeg';
+import Img2 from '../../../public/inscripcion.jpeg';
 import { useAnioMatricula } from '../../hooks/useAnioMatricula';
 
 

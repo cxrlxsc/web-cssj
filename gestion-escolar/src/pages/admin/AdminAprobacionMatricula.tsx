@@ -22,6 +22,9 @@ export default function AdminAprobacionMatricula() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [provisioningId, setProvisioningId] = useState<string | null>(null);
+  const [rejecting, setRejecting] = useState<Admission | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectingBusy, setRejectingBusy] = useState(false);
   const [resultado, setResultado] = useState<Credenciales | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmData | null>(null);
   const [alertDialog, setAlertDialog] = useState<AlertData | null>(null);
@@ -84,6 +87,26 @@ export default function AdminAprobacionMatricula() {
       showAlert('No se pudo aprobar', err?.message || 'Error al aprobar al aspirante.', 'error');
     } finally {
       setProcessingId(null);
+    }
+  };
+
+  const abrirRechazo = (adm: Admission) => {
+    setRejectReason('');
+    setRejecting(adm);
+  };
+
+  const confirmarRechazo = async () => {
+    if (!rejecting || !rejectReason.trim()) return;
+    setRejectingBusy(true);
+    try {
+      await admissionService.rejectAdmission(rejecting.id, 'Admin_Registro', rejectReason.trim());
+      setRejecting(null);
+      await loadData();
+      showAlert('Aspirante rechazado', 'La familia verá el proceso como finalizado con el motivo indicado.', 'info');
+    } catch (err) {
+      showAlert('Error', err instanceof Error ? err.message : 'No se pudo registrar el rechazo.', 'error');
+    } finally {
+      setRejectingBusy(false);
     }
   };
 
@@ -188,13 +211,22 @@ export default function AdminAprobacionMatricula() {
                             {adm.gradeApplying} · Estado: <strong>{traducirEstado(adm.status)}</strong>
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleAprobar(adm)}
-                          disabled={processingId === adm.id}
-                          style={{ ...btnPrimario, opacity: processingId === adm.id ? 0.6 : 1 }}
-                        >
-                          {processingId === adm.id ? 'Generando...' : 'Aprobar y Matricular'}
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                          <button
+                            onClick={() => abrirRechazo(adm)}
+                            disabled={processingId === adm.id}
+                            style={btnRechazar}
+                          >
+                            Rechazar
+                          </button>
+                          <button
+                            onClick={() => handleAprobar(adm)}
+                            disabled={processingId === adm.id}
+                            style={{ ...btnPrimario, opacity: processingId === adm.id ? 0.6 : 1 }}
+                          >
+                            {processingId === adm.id ? 'Generando...' : 'Aprobar y Matricular'}
+                          </button>
+                        </div>
                       </div>
 
                       {/* RESUMEN DE EVALUACIONES (nota académica, asistencia y entrevista) */}
@@ -352,6 +384,36 @@ export default function AdminAprobacionMatricula() {
         </ModalOverlay>
       )}
 
+      {/* MODAL DE RECHAZO (con motivo) */}
+      {rejecting && (
+        <ModalOverlay>
+          <div style={dialogCard}>
+            <h2 style={{ margin: 0, color: NAVY, fontSize: '1.25rem' }}>Rechazar aspirante</h2>
+            <p style={{ margin: '0.7rem 0 0', color: '#475569', lineHeight: 1.5 }}>
+              Vas a finalizar el proceso de <strong>{rejecting.studentFirstName} {rejecting.studentLastName}</strong>. Indica el motivo (la familia lo verá en su portal):
+            </p>
+            <textarea
+              autoFocus
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              rows={3}
+              placeholder="Ej: No alcanzó el puntaje mínimo en las evaluaciones de admisión."
+              style={{ width: '100%', marginTop: '1rem', padding: '0.7rem 0.9rem', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '0.95rem', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
+            />
+            <div style={{ display: 'flex', gap: '0.6rem', marginTop: '1.3rem', justifyContent: 'flex-end' }}>
+              <button onClick={() => setRejecting(null)} style={btnGhost}>Cancelar</button>
+              <button
+                onClick={confirmarRechazo}
+                disabled={!rejectReason.trim() || rejectingBusy}
+                style={{ ...btnRechazar, opacity: (!rejectReason.trim() || rejectingBusy) ? 0.5 : 1, cursor: (!rejectReason.trim() || rejectingBusy) ? 'not-allowed' : 'pointer' }}
+              >
+                {rejectingBusy ? 'Rechazando…' : 'Rechazar aspirante'}
+              </button>
+            </div>
+          </div>
+        </ModalOverlay>
+      )}
+
       {/* MODAL DE ALERTA */}
       {alertDialog && (
         <ModalOverlay>
@@ -486,4 +548,9 @@ const btnPrimario: React.CSSProperties = {
 const btnSecundario: React.CSSProperties = {
   background: 'white', color: NAVY, border: `1px solid ${NAVY}`, borderRadius: '8px',
   padding: '0.5rem 1rem', fontWeight: 700,
+};
+
+const btnRechazar: React.CSSProperties = {
+  background: 'white', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '8px',
+  padding: '0.7rem 1.4rem', fontWeight: 700, cursor: 'pointer',
 };

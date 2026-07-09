@@ -57,6 +57,18 @@ export interface Admission {
   // Status
 status: 'pending' | 'evaluations' | 'interview' | 'approved' | 'rejected' | 'enrolled';
   applicationDate: Date;
+  // Expediente digital llenado por la familia en el portal (mismos datos que
+  // tiene un alumno de antiguo ingreso: NIE, salud, familia, transporte, sostenedor)
+  expedienteDigital?: Record<string, string>;
+  expedienteCompletado?: boolean;
+  // Consentimiento de tratamiento de datos personales (obligatorio: se manejan
+  // datos sensibles de menores). Se registra al iniciar la solicitud.
+  privacyConsent?: {
+    accepted: boolean;
+    acceptedAt: Date;
+    policyVersion: string;   // versión del texto de política aceptada
+    acceptedByEmail?: string;
+  };
   carnet?: string;                // Carnet institucional asignado al aprobar (8 dígitos, se usa en el NPE)
   paymentReceipt?: AdmissionFileReview;   // Comprobante de pago subido por la familia (colecturía)
   signedContract?: AdmissionFileReview;   // Contrato firmado subido por la familia (auditoría legal)

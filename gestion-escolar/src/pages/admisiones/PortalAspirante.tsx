@@ -99,9 +99,11 @@ export default function PortalAspirante() {
 
       await enrollmentService.getEnrollmentByAdmission(admissionData.id);
 
-      // Cargar los estados guardados
-      const expGuardado = localStorage.getItem(`expediente_${admissionData.id}`);
-      if (expGuardado) setExpedienteCompletado(true);
+      // El expediente se considera completado según Firebase (funciona desde
+      // cualquier dispositivo, no solo en el que se llenó).
+      const expedienteListo = !!admissionData.expedienteCompletado
+        || (!!admissionData.expedienteDigital && Object.keys(admissionData.expedienteDigital).length > 0);
+      if (expedienteListo) setExpedienteCompletado(true);
 
       // Estado del pago y contrato: real, desde el documento de la admisión.
       const mapEstado = (s?: string): ComprobanteEstado =>
@@ -228,10 +230,7 @@ const handleGuardarExpediente = async (e: React.FormEvent<HTMLFormElement>) => {
         expedienteCompletado: true // Marcamos como completado en la BD
       });
 
-      // 4. Guardamos localmente el estado de completado
-      localStorage.setItem(`expediente_${admission.id}`, 'true');
-
-      // 5. Refrescamos la admisión en memoria para que al reabrir "revisar datos"
+      // 4. Refrescamos la admisión en memoria para que al reabrir "revisar datos"
       //    el modal muestre lo que se acaba de guardar (sin recargar la página)
       setAdmission({
         ...(admission as any),

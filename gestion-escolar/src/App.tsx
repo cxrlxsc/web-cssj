@@ -6,7 +6,6 @@ import 'aos/dist/aos.css';
 import Home from '././pages/Home'; 
 import About from './components/home/About';
 import AccesoAdmision from './pages/admisiones/AccesoAdmision'; 
-import ProcesoAdmision from './pages/admisiones/ProcesoAdmision';
 
 // Importaciones para el sistema de Admin
 import Login from './pages/admin/Login';
@@ -35,6 +34,7 @@ import Directorio from './pages/home/Directorio';
 import Noticias from './pages/home/Noticias';
 import ProcesoInscripcion from './pages/home/ProcesoInscripcion';
 import CalendarioAcademico from './pages/home/CalendarioAcademico';
+import PoliticaPrivacidad from './pages/home/PoliticaPrivacidad';
 
 // Módulo de Reingreso Estudiantes
 import PortalAspirante from './pages/admisiones/PortalAspirante';
@@ -63,11 +63,8 @@ function App() {
       <Route path="/directorio-institucional" element={<Directorio />} />
       <Route path="/noticias" element={<Noticias />} />
       <Route path="/solicitud-admision" element={<AccesoAdmision />} />
-      <Route
-        path="/solicitud-admision/dashboard"
-        element={<ProcesoAdmision />}
-      />
       <Route path="/calendario-academico" element={<CalendarioAcademico />} />
+      <Route path="/politica-privacidad" element={<PoliticaPrivacidad />} />
       <Route path="/proceso-inscripcion" element={<ProcesoInscripcion />} />
       <Route path="/mi-solicitud" element={<PortalAspirante />} />
       {/* Examen académico en línea (habilitado por el admin en /admin/evaluaciones) */}

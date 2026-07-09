@@ -33,10 +33,11 @@ export default function Footer() {
         <div>
           <h4 className="footer-titulo">Enlaces de Interés</h4>
           <ul className="footer-links">
-            <li><a href="#inicio">Procesos Académicos</a></li>
+            <li><a href="/proceso-inscripcion">Procesos Académicos</a></li>
             <li><a href="#registro">Registro Académico</a></li>
             <li><Link to="/solicitud-admision">Solicitud de Admisión</Link></li>
             <li><Link to="/login">Portal de Alumnos</Link></li>
+            <li><Link to="#">Politicas de Privacidad</Link></li>
           </ul>
         </div>
         
@@ -50,18 +51,23 @@ export default function Footer() {
           
           <div className="social-icons">
             {/* Íconos temporales con texto, luego puedes usar FontAwesome o SVGs */}
-            <a href="https://www.facebook.com/CSSJSA/" title="Facebook">f</a>
+            <a href="https://www.facebook.com/CSSJSA/" title="Facebook">F</a>
             <a href="https://www.instagram.com/cssj_sv/" title="Instagram">IG</a>
             <a href="#" title="WhatsApp">WA</a>
             <a href="#" title="TikTok">TK</a>
           </div>
         </div>
-
       </div>
       
       {/* Derechos de Autor */}
       <div className="footer-bottom">
-        <p>© {new Date().getFullYear()} Colegio Salesiano San José. Todos los derechos reservados.</p>
+        <p>
+          © {new Date().getFullYear()} Colegio Salesiano San José. Todos los derechos reservados.
+          {' · '}
+          <Link to="/politica-privacidad" style={{ color: 'inherit', textDecoration: 'underline' }}>
+            Política de Privacidad
+          </Link>
+        </p>
       </div>
     </footer>
   );

@@ -352,7 +352,7 @@ export const alumnoService = {
    * mismo proceso que los alumnos antiguos.
    * Devuelve el carnet, o null si la admisión aún no tiene carnet asignado.
    */
-  async crearAlumnoDesdeAdmision(admission: Admission): Promise<string | null> {
+  async crearAlumnoDesdeAdmision(admission: Admission): Promise<{ carnet: string; pin: string } | null> {
     const carnet = (admission.carnet || '').trim();
     if (!carnet) return null;
 
@@ -363,10 +363,29 @@ export const alumnoService = {
       ? admission.dateOfBirth.toISOString().split('T')[0]
       : '';
 
-    // El responsable registrado en la admisión se coloca como padre, madre o
-    // encargado según el parentesco declarado; el resto se completa al ratificar.
+    // El EXPEDIENTE DIGITAL que llenó la familia trae los mismos datos que un
+    // alumno de antiguo ingreso (NIE, salud, sacramentos, familia completa,
+    // transporte y sostenedor). Se copia campo por campo; si algo faltara,
+    // se usan los datos base de la solicitud como respaldo.
+    const exp = admission.expedienteDigital || {};
+    const v = (clave: string, respaldo = '') => (exp[clave] || '').toString().trim() || respaldo;
+    const siNo = (clave: string) => (v(clave).toUpperCase() === 'SI' ? 'SI' : 'NO');
+
+    const contactoDesdeExpediente = (prefijo: 'padre' | 'madre' | 'encargado'): ContactoFamiliar => ({
+      nombre: v(`${prefijo}_nombre`),
+      profesion: v(`${prefijo}_profesion`),
+      lugarTrabajo: v(`${prefijo}_lugar_trabajo`),
+      cargo: v(`${prefijo}_cargo`),
+      telefonoFijo: v(`${prefijo}_tel_fijo`),
+      telefonoTrabajo: v(`${prefijo}_tel_trabajo`),
+      telefonoMovil: v(`${prefijo}_tel_movil`),
+      email: v(`${prefijo}_email`),
+      religion: v(`${prefijo}_religion`),
+    });
+
+    // Respaldo si el expediente no existiera: el responsable de la solicitud
     const contactoVacio: ContactoFamiliar = { nombre: '', profesion: '', lugarTrabajo: '', cargo: '', telefonoFijo: '', telefonoTrabajo: '', telefonoMovil: '', email: '', religion: '' };
-    const responsable: ContactoFamiliar = {
+    const responsableSolicitud: ContactoFamiliar = {
       ...contactoVacio,
       nombre: `${admission.parentFirstName} ${admission.parentLastName}`.trim(),
       telefonoMovil: admission.parentPhone || '',
@@ -376,6 +395,19 @@ export const alumnoService = {
     const esMadre = parentesco.includes('madre') || parentesco.includes('mam');
     const esPadre = parentesco.includes('padre') || parentesco.includes('pap');
 
+    let padre = contactoDesdeExpediente('padre');
+    let madre = contactoDesdeExpediente('madre');
+    let encargado = contactoDesdeExpediente('encargado');
+    if (!padre.nombre && !madre.nombre && !encargado.nombre) {
+      padre = esPadre ? responsableSolicitud : contactoVacio;
+      madre = esMadre ? responsableSolicitud : contactoVacio;
+      encargado = (!esPadre && !esMadre) ? responsableSolicitud : contactoVacio;
+    }
+
+    const nie = v('alumno_nie');
+    // PIN igual que los alumnos antiguos: el NIE (o últimos 4 del carnet si no tiene)
+    const pin = nie || carnet.slice(-4);
+
     const alumno: AlumnoReingreso = {
       // Ingreso
       anioIngreso: String(anio),
@@ -384,55 +416,62 @@ export const alumnoService = {
       anioCalculo: anio,      // en ciclos futuros, los grados avanzan solos
 
       // Acceso al portal de reingreso
-      pin: carnet.slice(-4),
+      pin,
       estado: 'ACTIVO',
 
       // Alumno
       carnet,
-      nie: '',
-      nombres: admission.studentFirstName || '',
-      apellidos: admission.studentLastName || '',
-      sexo: admission.gender === 'F' ? 'FEMENINO' : 'MASCULINO',
-      fechaNac: nacimiento,
-      nacionalidad: 'SALVADOREÑA',
-      zona: '',
-      departamento: admission.departamento || '',
-      municipio: [admission.municipio, admission.distrito].filter(Boolean).join(', '),
-      telefono: admission.parentPhone || '',
-      direccion: admission.direccion || '',
-      viveCon: '',
-      religion: '',
-      tipoSangre: '',
-      enfermedades: 'Ninguna',
-      alergias: 'Ninguna',
-      bautizado: 'NO',
-      comunion: 'NO',
-      confirmado: 'NO',
-      cursoParvularia: 'NO',
+      nie,
+      nombres: v('alumno_nombres', admission.studentFirstName || ''),
+      apellidos: v('alumno_apellidos', admission.studentLastName || ''),
+      sexo: v('alumno_sexo', admission.gender === 'F' ? 'FEMENINO' : 'MASCULINO').toUpperCase(),
+      fechaNac: v('alumno_fecha_nacimiento', nacimiento),
+      nacionalidad: v('alumno_nacionalidad', 'SALVADOREÑA'),
+      zona: v('alumno_zona_residencial').toUpperCase(),
+      departamento: v('alumno_departamento', admission.departamento || ''),
+      municipio: v('alumno_municipio', [admission.municipio, admission.distrito].filter(Boolean).join(', ')),
+      telefono: v('alumno_telefono', admission.parentPhone || ''),
+      direccion: v('alumno_direccion', admission.direccion || ''),
+      viveCon: v('alumno_vive_con').toUpperCase(),
+      religion: v('alumno_religion'),
+      tipoSangre: v('alumno_tipo_sangre'),
+      enfermedades: v('alumno_enfermedades', 'Ninguna'),
+      alergias: v('alumno_alergias', 'Ninguna'),
+      bautizado: siNo('alumno_bautizado'),
+      comunion: siNo('alumno_comunion'),
+      confirmado: siNo('alumno_confirmado'),
+      cursoParvularia: siNo('alumno_curso_parvularia'),
       centroProcedencia: admission.previousSchool || '',
 
       // Familia
-      padre: esPadre ? responsable : contactoVacio,
-      madre: esMadre ? responsable : contactoVacio,
-      encargado: (!esPadre && !esMadre) ? responsable : contactoVacio,
-      responsable: (admission.parentRelationship || 'ENCARGADO').toUpperCase(),
+      padre,
+      madre,
+      encargado,
+      responsable: v('responsable_legal', (admission.parentRelationship || 'ENCARGADO')).toUpperCase(),
 
+      // Emergencia (el expediente usa variantes según con quién vive el alumno)
       emergencia: {
-        llamarA: responsable.nombre,
-        telefono: admission.parentPhone || '',
+        llamarA: v('emergencia_nombre') || v('emergencia_nombre_madre') || v('emergencia_nombre_padre') || responsableSolicitud.nombre,
+        telefono: v('emergencia_telefono') || v('emergencia_telefono_madre') || v('emergencia_telefono_padre') || admission.parentPhone || '',
       },
 
-      transporte: { tipo: 'VEHICULO PROPIO', nombreMotorista: '', placa: '', telefonoMotorista: '' },
+      transporte: {
+        tipo: v('transporte_tipo', 'VEHICULO PROPIO').toUpperCase(),
+        nombreMotorista: v('transporte_motorista'),
+        placa: v('transporte_placa'),
+        telefonoMotorista: v('transporte_telefono'),
+      },
 
+      // Facturación: datos del sostenedor económico del expediente (DUI/NIT incluidos)
       facturacion: {
-        nombreCompleto: responsable.nombre,
-        direccion: admission.direccion || '',
-        telefono: admission.parentPhone || '',
-        email: admission.parentEmail || '',
-        dui: '',
-        nit: '',
-        profesion: '',
-        parentesco: (admission.parentRelationship || '').toUpperCase(),
+        nombreCompleto: v('sostenedor_nombre', responsableSolicitud.nombre),
+        direccion: v('sostenedor_direccion', admission.direccion || ''),
+        telefono: v('sostenedor_telefono', admission.parentPhone || ''),
+        email: v('sostenedor_email', admission.parentEmail || ''),
+        dui: v('sostenedor_dui'),
+        nit: v('sostenedor_nit'),
+        profesion: v('sostenedor_profesion'),
+        parentesco: v('sostenedor_parentesco', admission.parentRelationship || '').toUpperCase(),
       },
 
       importadoDesdeSql: false,
@@ -450,7 +489,7 @@ export const alumnoService = {
       { merge: true }
     );
 
-    return carnet;
+    return { carnet, pin };
   },
 
   /**

@@ -13,6 +13,7 @@ import { alumnosParaImportar } from '../../data/alumnosParaImportar';
 import { parseAlumnosSqlDump, type ErrorParseo } from '../../utils/alumnoSqlParser';
 import { alumnoService, mapSqlRowToAlumno, pinPorDefecto, GRADUADO, type ResultadoImportacion } from '../../services/alumnoService';
 import { configService } from '../../services/configService';
+import logoImg from '../../assets/logo.png';
 import type { AlumnoSqlRow } from '../../types/reingreso';
 
 export const AdminImportarAlumnos = () => {
@@ -24,6 +25,11 @@ export const AdminImportarAlumnos = () => {
   useEffect(() => {
     configService.getAnioMatricula().then(setAnioMatricula).catch(() => { /* usa el año actual */ });
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminSession');
+    navigate('/admin/login');
+  };
   const [resultado, setResultado] = useState<ResultadoImportacion | null>(null);
   const [rowsArchivo, setRowsArchivo] = useState<AlumnoSqlRow[]>([]);
   const [erroresParseo, setErroresParseo] = useState<ErrorParseo[]>([]);
@@ -107,7 +113,19 @@ export const AdminImportarAlumnos = () => {
   );
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '3rem auto', padding: '0 1rem', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#f1f5f9', fontFamily: 'system-ui, sans-serif' }}>
+      {/* NAVBAR VERDE INSTITUCIONAL */}
+      <nav style={{ background: '#008C5A', color: 'white', padding: '0.9rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+          <img src={logoImg} alt="Logo" style={{ height: '42px' }} />
+          <span style={{ fontWeight: 700, fontSize: '1.05rem' }}>Colegio Salesiano San José</span>
+        </div>
+        <button onClick={handleLogout} style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '8px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 600 }}>
+          Cerrar Sesión
+        </button>
+      </nav>
+
+      <div style={{ maxWidth: '1100px', margin: '2.5rem auto', padding: '0 1rem' }}>
       {/* HEADER */}
       <div style={{ background: '#002a4a', color: 'white', padding: '2rem', borderRadius: '12px', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
@@ -244,11 +262,11 @@ export const AdminImportarAlumnos = () => {
         <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', borderLeft: resultado.errores.length === 0 ? '5px solid #22c55e' : '5px solid #f59e0b' }}>
           <h3 style={{ margin: '0 0 1rem 0', color: '#0f172a' }}>Resultado de la importación</h3>
           <p style={{ margin: '0 0 0.5rem 0', color: '#166534', fontWeight: 'bold' }}>
-            ✅ Importados correctamente: {resultado.importados} de {resultado.total}
+            Importados correctamente: {resultado.importados} de {resultado.total}
           </p>
           {resultado.errores.length > 0 && (
             <>
-              <p style={{ margin: '1rem 0 0.5rem 0', color: '#b91c1c', fontWeight: 'bold' }}>⚠️ Errores ({resultado.errores.length}):</p>
+              <p style={{ margin: '1rem 0 0.5rem 0', color: '#b91c1c', fontWeight: 'bold' }}>Errores ({resultado.errores.length}):</p>
               <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#7f1d1d', fontSize: '0.85rem' }}>
                 {resultado.errores.map((err, i) => (
                   <li key={i}><strong>{err.carnet}</strong>: {err.error}</li>
@@ -258,6 +276,7 @@ export const AdminImportarAlumnos = () => {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 };

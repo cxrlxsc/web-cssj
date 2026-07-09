@@ -5,7 +5,7 @@ import { admissionService } from '../../services/admissionService';
 import { admissionDocumentService } from '../../services/admissionDocumentService';
 import { evaluationService } from '../../services/evaluationService';
 import logoImg from '../../assets/logo.png';
-import type { Admission, AdmissionDocument } from '../../types';
+import type { Admission, AdmissionDocument, AdmissionDocumentType } from '../../types';
 import './adminStyles/AdminAdmisiones.css';
 
 export default function AdminAdmisiones() {
@@ -19,6 +19,9 @@ export default function AdminAdmisiones() {
   
   const [rejectingDocId, setRejectingDocId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+
+  // Documentos REQUERIDOS del grado del aspirante seleccionado (para saber cuáles faltan)
+  const [tiposRequeridos, setTiposRequeridos] = useState<{ type: AdmissionDocumentType; name: string }[]>([]);
 
   const handleLogout = () => {
     localStorage.removeItem('adminSession'); 
@@ -47,6 +50,12 @@ export default function AdminAdmisiones() {
     try {
       const docs = await admissionDocumentService.getDocumentsForAdmission(admission.id);
       setDocuments(docs);
+      // Documentos obligatorios según el grado (para exigirlos todos antes de habilitar exámenes)
+      const requeridos = admissionDocumentService
+        .getRequiredDocuments(admission.gradeApplying)
+        .filter(d => d.isRequired)
+        .map(d => ({ type: d.type, name: d.name }));
+      setTiposRequeridos(requeridos);
     } catch (error) {
       console.error("Error cargando documentos:", error);
     } finally {
@@ -99,7 +108,11 @@ export default function AdminAdmisiones() {
     }
   };
 
-  const todosAprobados = documents.length > 0 && documents.every(d => d.status === 'approved');
+  // Solo se pueden habilitar exámenes cuando TODOS los documentos requeridos del
+  // grado están subidos Y aprobados (no basta con que lo subido esté aprobado).
+  const tiposAprobados = new Set(documents.filter(d => d.status === 'approved').map(d => d.type));
+  const requeridosFaltantes = tiposRequeridos.filter(req => !tiposAprobados.has(req.type));
+  const todosAprobados = tiposRequeridos.length > 0 && requeridosFaltantes.length === 0;
 
   return (
     <div className="admin-admisiones-layout">
@@ -279,8 +292,18 @@ export default function AdminAdmisiones() {
                 <div className="modal-footer-action">
                   <h3>Paso Siguiente: Evaluaciones de Admisión</h3>
                   <p>Si el expediente documental está completo y aprobado, habilita el acceso a las pruebas.</p>
-                  
-                  <button 
+
+                  {/* Lista de documentos requeridos que aún faltan por aprobar */}
+                  {!loadingDocs && requeridosFaltantes.length > 0 && (
+                    <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '0.9rem 1.1rem', margin: '0 0 1rem 0', textAlign: 'left' }}>
+                      <strong style={{ color: '#92400e', fontSize: '0.88rem' }}>Faltan por aprobar (obligatorios de {selectedAdmission.gradeApplying}):</strong>
+                      <ul style={{ margin: '0.4rem 0 0', paddingLeft: '1.3rem', color: '#a16207', fontSize: '0.85rem' }}>
+                        {requeridosFaltantes.map(req => <li key={req.type}>{req.name}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  <button
                     onClick={handleHabilitarExamenes}
                     disabled={!todosAprobados}
                     className={`btn-primary-action ${todosAprobados ? 'active' : 'disabled'}`}

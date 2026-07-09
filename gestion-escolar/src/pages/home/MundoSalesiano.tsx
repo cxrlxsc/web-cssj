@@ -158,13 +158,6 @@ export default function MundoSalesiano() {
                 >
                   <span className="opcion-icono">◆</span> Familia Salesiana
                 </button>
-
-                <button 
-                  className={`opcion-btn ${seccionActiva === 'red_ius' ? 'activa' : ''}`}
-                  onClick={() => setSeccionActiva('red_ius')}
-                >
-                  <span className="opcion-icono">◆</span> Red IUS
-                </button>
               </div>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import Img1 from '../../../public/img1.jpeg'; 
+import imgV from '../../../public/valores.jpeg';
 
 
 import { Navbar } from '../layout/Navbar';
@@ -113,7 +114,7 @@ export default function About() {
       <section className="seccion-premium">
         <div className="col-imagen" data-aos="fade-right">
           <div className="imagen-decorada-verde">
-             <img src="https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=800&q=80" alt="Valores" />
+             <img src={imgV} alt="Valores" />
           </div>
         </div>
         <div className="col-texto" data-aos="fade-left">

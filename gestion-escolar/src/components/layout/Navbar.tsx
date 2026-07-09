@@ -95,7 +95,7 @@ export const Navbar = () => {
           
           <li className="udb-nav-item">
 
-            <a href="#contacto" className="udb-nav-link">Contáctanos</a>
+            <a href="/directorio-institucional" className="udb-nav-link">Contáctanos</a>
 
           </li>
 

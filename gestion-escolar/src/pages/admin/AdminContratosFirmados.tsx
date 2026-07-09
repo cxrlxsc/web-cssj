@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { admissionService } from '../../services/admissionService';
 import { admissionFinanceService } from '../../services/admissionFinanceService';
+import { reingresoFinanceService } from '../../services/reingresoFinanceService';
 import { alumnoService } from '../../services/alumnoService';
 import { useAdminDialogs } from '../../components/admin/useAdminDialogs';
 import logoImg from '../../assets/logo.png';
-import type { Admission } from '../../types';
+import type { Admission, AdmissionFileReview } from '../../types';
 import './adminStyles/AdminContratosFirmados.css';
 
 function toDate(value: any): Date | null {
@@ -17,12 +18,26 @@ function toDate(value: any): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
+// Fila normalizada: unifica contratos de Nuevo Ingreso (admissions) y
+// Reingreso (reingresoPayments), igual que hace la colecturía con los pagos.
+interface ContratoRow {
+  key: string;
+  tipo: 'nuevo' | 'reingreso';
+  refId: string;         // admissionId (nuevo) o carnet (reingreso)
+  studentName: string;
+  parentName: string;
+  grade: string;
+  carnet: string;
+  contract: AdmissionFileReview;
+  admission?: Admission; // solo nuevo ingreso (para la matrícula oficial)
+}
+
 export default function AdminContratosFirmados() {
   const navigate = useNavigate();
   const { confirm, prompt, alert, dialogs } = useAdminDialogs();
-  const [contratos, setContratos] = useState<Admission[]>([]);
+  const [contratos, setContratos] = useState<ContratoRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selected, setSelected] = useState<Admission | null>(null);
+  const [selected, setSelected] = useState<ContratoRow | null>(null);
 
   const handleLogout = () => {
     localStorage.removeItem('adminSession');
@@ -32,9 +47,39 @@ export default function AdminContratosFirmados() {
   const loadContratos = async () => {
     setLoading(true);
     try {
-      const all = await admissionService.getAllAdmissions();
-      // Solo los que ya subieron su contrato firmado.
-      setContratos(all.filter(a => !!a.signedContract));
+      const [admisiones, reingresos] = await Promise.all([
+        admissionService.getAllAdmissions(),
+        reingresoFinanceService.getAllPayments(),
+      ]);
+
+      const nuevos: ContratoRow[] = admisiones
+        .filter(a => !!a.signedContract)
+        .map(a => ({
+          key: `adm_${a.id}`,
+          tipo: 'nuevo',
+          refId: a.id,
+          studentName: `${a.studentFirstName} ${a.studentLastName}`,
+          parentName: `${a.parentFirstName} ${a.parentLastName}`,
+          grade: a.gradeApplying,
+          carnet: a.carnet || '—',
+          contract: a.signedContract!,
+          admission: a,
+        }));
+
+      const antiguos: ContratoRow[] = reingresos
+        .filter(r => !!r.signedContract)
+        .map(r => ({
+          key: `rei_${r.carnet}`,
+          tipo: 'reingreso',
+          refId: r.carnet,
+          studentName: r.studentName,
+          parentName: '—',
+          grade: r.grade,
+          carnet: r.carnet,
+          contract: r.signedContract!,
+        }));
+
+      setContratos([...nuevos, ...antiguos]);
     } catch (error) {
       console.error('Error cargando contratos:', error);
     } finally {
@@ -44,29 +89,37 @@ export default function AdminContratosFirmados() {
 
   useEffect(() => { loadContratos(); }, []);
 
-  const handleAprobar = async (adm: Admission) => {
+  const handleAprobar = async (row: ContratoRow) => {
     const ok = await confirm({
-      title: 'Aprobar y matricular',
-      message: `¿Confirmas que el contrato de ${adm.studentFirstName} ${adm.studentLastName} tiene las firmas correctas y es válido legalmente?\nEsto matriculará oficialmente al alumno.`,
-      confirmLabel: 'Aprobar y Matricular',
+      title: row.tipo === 'nuevo' ? 'Aprobar y matricular' : 'Aprobar contrato',
+      message: `¿Confirmas que el contrato de ${row.studentName} tiene las firmas correctas y es válido legalmente?\n${row.tipo === 'nuevo' ? 'Esto matriculará oficialmente al alumno.' : 'La matrícula del alumno queda oficializada.'}`,
+      confirmLabel: 'Aprobar Contrato',
       tone: 'navy',
     });
     if (!ok) return;
     try {
-      await admissionFinanceService.reviewContract(adm.id, 'approved', 'Admin_Registro');
+      if (row.tipo === 'reingreso') {
+        // Alumno antiguo: ya vive en la colección 'alumnos'; solo se aprueba el contrato.
+        await reingresoFinanceService.reviewContract(row.refId, 'approved', 'Admin_Registro');
+        setSelected(null);
+        await loadContratos();
+        await alert({ title: '¡Contrato aprobado!', message: 'La matrícula del alumno de reingreso queda oficializada.', tone: 'success' });
+        return;
+      }
 
-      // MATRÍCULA OFICIAL: el aspirante pasa a la colección 'alumnos'.
-      // Desde el siguiente ciclo iniciará sesión como ANTIGUO INGRESO (reingreso)
-      // con su carnet + PIN (últimos 4 dígitos del carnet).
-      const carnet = await alumnoService.crearAlumnoDesdeAdmision(adm);
-      await admissionService.updateAdmissionStatus(adm.id, 'enrolled', 'Admin_Registro');
+      // NUEVO INGRESO — matrícula oficial: pasa a la colección 'alumnos' con TODO su
+      // expediente. Desde el siguiente ciclo inicia sesión como ANTIGUO INGRESO
+      // (reingreso) con su carnet + PIN (su NIE, o últimos 4 del carnet si no tiene).
+      await admissionFinanceService.reviewContract(row.refId, 'approved', 'Admin_Registro');
+      const resultado = row.admission ? await alumnoService.crearAlumnoDesdeAdmision(row.admission) : null;
+      await admissionService.updateAdmissionStatus(row.refId, 'enrolled', 'Admin_Registro');
 
       setSelected(null);
       await loadContratos();
       await alert({
         title: '¡Contrato aprobado!',
-        message: carnet
-          ? `El alumno queda matriculado oficialmente y ya forma parte del registro de alumnos.\n\nCarnet: ${carnet}\nPIN del portal de reingreso (próximos ciclos): ${carnet.slice(-4)}`
+        message: resultado
+          ? `El alumno queda matriculado oficialmente y ya forma parte del registro de alumnos.\n\nCarnet: ${resultado.carnet}\nPIN del portal de reingreso (próximos ciclos): ${resultado.pin}`
           : 'El alumno queda matriculado, pero no tiene carnet asignado: apruébalo primero en "Aprobación y Matrícula" y vuelve a aprobar el contrato.',
         tone: 'success',
       });
@@ -75,7 +128,7 @@ export default function AdminContratosFirmados() {
     }
   };
 
-  const handleRechazar = async (adm: Admission) => {
+  const handleRechazar = async (row: ContratoRow) => {
     const motivo = await prompt({
       title: 'Devolver contrato',
       message: 'Indica el motivo del rechazo (se mostrará a la familia):',
@@ -84,7 +137,11 @@ export default function AdminContratosFirmados() {
     });
     if (!motivo) return;
     try {
-      await admissionFinanceService.reviewContract(adm.id, 'rejected', 'Admin_Registro', motivo);
+      if (row.tipo === 'reingreso') {
+        await reingresoFinanceService.reviewContract(row.refId, 'rejected', 'Admin_Registro', motivo);
+      } else {
+        await admissionFinanceService.reviewContract(row.refId, 'rejected', 'Admin_Registro', motivo);
+      }
       setSelected(null);
       await loadContratos();
       await alert({ title: 'Contrato devuelto', message: `Motivo enviado a la familia:\n"${motivo}"`, tone: 'info' });
@@ -144,16 +201,21 @@ export default function AdminContratosFirmados() {
                 </tr>
               </thead>
               <tbody>
-                {contratos.map(adm => {
-                  const status = adm.signedContract!.status;
-                  const fecha = toDate(adm.signedContract!.uploadedAt);
+                {contratos.map(row => {
+                  const status = row.contract.status;
+                  const fecha = toDate(row.contract.uploadedAt);
                   return (
-                    <tr key={adm.id}>
+                    <tr key={row.key}>
                       <td>
-                        <div className="student-name">{adm.studentFirstName} {adm.studentLastName}</div>
-                        <div className="parent-name">Resp: {adm.parentFirstName} {adm.parentLastName}</div>
+                        <div className="student-name">{row.studentName}</div>
+                        <div className="parent-name">
+                          {row.tipo === 'nuevo' ? `Resp: ${row.parentName}` : `Carnet: ${row.carnet}`}
+                          <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', fontWeight: 700, padding: '0.1rem 0.5rem', borderRadius: '999px', background: row.tipo === 'nuevo' ? '#e0f2fe' : '#fef3c7', color: row.tipo === 'nuevo' ? '#0369a1' : '#92400e' }}>
+                            {row.tipo === 'nuevo' ? 'Nuevo Ingreso' : 'Reingreso'}
+                          </span>
+                        </div>
                       </td>
-                      <td><span style={{ color: '#0068B3', fontWeight: 700 }}>{adm.gradeApplying}</span></td>
+                      <td><span style={{ color: '#0068B3', fontWeight: 700 }}>{row.grade}</span></td>
                       <td style={{ color: '#64748b' }}>{fecha ? fecha.toLocaleDateString() : '—'}</td>
                       <td>
                         <span className={`status-badge ${status === 'pending' ? 'status-pending' : status === 'approved' ? 'status-approved' : 'status-rejected'}`}>
@@ -161,7 +223,7 @@ export default function AdminContratosFirmados() {
                         </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <button onClick={() => setSelected(adm)} className="btn-action-table">Auditar Documento</button>
+                        <button onClick={() => setSelected(row)} className="btn-action-table">Auditar Documento</button>
                       </td>
                     </tr>
                   );
@@ -171,13 +233,13 @@ export default function AdminContratosFirmados() {
           )}
         </div>
 
-        {selected && selected.signedContract && (
+        {selected && (
           <div className="modal-overlay">
             <div className="modal-content">
               <div className="modal-header">
                 <div>
                   <h2>Contrato de Servicios Educativos</h2>
-                  <p>Aspirante: {selected.studentFirstName} {selected.studentLastName} | Carnet: {selected.carnet || '—'}</p>
+                  <p>{selected.tipo === 'nuevo' ? 'Aspirante' : 'Alumno'}: {selected.studentName} | Carnet: {selected.carnet || '—'}</p>
                 </div>
                 <button onClick={() => setSelected(null)} className="btn-close-modal">
                   <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -186,17 +248,17 @@ export default function AdminContratosFirmados() {
 
               <div className="modal-body">
                 <div className="document-preview">
-                  {esPdf(selected.signedContract.fileName) ? (
-                    <iframe title="Contrato" src={selected.signedContract.fileUrl} style={{ width: '100%', height: '60vh', border: 'none', borderRadius: '8px' }} />
+                  {esPdf(selected.contract.fileName) ? (
+                    <iframe title="Contrato" src={selected.contract.fileUrl} style={{ width: '100%', height: '60vh', border: 'none', borderRadius: '8px' }} />
                   ) : (
-                    <img src={selected.signedContract.fileUrl} alt="Contrato firmado escaneado" />
+                    <img src={selected.contract.fileUrl} alt="Contrato firmado escaneado" />
                   )}
                 </div>
-                <a href={selected.signedContract.fileUrl} target="_blank" rel="noreferrer" style={{ display: 'inline-block', margin: '0.5rem 0 1rem', color: '#0068B3', fontWeight: 700 }}>
+                <a href={selected.contract.fileUrl} target="_blank" rel="noreferrer" style={{ display: 'inline-block', margin: '0.5rem 0 1rem', color: '#0068B3', fontWeight: 700 }}>
                   Abrir archivo en pestaña nueva ↗
                 </a>
 
-                {selected.signedContract.status === 'pending' && (
+                {selected.contract.status === 'pending' && (
                   <div className="modal-actions">
                     <button onClick={() => handleAprobar(selected)} className="btn-approve-large">
                       <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -209,14 +271,14 @@ export default function AdminContratosFirmados() {
                   </div>
                 )}
 
-                {selected.signedContract.status !== 'pending' && (
-                  <div style={{ textAlign: 'center', padding: '1.5rem', background: selected.signedContract.status === 'approved' ? '#f0fdf4' : '#fef2f2', borderRadius: '8px', border: `1px solid ${selected.signedContract.status === 'approved' ? '#bbf7d0' : '#fecaca'}` }}>
+                {selected.contract.status !== 'pending' && (
+                  <div style={{ textAlign: 'center', padding: '1.5rem', background: selected.contract.status === 'approved' ? '#f0fdf4' : '#fef2f2', borderRadius: '8px', border: `1px solid ${selected.contract.status === 'approved' ? '#bbf7d0' : '#fecaca'}` }}>
                     <p style={{ margin: 0, color: '#030405', fontSize: '1.1rem' }}>
-                      Estado: <span style={{ fontWeight: 800, color: selected.signedContract.status === 'approved' ? '#15803d' : '#b91c1c' }}>{selected.signedContract.status === 'approved' ? 'APROBADO (MATRICULADO)' : 'DEVUELTO A LA FAMILIA'}</span>
+                      Estado: <span style={{ fontWeight: 800, color: selected.contract.status === 'approved' ? '#15803d' : '#b91c1c' }}>{selected.contract.status === 'approved' ? 'APROBADO (MATRICULADO)' : 'DEVUELTO A LA FAMILIA'}</span>
                     </p>
-                    {selected.signedContract.status === 'rejected' && selected.signedContract.rejectionReason && (
+                    {selected.contract.status === 'rejected' && selected.contract.rejectionReason && (
                       <p style={{ marginTop: '0.5rem', color: '#b91c1c', fontSize: '0.95rem' }}>
-                        <strong>Motivo enviado:</strong> {selected.signedContract.rejectionReason}
+                        <strong>Motivo enviado:</strong> {selected.contract.rejectionReason}
                       </p>
                     )}
                   </div>
