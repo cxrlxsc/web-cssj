@@ -7,6 +7,7 @@ import { reingresoFinanceService } from '../../services/reingresoFinanceService'
 import { alumnoService } from '../../services/alumnoService';
 import { useAdminDialogs } from '../../components/admin/useAdminDialogs';
 import logoImg from '../../assets/logo.png';
+import { cerrarSesionAdmin } from '../../auth/adminAuth';
 import type { Admission, AdmissionFileReview } from '../../types';
 import './adminStyles/AdminContratosFirmados.css';
 
@@ -39,8 +40,8 @@ export default function AdminContratosFirmados() {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<ContratoRow | null>(null);
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminSession');
+  const handleLogout = async () => {
+    await cerrarSesionAdmin();
     navigate('/admin/login');
   };
 

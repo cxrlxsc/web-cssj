@@ -5,6 +5,7 @@ import { admissionService } from '../../services/admissionService';
 import { evaluationService } from '../../services/evaluationService';
 import { microsoftProvisioningService } from '../../services/microsoftProvisioningService';
 import logoImg from '../../assets/logo.png';
+import { cerrarSesionAdmin } from '../../auth/adminAuth';
 import type { Admission, AdmissionEvaluation } from '../../types';
 
 const VERDE = '#008C5A';
@@ -32,8 +33,8 @@ export default function AdminAprobacionMatricula() {
   const showAlert = (title: string, message: string, tone: AlertData['tone'] = 'info') =>
     setAlertDialog({ title, message, tone });
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminSession');
+  const handleLogout = async () => {
+    await cerrarSesionAdmin();
     navigate('/admin/login');
   };
 

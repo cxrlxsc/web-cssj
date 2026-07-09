@@ -25,6 +25,14 @@ service firebase.storage {
                    );
     }
 
+    // Imágenes de portadas del sitio público, editadas desde el Gestor de
+    // Página Web. Lectura pública; escritura solo de imágenes hasta 5 MB.
+    match /portadas/{fileName} {
+      allow read: if true;
+      allow write: if request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
     // Todo lo demás: bloqueado por defecto.
     match /{allPaths=**} {
       allow read, write: if false;

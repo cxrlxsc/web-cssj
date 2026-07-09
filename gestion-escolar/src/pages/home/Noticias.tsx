@@ -5,9 +5,11 @@ import { db } from '../../firebase/config'; // Asegúrate de que esta ruta sea c
 
 import { Navbar } from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import { usePortada } from '../../hooks/usePortada';
 import './Noticias.css';
 
 export default function Noticias() {
+  const portada = usePortada('noticias');
   const [noticias, setNoticias] = useState<any[]>([]);
   const [eventos, setEventos] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -50,7 +52,7 @@ export default function Noticias() {
     <div className="noticias-page">
       <Navbar />
 
-      <section className="hero-noticias" data-aos="fade-in">
+      <section className="hero-noticias" style={portada} data-aos="fade-in">
         <span className="badge-premium" data-aos="fade-down" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}>
           Actualidad Institucional
         </span>

@@ -8,9 +8,11 @@ import imgV from '../../../public/valores.jpeg';
 
 import { Navbar } from '../layout/Navbar';
 import Footer from '../layout/Footer';
+import { usePortada } from '../../hooks/usePortada';
 import '../../pages/home/About.css'; // Asegúrate de importar el CSS nuevo
 
 export default function About() {
+  const portada = usePortada('nosotros');
   const [info, setInfo] = useState({
     mision: 'Cargando misión...',
     vision: 'Cargando visión...'
@@ -40,7 +42,7 @@ export default function About() {
       {/* =========================================
           BANNER HERO (ESTILO HOME: VERDE + PUNTOS)
           ========================================= */}
-      <section className="hero-nosotros" data-aos="fade-in">
+      <section className="hero-nosotros" style={portada} data-aos="fade-in">
         <div className="hero-content">
           <span className="badge-premium" data-aos="fade-down" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}>
             Institucional

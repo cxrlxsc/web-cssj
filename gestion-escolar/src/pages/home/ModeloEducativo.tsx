@@ -2,10 +2,12 @@
 import { useEffect } from 'react';
 import { Navbar } from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import { usePortada } from '../../hooks/usePortada';
 import './ModeloEducativo.css';
 
 export default function ModeloEducativo() {
-  
+  const portada = usePortada('modelo-educativo');
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -15,7 +17,7 @@ export default function ModeloEducativo() {
       <Navbar />
 
       {/* Banner Superior */}
-      <section className="hero-modelo" data-aos="fade-in">
+      <section className="hero-modelo" style={portada} data-aos="fade-in">
         <span className="badge-premium" data-aos="fade-down" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}>
           Excelencia Salesiana
         </span>

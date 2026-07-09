@@ -9,6 +9,7 @@ import { db } from '../../firebase/config';
 import { Navbar } from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import { useAnioMatricula } from '../../hooks/useAnioMatricula';
+import { usePortada } from '../../hooks/usePortada';
 import './CalendarioAcademico.css';
 
 interface EventoCalendario {
@@ -23,6 +24,7 @@ interface EventoCalendario {
 
 export default function CalendarioAcademico() {
   const anioMatricula = useAnioMatricula();
+  const portada = usePortada('calendario-academico');
   const [eventos, setEventos] = useState<EventoCalendario[]>([]);
   const [cargando, setCargando] = useState(true);
 
@@ -59,7 +61,7 @@ export default function CalendarioAcademico() {
       <Navbar />
 
       {/* Banner Principal */}
-      <section className="hero-calendario-acad" data-aos="fade-in">
+      <section className="hero-calendario-acad" style={portada} data-aos="fade-in">
         <span className="badge-premium" data-aos="fade-down" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}>
           Planificación Anual
         </span>

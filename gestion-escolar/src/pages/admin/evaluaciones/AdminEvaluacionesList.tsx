@@ -5,6 +5,7 @@ import { evaluationService } from '../../../services/evaluationService';
 import { admissionService } from '../../../services/admissionService';
 import { useAdminDialogs } from '../../../components/admin/useAdminDialogs';
 import logoImg from '../../../assets/logo.png';
+import { cerrarSesionAdmin } from '../../../auth/adminAuth';
 import type { Admission, AdmissionEvaluation, EvaluationTemplate } from '../../../types';
 import './AdminEvaluacionesList.css'; // <-- IMPORTAMOS EL CSS
 
@@ -182,8 +183,8 @@ export default function AdminEvaluacionesList() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminSession'); 
+  const handleLogout = async () => {
+    await cerrarSesionAdmin();
     navigate('/admin/login');
   };
 

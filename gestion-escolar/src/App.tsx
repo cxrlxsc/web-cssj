@@ -92,21 +92,21 @@ function App() {
         }
       />
 
-      {/* MODIFICAR PAGINA WEB (INSTITUCIONAL) */}
+      {/* MODIFICAR PAGINA WEB (INSTITUCIONAL) — admin y editor_web */}
       <Route
         path="/admin/institucional"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute rol="editor_web">
             <AdminInstitucional />
           </ProtectedRoute>
         }
       />
 
-      {/* RECURSOS INTERNOS ACADÉMICOS Y SUS 4 OPCIONES */}
+      {/* RECURSOS INTERNOS ACADÉMICOS Y SUS OPCIONES — solo admin + candado */}
       <Route
         path="/admin/recursos"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute rol="admin" candado>
             <AdminRecursosInternos />
           </ProtectedRoute>
         }
@@ -115,7 +115,7 @@ function App() {
       <Route
         path="/admin/solicitudes"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute rol="admin" candado>
             <AdminAdmisiones />
           </ProtectedRoute>
         }
@@ -124,7 +124,7 @@ function App() {
       <Route
         path="/admin/colecturia"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute rol="admin" candado>
             <AdminPagosReingreso />
           </ProtectedRoute>
         }
@@ -134,7 +134,7 @@ function App() {
       <Route
         path="/admin/importar-alumnos"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute rol="admin" candado>
             <AdminImportarAlumnos />
           </ProtectedRoute>
         }
@@ -143,7 +143,7 @@ function App() {
       <Route
         path="/admin/codigos"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute rol="admin" candado>
             <AdminCodigos />
           </ProtectedRoute>
         }
@@ -152,7 +152,7 @@ function App() {
       <Route
         path="/admin/contratos"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute rol="admin" candado>
             <AdminContrato />
           </ProtectedRoute>
         }
@@ -161,7 +161,7 @@ function App() {
       <Route
         path="/admin/contratos-firmados"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute rol="admin" candado>
             <AdminContratosFirmados />
           </ProtectedRoute>
         }
@@ -171,7 +171,7 @@ function App() {
       <Route
         path="/admin/evaluaciones/constructor"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute rol="admin" candado>
             <ExamTemplateBuilder />
           </ProtectedRoute>
         }
@@ -179,7 +179,7 @@ function App() {
       <Route
         path="/admin/evaluaciones"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute rol="admin" candado>
             <AdminEvaluacionesList />
           </ProtectedRoute>
         }
@@ -187,7 +187,7 @@ function App() {
       <Route
         path="/admin/aprobacion"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute rol="admin" candado>
             <AdminAprobacionMatricula />
           </ProtectedRoute>
         }

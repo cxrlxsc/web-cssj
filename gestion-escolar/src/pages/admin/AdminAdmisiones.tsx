@@ -1,6 +1,7 @@
 // src/pages/admin/AdminAdmisiones.tsx
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { cerrarSesionAdmin } from '../../auth/adminAuth';
 import { admissionService } from '../../services/admissionService';
 import { admissionDocumentService } from '../../services/admissionDocumentService';
 import { evaluationService } from '../../services/evaluationService';
@@ -23,8 +24,8 @@ export default function AdminAdmisiones() {
   // Documentos REQUERIDOS del grado del aspirante seleccionado (para saber cuáles faltan)
   const [tiposRequeridos, setTiposRequeridos] = useState<{ type: AdmissionDocumentType; name: string }[]>([]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminSession'); 
+  const handleLogout = async () => {
+    await cerrarSesionAdmin();
     navigate('/admin/login');
   };
 

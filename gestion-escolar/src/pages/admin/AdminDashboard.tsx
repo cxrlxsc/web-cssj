@@ -1,13 +1,17 @@
 // src/pages/admin/AdminDashboard.tsx
 import { Link, useNavigate } from 'react-router-dom';
 import logoImg from '../../assets/logo.png';
+import { cerrarSesionAdmin } from '../../auth/adminAuth';
+import { useUserRole } from '../../hooks/useUserRole';
 import './adminStyles/AdminDashboard.css';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const { rol, cargando } = useUserRole();
+  const esAdmin = rol === 'admin';
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminSession'); 
+  const handleLogout = async () => {
+    await cerrarSesionAdmin();
     navigate('/admin/login');
   };
 
@@ -64,7 +68,8 @@ export default function AdminDashboard() {
 
           </section>
 
-          {/* ENTORNO 2: RECURSOS INTERNOS ACADÉMICOS */}
+          {/* ENTORNO 2: RECURSOS INTERNOS ACADÉMICOS — solo para admin */}
+          {!cargando && esAdmin && (
           <section className="dashboard-card card-recursos">
             
             <div className="card-header">
@@ -92,6 +97,7 @@ export default function AdminDashboard() {
             </div>
 
           </section>
+          )}
 
         </div>
       </main>

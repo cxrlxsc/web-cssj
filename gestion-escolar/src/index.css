@@ -758,21 +758,67 @@ background: transparent; /* ¡MAGIA! Se funde con el fondo del carrusel */  over
 /* COLUMNA DERECHA: IMAGEN */
 .inscripcion-estudiantes {
   flex: 1;
-  display: flex; 
-  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 6% 4rem 2rem;
+}
+
+/* Marco decorado: borde dorado desplazado detrás de la foto */
+.marco-estudiantes {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+}
+
+.marco-estudiantes::before {
+  content: '';
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  bottom: 16px;
+  left: 16px;
+  border: 3px solid rgba(250, 181, 41, 0.85);
+  border-radius: 28px;
+  z-index: 0;
 }
 
 .composicion-estudiantes {
+  position: relative;
+  z-index: 1;
   width: 100%;
-  height: 100%;
+  aspect-ratio: 5 / 4;
+  max-height: 520px;
   object-fit: cover;
+  border-radius: 24px;
+  box-shadow: 0 30px 60px rgba(0, 20, 10, 0.45);
+  display: block;
+}
+
+/* Etiqueta flotante sobre la esquina inferior de la foto */
+.chip-flotante-cta {
+  position: absolute;
+  bottom: -18px;
+  left: 28px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+  color: #002a4a;
+  font-weight: 800;
+  font-size: 0.95rem;
+  padding: 0.75rem 1.4rem;
+  border-radius: 50px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
 }
 
 /* Responsivo para celulares */
 @media (max-width: 900px) {
   .banner-premium { flex-direction: column; }
   .inscripcion-info { padding: 3rem 5%; }
-  .inscripcion-estudiantes { min-height: 400px; }
+  .inscripcion-estudiantes { min-height: auto; padding: 1.5rem 8% 3rem; }
+  .marco-estudiantes::before { top: -10px; right: -10px; bottom: 10px; left: 10px; }
   .inscripcion-info .titulo-seccion { font-size: 2.5rem; }
 }
 /* =======================================================

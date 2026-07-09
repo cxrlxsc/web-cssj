@@ -7,6 +7,7 @@ import { reingresoFinanceService } from '../../services/reingresoFinanceService'
 import { configService, GRADOS_ARANCEL, type ArancelGrado, type ConfigMatricula } from '../../services/configService';
 import { useAdminDialogs } from '../../components/admin/useAdminDialogs';
 import logoImg from '../../assets/logo.png';
+import { cerrarSesionAdmin } from '../../auth/adminAuth';
 import type { AdmissionFileReview } from '../../types';
 import './adminStyles/AdminColecturia.css';
 
@@ -45,8 +46,8 @@ export const AdminPagosReingreso = () => {
   const [ciclo, setCiclo] = useState<ConfigMatricula | null>(null);
   const [guardandoCiclo, setGuardandoCiclo] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminSession');
+  const handleLogout = async () => {
+    await cerrarSesionAdmin();
     navigate('/admin/login');
   };
 

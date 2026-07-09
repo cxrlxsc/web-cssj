@@ -6,6 +6,7 @@
 // La calificación es automática: el sistema saca la nota y el desglose por materia.
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { cerrarSesionAdmin } from '../../../auth/adminAuth';
 import { evaluationService } from '../../../services/evaluationService';
 import { compressImage } from '../../../utils/imageCompression';
 import logoImg from '../../../assets/logo.png';
@@ -235,8 +236,8 @@ export default function ExamTemplateBuilder() {
   // RENDERIZADO
   // ==========================================
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminSession');
+  const handleLogout = async () => {
+    await cerrarSesionAdmin();
     navigate('/admin/login');
   };
 

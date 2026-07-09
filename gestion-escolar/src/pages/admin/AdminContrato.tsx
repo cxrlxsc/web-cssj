@@ -5,6 +5,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { configService } from '../../services/configService';
 import logoImg from '../../assets/logo.png';
+import { cerrarSesionAdmin } from '../../auth/adminAuth';
 import './adminStyles/AdminContrato.css';
 
 // ============================================================================
@@ -128,8 +129,8 @@ export default function AdminContrato() {
     fecha_emision_letras: '2 días del mes de enero de dos mil veintiséis'
   });
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminSession'); 
+  const handleLogout = async () => {
+    await cerrarSesionAdmin();
     navigate('/admin/login');
   };
 

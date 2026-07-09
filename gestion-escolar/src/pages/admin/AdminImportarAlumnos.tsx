@@ -9,6 +9,7 @@
 //      volcado trae con tabuladores rotos). Estas tienen prioridad sobre el archivo.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { cerrarSesionAdmin } from '../../auth/adminAuth';
 import { alumnosParaImportar } from '../../data/alumnosParaImportar';
 import { parseAlumnosSqlDump, type ErrorParseo } from '../../utils/alumnoSqlParser';
 import { alumnoService, mapSqlRowToAlumno, pinPorDefecto, GRADUADO, type ResultadoImportacion } from '../../services/alumnoService';
@@ -26,8 +27,8 @@ export const AdminImportarAlumnos = () => {
     configService.getAnioMatricula().then(setAnioMatricula).catch(() => { /* usa el año actual */ });
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminSession');
+  const handleLogout = async () => {
+    await cerrarSesionAdmin();
     navigate('/admin/login');
   };
   const [resultado, setResultado] = useState<ResultadoImportacion | null>(null);

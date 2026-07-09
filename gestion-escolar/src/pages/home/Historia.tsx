@@ -2,10 +2,12 @@
 import { useEffect } from 'react';
 import { Navbar } from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import { usePortada } from '../../hooks/usePortada';
 import './Historia.css';
 
 export default function Historia() {
-  
+  const portada = usePortada('historia');
+
   // Datos históricos reales del Colegio Salesiano San José
   const hitosHistoricos = [
     {
@@ -61,7 +63,7 @@ export default function Historia() {
     <div className="historia-container">
       <Navbar />
 
-      <section className="hero-historia" data-aos="fade-in">
+      <section className="hero-historia" style={portada} data-aos="fade-in">
         <span className="badge-premium" data-aos="fade-down" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}>
           Legado Institucional
         </span>

@@ -5,9 +5,11 @@ import { db } from '../../firebase/config';
 
 import { Navbar } from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import { usePortada } from '../../hooks/usePortada';
 import './Ubicacion.css';
 
 export default function Ubicacion() {
+  const portada = usePortada('ubicacion');
   const [contacto, setContacto] = useState({
     telefono: 'Cargando información...',
     email: 'Cargando información...',
@@ -33,12 +35,6 @@ export default function Ubicacion() {
     window.scrollTo(0, 0);
   }, []);
 
-  // Función simulada para el formulario
-  const handleEnviarMensaje = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert("¡Mensaje enviado con éxito! Nos pondremos en contacto contigo pronto.");
-  };
-
   // URL exacta del Colegio Salesiano San José en Google Maps
 const mapaIframe = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15502.836855110825!2d-89.56066265!3d13.9800587!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8f62e620848db4cb%3A0x57f90b2d907fd094!2sColegio%20Salesiano%20San%20Jos%C3%A9!5e0!3m2!1ses!2ssv!4v1700000000000!5m2!1ses!2ssv";
   return (
@@ -46,7 +42,7 @@ const mapaIframe = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15502.
       <Navbar />
 
       {/* Banner Verde Premium */}
-      <section className="hero-ubicacion-premium">
+      <section className="hero-ubicacion-premium" style={portada}>
         <span className="badge-premium" data-aos="fade-down" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}>
           Contáctanos
         </span>
@@ -101,20 +97,6 @@ const mapaIframe = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15502.
                 </div>
 
               </div>
-            </div>
-
-            {/* Separador sutil */}
-            <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '1rem 0' }} />
-
-            {/* Bloque de Formulario */}
-            <div className="bloque-formulario">
-              <h3>Envíanos un mensaje</h3>
-              <form className="formulario-contacto" onSubmit={handleEnviarMensaje}>
-                <input type="text" className="input-premium" placeholder="Tu nombre completo" required />
-                <input type="email" className="input-premium" placeholder="Tu correo electrónico" required />
-                <textarea className="input-premium" rows={3} placeholder="¿En qué te podemos ayudar?" required></textarea>
-                <button type="submit" className="btn-enviar-premium">Enviar Mensaje</button>
-              </form>
             </div>
 
           </div>

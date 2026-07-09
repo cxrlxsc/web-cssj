@@ -4,10 +4,12 @@ import { Link } from 'react-router-dom'; // <-- IMPORTANTE: Agregamos Link para 
 import { Navbar } from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import { useAnioMatricula } from '../../hooks/useAnioMatricula';
+import { usePortada } from '../../hooks/usePortada';
 import './ProcesoInscripcion.css';
 
 export default function ProcesoInscripcion() {
   const anioMatricula = useAnioMatricula();
+  const portada = usePortada('proceso-inscripcion');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -17,7 +19,7 @@ export default function ProcesoInscripcion() {
     <div className="inscripcion-page">
       <Navbar />
 
-      <section className="hero-inscripcion" data-aos="fade-in">
+      <section className="hero-inscripcion" style={portada} data-aos="fade-in">
         <span className="badge-premium" data-aos="fade-down" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}>
           Admisiones {anioMatricula}
         </span>

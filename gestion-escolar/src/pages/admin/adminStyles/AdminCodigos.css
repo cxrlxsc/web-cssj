@@ -205,8 +205,169 @@
   color: #64748b;
 }
 
+/* ===== FORMULARIO DE DATOS (encargado + aspirante) ===== */
+.codigo-form {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-fila-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.1rem;
+}
+
+.campo { display: flex; flex-direction: column; gap: 0.4rem; }
+.campo label {
+  font-weight: 800;
+  color: #475569;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.campo input {
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+.campo input:focus {
+  outline: none;
+  border-color: #0068B3;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(0, 104, 179, 0.1);
+}
+
+/* ===== LISTA DE CÓDIGOS EMITIDOS ===== */
+.codigos-lista-card {
+  background: #FFFFFF;
+  padding: 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  margin-top: 2.5rem;
+}
+.codigos-lista-card h3 {
+  color: #030405;
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin: 0 0 0.4rem 0;
+}
+.codigos-lista-sub {
+  color: #64748b;
+  font-size: 0.95rem;
+  margin: 0 0 1.75rem 0;
+}
+
+.codigos-lista { display: flex; flex-direction: column; gap: 1rem; }
+
+.codigo-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: box-shadow 0.2s;
+}
+.codigo-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+.codigo-item-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+}
+.codigo-valor {
+  font-family: monospace;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #0068B3;
+  letter-spacing: 2px;
+}
+.codigo-anio {
+  font-size: 0.8rem;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  font-weight: 700;
+}
+.estado-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.25rem 0.7rem;
+  border-radius: 50px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-left: auto;
+}
+.estado-badge.disponible { background: #dcfce7; color: #15803d; }
+.estado-badge.usado { background: #e0e7ff; color: #4338ca; }
+.estado-badge.desactivado { background: #fee2e2; color: #b91c1c; }
+
+.codigo-datos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.6rem 1.25rem;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 0.85rem;
+}
+.dato-mini { display: flex; flex-direction: column; gap: 0.15rem; }
+.dato-mini .etq {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.dato-mini .val { font-size: 0.9rem; color: #030405; font-weight: 600; word-break: break-word; }
+
+.codigo-usos-titulo {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0 0 0.5rem 0;
+}
+.uso-fila {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0;
+  border-top: 1px dashed #e2e8f0;
+  font-size: 0.9rem;
+  color: #334155;
+  flex-wrap: wrap;
+}
+.uso-fila .uso-nombre { font-weight: 700; color: #030405; }
+.uso-fila .uso-fecha { color: #64748b; font-size: 0.85rem; margin-left: auto; }
+.uso-vacio {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  font-style: italic;
+  padding: 0.4rem 0;
+}
+
+.lista-vacia, .lista-cargando {
+  text-align: center;
+  color: #94a3b8;
+  padding: 2.5rem 1rem;
+  font-size: 0.95rem;
+}
+
 /* Responsividad */
 @media (max-width: 640px) {
+  .form-fila-2 { grid-template-columns: 1fr; }
+  .codigos-lista-card { padding: 1.5rem; }
   .admin-navbar {
     flex-direction: column;
     gap: 1rem;

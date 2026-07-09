@@ -2,10 +2,12 @@
 import { useEffect } from 'react';
 import { Navbar } from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import { usePortada } from '../../hooks/usePortada';
 import './Directorio.css';
 
 export default function Directorio() {
-  
+  const portada = usePortada('directorio');
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -67,7 +69,7 @@ export default function Directorio() {
       <Navbar />
 
       {/* Banner Principal Estilo Home */}
-      <section className="hero-directorio" data-aos="fade-in">
+      <section className="hero-directorio" style={portada} data-aos="fade-in">
         <span className="badge-premium" data-aos="fade-down" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}>
           Canales Oficiales
         </span>

@@ -1,13 +1,14 @@
 // src/pages/admin/AdminRecursosInternos.tsx
 import { Link, useNavigate } from 'react-router-dom';
 import logoImg from '../../assets/logo.png';
+import { cerrarSesionAdmin } from '../../auth/adminAuth';
 import './adminStyles/AdminRecursosInternos.css';
 
 export default function AdminRecursosInternos() {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminSession'); 
+  const handleLogout = async () => {
+    await cerrarSesionAdmin();
     navigate('/admin/login');
   };
 

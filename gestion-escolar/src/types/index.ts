@@ -151,6 +151,15 @@ export interface CodeUsage {
   usedAt: Date;
 }
 
+// Datos del encargado y aspirante para quien se emite el código (se capturan
+// al momento de generarlo, antes de que el aspirante lo canjee).
+export interface CodeAssignment {
+  applicantName: string;   // Nombre del aspirante
+  guardianName: string;    // Nombre del encargado
+  guardianPhone: string;   // Teléfono del encargado
+  guardianEmail: string;   // Correo del encargado
+}
+
 // Access Code interface
 export interface AccessCode {
   id: string;
@@ -165,6 +174,7 @@ export interface AccessCode {
   gradeLevel: string;
   createdBy: string;
   creatorName?: string;
+  assignedTo?: CodeAssignment;
   usedBy?: CodeUsage[];
 }
 

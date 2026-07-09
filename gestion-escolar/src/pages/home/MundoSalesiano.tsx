@@ -2,9 +2,11 @@
 import { useState, useEffect } from 'react';
 import { Navbar } from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import { usePortada } from '../../hooks/usePortada';
 import './MundoSalesiano.css';
 
 export default function MundoSalesiano() {
+  const portada = usePortada('mundo-salesiano');
   // Estado que controla qué pestaña estamos viendo
   const [seccionActiva, setSeccionActiva] = useState('don_bosco');
 
@@ -112,7 +114,7 @@ export default function MundoSalesiano() {
     <div className="mundo-page">
       <Navbar />
 
-      <section className="hero-mundo" data-aos="fade-in">
+      <section className="hero-mundo" style={portada} data-aos="fade-in">
         <span className="badge-premium" data-aos="fade-down" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}>
           Nuestra Identidad
         </span>

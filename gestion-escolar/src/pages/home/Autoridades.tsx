@@ -5,9 +5,11 @@ import { db } from '../../firebase/config';
 
 import { Navbar } from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import { usePortada } from '../../hooks/usePortada';
 import './Autoridades.css';
 
 export default function Autoridades() {
+  const portada = usePortada('autoridades');
   const [autoridades, setAutoridades] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
 
@@ -36,7 +38,7 @@ export default function Autoridades() {
       <Navbar />
 
       {/* Banner Verde */}
-      <section className="hero-autoridades" data-aos="fade-in">
+      <section className="hero-autoridades" style={portada} data-aos="fade-in">
         <span className="badge-premium" data-aos="fade-down" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}>
           Directorio Institucional
         </span>

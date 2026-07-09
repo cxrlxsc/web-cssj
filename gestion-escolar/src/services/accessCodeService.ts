@@ -48,6 +48,7 @@ export const accessCodeService = {
           creatorName: data.creatorName || 'Admin',
           createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt) || new Date(),
           expiresAt: data.expiresAt?.toDate?.() || (data.expiresAt ? new Date(data.expiresAt) : undefined),
+          assignedTo: data.assignedTo || undefined,
           usedBy: usedBy,
         } as AccessCode;
       });
@@ -223,6 +224,7 @@ export const accessCodeService = {
       creatorName: data.creatorName || 'Admin',
       createdAt: data.createdAt?.toDate?.() || new Date(),
       expiresAt: data.expiresAt?.toDate?.() || undefined,
+      assignedTo: data.assignedTo || undefined,
       usedBy: (data.usedBy || []).map((usage: any) => ({
         ...usage,
         usedAt: usage.usedAt?.toDate?.() || new Date()
