@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { alumnoService } from '../../services/alumnoService';
 import { configService } from '../../services/configService';
+import { obtenerSesionEstudiante, cerrarSesionEstudiante } from '../../auth/studentSession';
 import type { AlumnoReingreso } from '../../types/reingreso';
 
 // Estilos reutilizables para mantener el código limpio
@@ -24,28 +25,31 @@ export const FormularioReingreso = () => {
   }, []);
 
   useEffect(() => {
-    const sessionCarnet = localStorage.getItem('studentSession');
-    if (!sessionCarnet) {
-      navigate('/reingreso/login');
-      return;
-    }
-    // Cargamos el expediente real desde Firebase (colección 'alumnos')
-    alumnoService.getAlumno(sessionCarnet).then(alumno => {
-      if (!alumno) {
-        localStorage.removeItem('studentSession');
+    (async () => {
+      // Esperamos a que la sesión (token del estudiante) esté lista antes de leer.
+      const sessionCarnet = await obtenerSesionEstudiante();
+      if (!sessionCarnet) {
         navigate('/reingreso/login');
-      } else {
-        setStudent(alumno);
+        return;
       }
-    }).catch(() => {
-      navigate('/reingreso/login');
-    });
+      try {
+        const alumno = await alumnoService.getAlumno(sessionCarnet);
+        if (!alumno) {
+          await cerrarSesionEstudiante();
+          navigate('/reingreso/login');
+        } else {
+          setStudent(alumno);
+        }
+      } catch {
+        navigate('/reingreso/login');
+      }
+    })();
   }, [navigate]);
 
   if (!student) return <div style={{ textAlign: 'center', marginTop: '3rem' }}>Cargando expediente...</div>;
 
-  const handleLogout = () => {
-    localStorage.removeItem('studentSession');
+  const handleLogout = async () => {
+    await cerrarSesionEstudiante();
     navigate('/reingreso/login');
   };
 

@@ -1,8 +1,10 @@
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  addDoc, 
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -466,7 +468,9 @@ export const admissionService = {
     // 4. Contraseña inicial temporal derivada del carnet
     const password = buildTempPassword(carnet);
 
-    // 5. Persistir en la admisión
+    // 5. Persistir en la admisión — SIN la contraseña (dato sensible).
+    //    La contraseña va aparte en 'studentCredentials' (colección solo-admin),
+    //    para que no quede dentro de la admisión que el aspirante puede leer.
     const now = new Date();
     await this.updateAdmission(admission.id, {
       status: 'approved',
@@ -481,7 +485,6 @@ export const admissionService = {
       },
       assignedCredentials: {
         microsoftEmail: email,
-        microsoftPassword: password,
         studentCode: carnet,
         assignedBy: adminName,
         assignedByName: adminName,
@@ -492,6 +495,30 @@ export const admissionService = {
       },
     });
 
+    // 6. Contraseña temporal en colección aislada (solo-admin en las reglas).
+    await setDoc(doc(db, 'studentCredentials', admission.id), {
+      microsoftPassword: password,
+      microsoftEmail: email,
+      carnet,
+      assignedAt: Timestamp.fromDate(now),
+    });
+
     return { carnet, email, password };
+  },
+
+  /**
+   * Contraseña temporal M365 de una admisión (para mostrarla en el panel admin).
+   * Lee de 'studentCredentials'; si no existe (admisiones aprobadas antes de este
+   * cambio) la reconstruye a partir del carnet, que es determinista.
+   */
+  async getStudentPassword(admission: Admission): Promise<string> {
+    try {
+      const snap = await getDoc(doc(db, 'studentCredentials', admission.id));
+      const guardada = snap.exists() ? (snap.data().microsoftPassword as string | undefined) : undefined;
+      if (guardada) return guardada;
+    } catch {
+      // sin conexión o sin permiso: caemos al valor determinista
+    }
+    return admission.carnet ? buildTempPassword(admission.carnet) : '';
   }
 };

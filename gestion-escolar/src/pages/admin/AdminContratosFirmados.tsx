@@ -39,6 +39,42 @@ export default function AdminContratosFirmados() {
   const [contratos, setContratos] = useState<ContratoRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<ContratoRow | null>(null);
+  // Red de seguridad: contrato de nuevo ingreso ya aprobado cuyo alumno NO existe
+  // en la colección 'alumnos' (p. ej. un fallo a medio proceso). Permite completarla.
+  const [matriculaIncompleta, setMatriculaIncompleta] = useState(false);
+  const [completandoMatricula, setCompletandoMatricula] = useState(false);
+
+  useEffect(() => {
+    setMatriculaIncompleta(false);
+    if (!selected || selected.tipo !== 'nuevo' || selected.contract.status !== 'approved') return;
+    const carnet = selected.admission?.carnet;
+    if (!carnet) return;
+    let activo = true;
+    alumnoService.getAlumno(carnet)
+      .then(alumno => { if (activo && !alumno) setMatriculaIncompleta(true); })
+      .catch(() => { /* sin conexión: no ofrecemos el botón */ });
+    return () => { activo = false; };
+  }, [selected]);
+
+  const handleCompletarMatricula = async () => {
+    if (!selected?.admission) return;
+    setCompletandoMatricula(true);
+    try {
+      const resultado = await alumnoService.crearAlumnoDesdeAdmision(selected.admission);
+      if (!resultado) throw new Error('Sin carnet');
+      await admissionService.updateAdmissionStatus(selected.refId, 'enrolled', 'Admin_Registro');
+      setMatriculaIncompleta(false);
+      await alert({
+        title: 'Matrícula completada',
+        message: `${selected.studentName} ya forma parte del registro de alumnos.\n\nCarnet: ${resultado.carnet}${resultado.correo ? `\nCorreo institucional: ${resultado.correo}` : ''}\nPIN del portal de reingreso: ${resultado.pin}`,
+        tone: 'success',
+      });
+    } catch {
+      await alert({ title: 'Error', message: 'No se pudo completar la matrícula. Intenta de nuevo.', tone: 'error' });
+    } finally {
+      setCompletandoMatricula(false);
+    }
+  };
 
   const handleLogout = async () => {
     await cerrarSesionAdmin();
@@ -91,6 +127,17 @@ export default function AdminContratosFirmados() {
   useEffect(() => { loadContratos(); }, []);
 
   const handleAprobar = async (row: ContratoRow) => {
+    // NUEVO INGRESO: sin carnet no hay matrícula posible. Se valida ANTES de
+    // tocar nada, para no dejar contratos aprobados sin alumno creado.
+    if (row.tipo === 'nuevo' && !row.admission?.carnet) {
+      await alert({
+        title: 'Falta un paso previo',
+        message: `${row.studentName} aún no tiene carnet asignado.\n\nApruébalo primero en "Aprobación y Matrícula" (ahí se genera su carnet, correo y contraseña) y luego regresa a aprobar este contrato.`,
+        tone: 'error',
+      });
+      return;
+    }
+
     const ok = await confirm({
       title: row.tipo === 'nuevo' ? 'Aprobar y matricular' : 'Aprobar contrato',
       message: `¿Confirmas que el contrato de ${row.studentName} tiene las firmas correctas y es válido legalmente?\n${row.tipo === 'nuevo' ? 'Esto matriculará oficialmente al alumno.' : 'La matrícula del alumno queda oficializada.'}`,
@@ -108,24 +155,27 @@ export default function AdminContratosFirmados() {
         return;
       }
 
-      // NUEVO INGRESO — matrícula oficial: pasa a la colección 'alumnos' con TODO su
-      // expediente. Desde el siguiente ciclo inicia sesión como ANTIGUO INGRESO
-      // (reingreso) con su carnet + PIN (su NIE, o últimos 4 del carnet si no tiene).
+      // NUEVO INGRESO — matrícula oficial: PRIMERO se crea el alumno en la
+      // colección 'alumnos' con TODO su expediente (si esto falla, el contrato
+      // queda pendiente y se puede reintentar). Desde el siguiente ciclo inicia
+      // sesión como ANTIGUO INGRESO (reingreso) con su carnet + PIN (su NIE,
+      // o últimos 4 del carnet si no tiene).
+      const resultado = await alumnoService.crearAlumnoDesdeAdmision(row.admission!);
+      if (!resultado) {
+        throw new Error('La admisión no tiene carnet asignado.');
+      }
       await admissionFinanceService.reviewContract(row.refId, 'approved', 'Admin_Registro');
-      const resultado = row.admission ? await alumnoService.crearAlumnoDesdeAdmision(row.admission) : null;
       await admissionService.updateAdmissionStatus(row.refId, 'enrolled', 'Admin_Registro');
 
       setSelected(null);
       await loadContratos();
       await alert({
-        title: '¡Contrato aprobado!',
-        message: resultado
-          ? `El alumno queda matriculado oficialmente y ya forma parte del registro de alumnos.\n\nCarnet: ${resultado.carnet}\nPIN del portal de reingreso (próximos ciclos): ${resultado.pin}`
-          : 'El alumno queda matriculado, pero no tiene carnet asignado: apruébalo primero en "Aprobación y Matrícula" y vuelve a aprobar el contrato.',
+        title: '¡Alumno matriculado oficialmente!',
+        message: `${row.studentName} ya forma parte del registro de alumnos.\n\nCarnet: ${resultado.carnet}${resultado.correo ? `\nCorreo institucional: ${resultado.correo}` : ''}\nPIN del portal de reingreso (próximos ciclos): ${resultado.pin}`,
         tone: 'success',
       });
     } catch {
-      await alert({ title: 'Error', message: 'No se pudo aprobar el contrato.', tone: 'error' });
+      await alert({ title: 'Error', message: 'No se pudo completar la matrícula. El contrato sigue pendiente: revisa la conexión e intenta de nuevo.', tone: 'error' });
     }
   };
 
@@ -282,6 +332,23 @@ export default function AdminContratosFirmados() {
                         <strong>Motivo enviado:</strong> {selected.contract.rejectionReason}
                       </p>
                     )}
+                  </div>
+                )}
+
+                {/* RED DE SEGURIDAD: contrato aprobado pero alumno ausente en 'alumnos' */}
+                {matriculaIncompleta && (
+                  <div style={{ marginTop: '1rem', textAlign: 'center', padding: '1.5rem', background: '#fffbeb', borderRadius: '8px', border: '1px solid #fde68a' }}>
+                    <p style={{ margin: '0 0 1rem', color: '#92400e', fontWeight: 700 }}>
+                      Atención: este contrato está aprobado, pero el alumno aún no aparece en el registro de alumnos.
+                    </p>
+                    <button
+                      onClick={handleCompletarMatricula}
+                      disabled={completandoMatricula}
+                      className="btn-approve-large"
+                      style={{ opacity: completandoMatricula ? 0.6 : 1 }}
+                    >
+                      {completandoMatricula ? 'Matriculando...' : 'Completar Matrícula Ahora'}
+                    </button>
                   </div>
                 )}
               </div>

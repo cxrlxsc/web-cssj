@@ -29,6 +29,8 @@ const AZURE_CLIENT_SECRET = defineSecret("AZURE_CLIENT_SECRET");
 // Parámetros no sensibles (con default). El SKU de licencia es opcional: si se deja
 // vacío no se asigna licencia (la cuenta se crea, pero Teams requiere licencia).
 const AZURE_LICENSE_SKU = defineString("AZURE_LICENSE_SKU", { default: "" });
+// Dominio de los administradores autorizados a provisionar cuentas.
+const ADMIN_EMAIL_DOMAIN = defineString("ADMIN_EMAIL_DOMAIN", { default: "salesianosanjose.edu.sv" });
 const GRAPH = "https://graph.microsoft.com/v1.0";
 
 /** Obtiene un token de aplicación para Microsoft Graph. */
@@ -68,10 +70,17 @@ export const provisionM365User = onCall(
     region: "us-central1",
   },
   async (request) => {
-    // 1. Autorización: debe ser un usuario autenticado. En esta app, solo los
-    //    administradores usan Firebase Auth (los aspirantes usan códigos de acceso).
+    // 1. Autorización: debe ser un administrador autenticado con correo
+    //    institucional. En esta app solo los administradores usan Firebase Auth
+    //    (los aspirantes usan códigos de acceso), y crear una cuenta M365 consume
+    //    una licencia, así que restringimos por dominio del correo.
+    const callerEmail = (request.auth?.token?.email as string | undefined)?.toLowerCase() || "";
+    const dominio = ADMIN_EMAIL_DOMAIN.value().trim().toLowerCase();
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Debes iniciar sesión como administrador.");
+    }
+    if (dominio && !callerEmail.endsWith("@" + dominio)) {
+      throw new HttpsError("permission-denied", "Solo un administrador institucional puede provisionar cuentas.");
     }
 
     // 2. Leer la admisión.
@@ -88,7 +97,11 @@ export const provisionM365User = onCall(
     const adm = snap.data() as any;
     const creds = adm.assignedCredentials || {};
     const email: string = creds.microsoftEmail;
-    const password: string = creds.microsoftPassword;
+    // La contraseña vive aislada en 'studentCredentials' (solo-admin). Las
+    // admisiones aprobadas antes de ese cambio aún la tienen dentro de la admisión.
+    const credSnap = await admin.firestore().doc(`studentCredentials/${admissionId}`).get();
+    const password: string =
+      (credSnap.exists ? (credSnap.data() as any)?.microsoftPassword : undefined) || creds.microsoftPassword;
     const firstName: string = adm.studentFirstName || "";
     const lastName: string = adm.studentLastName || "";
 
@@ -186,3 +199,31 @@ export const provisionM365User = onCall(
     }
   }
 );
+
+/**
+ * Login de reingreso (alumno antiguo). Valida carnet + PIN EN EL SERVIDOR
+ * (el PIN nunca viaja al navegador) y devuelve un token de sesión de Firebase
+ * con uid = carnet. Con ese token el alumno solo puede leer/editar SU propio
+ * documento en 'alumnos' (según las reglas de Firestore).
+ */
+export const loginReingreso = onCall({ region: "us-central1" }, async (request) => {
+  const carnet = String(request.data?.carnet ?? "").trim();
+  const pin = String(request.data?.pin ?? "").trim();
+  if (!carnet || !pin) {
+    throw new HttpsError("invalid-argument", "Carnet y PIN son obligatorios.");
+  }
+
+  const snap = await admin.firestore().doc(`alumnos/${carnet}`).get();
+  // Mensaje genérico en todos los casos para no revelar si el carnet existe.
+  const credencialesInvalidas = () =>
+    new HttpsError("permission-denied", "Carnet o PIN incorrectos.");
+
+  if (!snap.exists) throw credencialesInvalidas();
+  const alumno = snap.data() as any;
+  if ((alumno.estado || "ACTIVO") !== "ACTIVO") throw credencialesInvalidas();
+  if (String(alumno.pin || "") !== pin) throw credencialesInvalidas();
+
+  // uid = carnet, con un claim que marca la sesión como de estudiante.
+  const token = await admin.auth().createCustomToken(carnet, { role: "student", carnet });
+  return { token };
+});

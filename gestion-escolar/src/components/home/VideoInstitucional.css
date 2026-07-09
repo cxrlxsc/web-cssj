@@ -1,0 +1,105 @@
+/* src/components/home/VideoInstitucional.css */
+
+.video-seccion {
+  padding: 5rem 5% 4rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.video-header {
+  margin-bottom: 3rem;
+}
+
+/* Marco decorado del video */
+.video-marco {
+  position: relative;
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+/* Borde dorado desplazado detrás del video (efecto marco) */
+.video-marco::before {
+  content: '';
+  position: absolute;
+  top: -18px;
+  left: -18px;
+  right: 18px;
+  bottom: 18px;
+  border: 3px solid rgba(250, 181, 41, 0.85);
+  border-radius: 24px;
+  z-index: 0;
+}
+
+/* Video e imagen de portada comparten forma y proporción 16:9 */
+.video-media {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 30px 60px rgba(0, 20, 10, 0.35);
+  object-fit: cover;
+}
+
+/* Portada clicable (thumbnail + botón play) */
+.video-portada {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 20px;
+}
+
+/* Velo verde institucional sobre la miniatura para que el play resalte */
+.video-velo {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(0, 42, 74, 0.15), rgba(0, 140, 90, 0.35));
+  transition: background 0.3s ease;
+}
+.video-portada:hover .video-velo {
+  background: linear-gradient(180deg, rgba(0, 42, 74, 0.25), rgba(0, 140, 90, 0.45));
+}
+
+/* Botón de reproducción */
+.video-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: #008C5A;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 6px; /* centra ópticamente el triángulo */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(250, 181, 41, 0.6);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+.video-portada:hover .video-play {
+  transform: translate(-50%, -50%) scale(1.08);
+  background: #007049;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.4), 0 0 0 10px rgba(250, 181, 41, 0.25);
+}
+
+/* Responsivo */
+@media (max-width: 640px) {
+  .video-seccion { padding: 3.5rem 5% 3rem; }
+  .video-header { margin-bottom: 2rem; }
+  .video-marco::before { top: -10px; left: -10px; right: 10px; bottom: 10px; border-radius: 18px; }
+  .video-play { width: 64px; height: 64px; }
+  .video-play svg { width: 28px; height: 28px; }
+}

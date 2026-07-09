@@ -5,6 +5,7 @@ import { doc, getDoc, type DocumentData } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { alumnoService } from '../../services/alumnoService';
 import { configService } from '../../services/configService';
+import { obtenerSesionEstudiante, cerrarSesionEstudiante } from '../../auth/studentSession';
 import './ContratoImpresion.css';
 
 export default function ContratoImpresion() {
@@ -130,7 +131,7 @@ export default function ContratoImpresion() {
         }
       } else {
         // Es un alumno Antiguo (Reingreso): expediente real desde Firebase (colección 'alumnos')
-        const sessionCarnet = localStorage.getItem('studentSession');
+        const sessionCarnet = await obtenerSesionEstudiante();
 
         if (!sessionCarnet) {
           navigate('/reingreso/login');
@@ -140,7 +141,7 @@ export default function ContratoImpresion() {
         try {
           const data = await alumnoService.getAlumno(sessionCarnet);
           if (!data) {
-            localStorage.removeItem('studentSession');
+            await cerrarSesionEstudiante();
             navigate('/reingreso/login');
             return;
           }

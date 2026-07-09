@@ -6,6 +6,7 @@ import { evaluationService } from '../../services/evaluationService';
 import { microsoftProvisioningService } from '../../services/microsoftProvisioningService';
 import logoImg from '../../assets/logo.png';
 import { cerrarSesionAdmin } from '../../auth/adminAuth';
+import { buildTempPassword } from '../../utils/credentialsGenerator';
 import type { Admission, AdmissionEvaluation } from '../../types';
 
 const VERDE = '#008C5A';
@@ -310,7 +311,7 @@ export default function AdminAprobacionMatricula() {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.6rem' }}>
                         <CampoCredencial label="Carnet" valor={adm.carnet || cred?.studentCode || '—'} onCopy={copiar} />
                         <CampoCredencial label="Correo (Teams)" valor={cred?.microsoftEmail || '—'} onCopy={copiar} />
-                        <CampoCredencial label="Contraseña" valor={cred?.microsoftPassword || '—'} onCopy={copiar} />
+                        <CampoCredencial label="Contraseña" valor={adm.carnet ? buildTempPassword(adm.carnet) : '—'} onCopy={copiar} />
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
                         <span style={{ fontSize: '0.85rem', color: '#64748b' }}>

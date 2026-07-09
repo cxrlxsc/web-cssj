@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cerrarSesionAdmin } from '../../auth/adminAuth';
+import { useAdminDialogs } from '../../components/admin/useAdminDialogs';
 import { admissionService } from '../../services/admissionService';
 import { admissionDocumentService } from '../../services/admissionDocumentService';
 import { evaluationService } from '../../services/evaluationService';
@@ -11,6 +12,7 @@ import './adminStyles/AdminAdmisiones.css';
 
 export default function AdminAdmisiones() {
   const navigate = useNavigate();
+  const { confirm, alert, dialogs } = useAdminDialogs();
   const [admissions, setAdmissions] = useState<Admission[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -69,13 +71,13 @@ export default function AdminAdmisiones() {
       await admissionDocumentService.approveDocument(docId, 'Admin_Registro');
       setDocuments(docs => docs.map(d => d.id === docId ? { ...d, status: 'approved' } : d));
     } catch (error) {
-      alert("Error al aprobar documento");
+      await alert({ title: 'Error', message: 'Error al aprobar el documento.', tone: 'error' });
     }
   };
 
   const handleRejectDoc = async (docId: string) => {
     if (!rejectReason.trim()) {
-      alert("Debes escribir un motivo para el rechazo");
+      await alert({ title: 'Falta el motivo', message: 'Debes escribir un motivo para el rechazo.', tone: 'error' });
       return;
     }
     try {
@@ -84,14 +86,19 @@ export default function AdminAdmisiones() {
       setRejectReason('');
       setDocuments(docs => docs.map(d => d.id === docId ? { ...d, status: 'rejected', rejectionReason: rejectReason } : d));
     } catch (error) {
-      alert("Error al rechazar documento");
+      await alert({ title: 'Error', message: 'Error al rechazar el documento.', tone: 'error' });
     }
   };
 
   const handleHabilitarExamenes = async () => {
     if (!selectedAdmission) return;
-    const confirm = window.confirm("¿Estás seguro de habilitar los exámenes para este aspirante? Esto le notificará que puede iniciar sus pruebas.");
-    if (!confirm) return;
+    const ok = await confirm({
+      title: 'Habilitar exámenes',
+      message: '¿Habilitar los exámenes para este aspirante? Se le notificará que puede iniciar sus pruebas.',
+      confirmLabel: 'Habilitar',
+      tone: 'verde',
+    });
+    if (!ok) return;
 
     try {
       await evaluationService.createEvaluationsForAdmission(
@@ -101,11 +108,11 @@ export default function AdminAdmisiones() {
       );
       // La solicitud pasa a fase de evaluaciones: así el aspirante ve sus citas en el portal
       await admissionService.updateAdmissionStatus(selectedAdmission.id, 'evaluations', 'Admin_Registro');
-      alert("Exámenes habilitados con éxito. El aspirante ya puede ver sus evaluaciones en su portal.");
-      loadAdmissions(); 
-      setSelectedAdmission(null); 
+      await alert({ title: 'Exámenes habilitados', message: 'El aspirante ya puede ver sus evaluaciones en su portal.', tone: 'success' });
+      loadAdmissions();
+      setSelectedAdmission(null);
     } catch (error) {
-      alert("Error al habilitar exámenes.");
+      await alert({ title: 'Error', message: 'Error al habilitar los exámenes.', tone: 'error' });
     }
   };
 
@@ -329,6 +336,7 @@ export default function AdminAdmisiones() {
         )}
 
       </main>
+      {dialogs}
     </div>
   );
 }

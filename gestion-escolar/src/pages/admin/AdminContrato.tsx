@@ -6,6 +6,7 @@ import { db } from '../../firebase/config';
 import { configService } from '../../services/configService';
 import logoImg from '../../assets/logo.png';
 import { cerrarSesionAdmin } from '../../auth/adminAuth';
+import { useAdminDialogs } from '../../components/admin/useAdminDialogs';
 import './adminStyles/AdminContrato.css';
 
 // ============================================================================
@@ -102,6 +103,7 @@ type DatosInstitucionales = typeof DEFAULT_INSTITUCIONAL;
 
 export default function AdminContrato() {
   const navigate = useNavigate();
+  const { confirm, alert, dialogs } = useAdminDialogs();
   const [activeTab, setActiveTab] = useState<'preview' | 'editor'>('preview');
 
   // Estado para la plantilla en crudo (desde Firebase)
@@ -177,9 +179,9 @@ export default function AdminContrato() {
         datos_institucionales: datosInstitucionales,
         ultima_actualizacion: new Date().toISOString()
       }, { merge: true });
-      alert("¡Contrato actualizado correctamente para todos los alumnos!");
+      await alert({ title: 'Contrato actualizado', message: 'El documento legal quedó actualizado para todos los alumnos.', tone: 'success' });
     } catch (error) {
-      alert("Error al guardar en Firebase.");
+      await alert({ title: 'Error', message: 'Error al guardar en Firebase.', tone: 'error' });
     } finally {
       setSaving(false);
     }
@@ -193,8 +195,14 @@ export default function AdminContrato() {
     setDatosInstitucionales({ ...datosInstitucionales, [e.target.name]: e.target.value });
   };
 
-  const handleRestaurarPlantilla = () => {
-    if (window.confirm('Esto reemplazará el texto del editor con la plantilla oficial más reciente (la que usa los campos de Director editables). Tus cambios no guardados en el texto se perderán. ¿Continuar?')) {
+  const handleRestaurarPlantilla = async () => {
+    const ok = await confirm({
+      title: 'Restaurar plantilla oficial',
+      message: 'Esto reemplazará el texto del editor con la plantilla oficial más reciente. Tus cambios no guardados en el texto se perderán. ¿Continuar?',
+      confirmLabel: 'Restaurar',
+      tone: 'navy',
+    });
+    if (ok) {
       setTemplateText(DEFAULT_TEMPLATE);
     }
   };
@@ -367,6 +375,7 @@ export default function AdminContrato() {
         )}
 
       </main>
+      {dialogs}
     </div>
   );
 }

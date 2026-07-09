@@ -1,0 +1,173 @@
+rules_version = '2';
+
+// ============================================================================
+// Reglas de seguridad de Firestore — Colegio Salesiano San José
+// ============================================================================
+//
+// MODELO DE ACCESO DE ESTA APP:
+//   - ADMINISTRADORES: usan Firebase Authentication (correo institucional).
+//     Son los únicos con sesión autenticada -> request.auth != null.
+//   - ASPIRANTES (nuevo ingreso): entran con un CÓDIGO de acceso, SIN sesión.
+//   - ALUMNOS (reingreso): entran con CARNET + PIN, SIN sesión.
+//
+// Por eso muchas colecciones permiten operaciones sin autenticación: es la única
+// forma de que aspirantes y alumnos operen su propio expediente. Estas reglas
+// hacen lo que SÍ se puede hacer de forma segura sin romper esos flujos:
+//   * Bloquear por defecto cualquier colección no contemplada.
+//   * Contenido del sitio y configuración: lectura pública, escritura solo admin.
+//   * Prohibir BORRADOS a quien no sea admin (evita borrados masivos / vandalismo).
+//   * Prohibir LISTAR el directorio de alumnos (evita volcar PINs/datos de menores).
+//
+// ⚠️ IMPORTANTE (para que isAdmin sea confiable): en la consola de Firebase,
+//    Authentication → Settings, DESACTIVA el registro público ("Enable create").
+//    Así request.auth != null solo puede ser una cuenta creada a mano por ustedes.
+//
+// La confidencialidad total de PINs y contraseñas requiere mover la validación a
+// Cloud Functions (Fase 2). Estas reglas son la base sólida sobre la que se apoya.
+// ============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Los ADMINISTRADORES entran con correo/contraseña (proveedor "password").
+    // Los ALUMNOS de reingreso entran con un token de sesión (proveedor "custom",
+    // uid = carnet). Distinguimos por el proveedor para que un alumno autenticado
+    // NO sea tratado como administrador.
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'password';
+    }
+
+    // ¿La sesión es la del alumno dueño de ese carnet?
+    function esDuenoDelCarnet(carnet) {
+      return request.auth != null && request.auth.uid == carnet;
+    }
+
+    // -------------------------------------------------------------------
+    // CONTENIDO PÚBLICO DEL SITIO — lectura para todos, escritura solo admin
+    // -------------------------------------------------------------------
+    match /institucional/{doc} {   // misión, visión, contactos, portadas
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /noticias/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /eventos/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /autoridades/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /configuracion/{doc} {   // ciclo escolar, aranceles, plantilla de contrato
+      allow read: if true;         // los portales públicos (talonario, contrato) lo necesitan
+      allow write: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------
+    // ROLES DE ADMINISTRADORES — se leen al iniciar sesión; se editan en consola
+    // -------------------------------------------------------------------
+    match /usuarios_admin/{correo} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Contraseñas temporales M365 de los estudiantes — SOLO admin.
+    // Aisladas aquí para que no queden dentro de la admisión (que el aspirante lee).
+    match /studentCredentials/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------
+    // DIRECTORIO DE ALUMNOS (reingreso) — login y ratificación con carnet+PIN
+    // Se lee/actualiza el documento propio por ID (carnet). Se PROHÍBE listar
+    // toda la colección salvo a un admin (evita volcar el directorio con PINs).
+    // -------------------------------------------------------------------
+    match /alumnos/{carnet} {
+      // El alumno solo lee/edita SU documento (uid == carnet); el PIN se valida en
+      // el servidor (Cloud Function loginReingreso) antes de emitir la sesión.
+      allow get, update: if isAdmin() || esDuenoDelCarnet(carnet);
+      allow list: if isAdmin();           // solo el admin puede listar/buscar todos
+      allow create, delete: if isAdmin(); // importación y borrado solo admin
+    }
+
+    // -------------------------------------------------------------------
+    // CÓDIGOS DE ACCESO — el aspirante valida y "consume" su código sin sesión
+    // -------------------------------------------------------------------
+    match /accessCodes/{id} {
+      allow read: if true;                // validar el código
+      allow update: if true;              // marcarlo como usado al canjearlo
+      allow create, delete: if isAdmin(); // emisión y borrado solo admin
+    }
+
+    // -------------------------------------------------------------------
+    // ADMISIONES (nuevo ingreso) Y SU DOCUMENTACIÓN — el aspirante entra con código
+    // -------------------------------------------------------------------
+    match /admissions/{id} {
+      allow read, create, update: if true;  // crear y trabajar el expediente propio
+      allow delete: if isAdmin();
+    }
+    match /admissionDocuments/{id} {
+      allow read, create, update: if true;  // subir documentos y revisarlos
+      allow delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------
+    // EVALUACIONES / EXÁMENES
+    // -------------------------------------------------------------------
+    match /evaluationTemplates/{id} {       // el admin construye; el aspirante lee su examen
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /admissionEvaluations/{id} {      // el aspirante responde su examen sin sesión
+      allow read, create, update: if true;
+      allow delete: if isAdmin();
+    }
+    match /evaluationPhases/{id} {
+      allow read, create, update: if true;
+      allow delete: if isAdmin();
+    }
+    match /evaluators/{id} {
+      allow read, create, update: if true;
+      allow delete: if isAdmin();
+    }
+    match /evaluationSessions/{id} {
+      allow read, create, update: if true;
+      allow delete: if isAdmin();
+    }
+    match /globalEvaluationSchedules/{id} {
+      allow read, create, update: if true;
+      allow delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------
+    // MATRÍCULA Y PAGOS (nuevo ingreso y reingreso) — subidas del aspirante/alumno
+    // -------------------------------------------------------------------
+    match /enrollments/{id} {
+      allow read, create, update: if true;
+      allow delete: if isAdmin();
+    }
+    match /enrollmentPayments/{id} {
+      allow read, create, update: if true;
+      allow delete: if isAdmin();
+    }
+    match /enrollmentContracts/{id} {
+      allow read, create, update: if true;
+      allow delete: if isAdmin();
+    }
+    match /reingresoPayments/{id} {
+      allow read, create, update: if true;
+      allow delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------
+    // TODO LO DEMÁS: bloqueado (este es también el comportamiento por defecto)
+    // -------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

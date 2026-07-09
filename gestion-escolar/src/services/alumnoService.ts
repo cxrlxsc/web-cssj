@@ -21,6 +21,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { configService } from './configService';
+import { iniciarSesionEstudiante } from '../auth/studentSession';
 import type { AlumnoReingreso, AlumnoSqlRow, ContactoFamiliar } from '../types/reingreso';
 import type { Admission } from '../types';
 
@@ -302,12 +303,13 @@ export const alumnoService = {
    * Login del portal de reingreso: carnet + PIN.
    * Devuelve el alumno si las credenciales son válidas y está activo; si no, null.
    */
+  // El PIN se valida EN EL SERVIDOR (Cloud Function): nunca se descarga el PIN al
+  // navegador. Si las credenciales son válidas, queda una sesión de Firebase con
+  // uid = carnet y ya se puede leer el expediente propio.
   async loginReingreso(carnet: string, pin: string): Promise<AlumnoReingreso | null> {
-    const alumno = await this.getAlumno(carnet);
-    if (!alumno) return null;
-    if ((alumno.estado || 'ACTIVO') !== 'ACTIVO') return null;
-    if ((alumno.pin || '') !== (pin || '').trim()) return null;
-    return alumno;
+    const ok = await iniciarSesionEstudiante(carnet, pin);
+    if (!ok) return null;
+    return this.getAlumno(carnet.trim());
   },
 
   /** Actualiza campos del alumno (ratificación de datos del formulario). */
@@ -348,11 +350,12 @@ export const alumnoService = {
    * MATRÍCULA OFICIAL DE NUEVO INGRESO: convierte una admisión (con contrato
    * firmado y aprobado) en un documento de la colección 'alumnos'.
    * A partir del siguiente ciclo, el alumno inicia sesión en el portal de
-   * REINGRESO con su carnet + PIN (últimos 4 dígitos del carnet) y sigue el
-   * mismo proceso que los alumnos antiguos.
-   * Devuelve el carnet, o null si la admisión aún no tiene carnet asignado.
+   * REINGRESO con su carnet + PIN (su NIE, o últimos 4 dígitos del carnet si
+   * no tiene) y sigue el mismo proceso que los alumnos antiguos.
+   * Es idempotente (setDoc con merge): re-ejecutarla no duplica ni daña datos.
+   * Devuelve carnet/pin/correo, o null si la admisión aún no tiene carnet asignado.
    */
-  async crearAlumnoDesdeAdmision(admission: Admission): Promise<{ carnet: string; pin: string } | null> {
+  async crearAlumnoDesdeAdmision(admission: Admission): Promise<{ carnet: string; pin: string; correo: string } | null> {
     const carnet = (admission.carnet || '').trim();
     if (!carnet) return null;
 
@@ -407,6 +410,8 @@ export const alumnoService = {
     const nie = v('alumno_nie');
     // PIN igual que los alumnos antiguos: el NIE (o últimos 4 del carnet si no tiene)
     const pin = nie || carnet.slice(-4);
+    // Correo institucional M365 asignado al aprobar la admisión
+    const correo = admission.assignedCredentials?.microsoftEmail || '';
 
     const alumno: AlumnoReingreso = {
       // Ingreso
@@ -474,6 +479,7 @@ export const alumnoService = {
         parentesco: v('sostenedor_parentesco', admission.parentRelationship || '').toUpperCase(),
       },
 
+      correoInstitucional: correo,
       importadoDesdeSql: false,
     };
 
@@ -489,7 +495,7 @@ export const alumnoService = {
       { merge: true }
     );
 
-    return { carnet, pin };
+    return { carnet, pin, correo };
   },
 
   /**

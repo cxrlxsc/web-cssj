@@ -5,15 +5,21 @@ import { accessCodeService } from '../../services/accessCodeService';
 import { configService } from '../../services/configService';
 import logoImg from '../../assets/logo.png'; // Asegúrate de que esta ruta sea correcta
 import { cerrarSesionAdmin } from '../../auth/adminAuth';
+import { useAdminDialogs } from '../../components/admin/useAdminDialogs';
 import type { AccessCode } from '../../types';
 import './adminStyles/AdminCodigos.css';
 
 const DATOS_VACIOS = { applicantName: '', guardianName: '', guardianPhone: '', guardianEmail: '' };
+const POR_PAGINA = 10;
 
 export default function AdminCodigos() {
   const navigate = useNavigate();
+  const { alert, dialogs } = useAdminDialogs();
   const [codigoGenerado, setCodigoGenerado] = useState('');
   const [generandoCodigo, setGenerandoCodigo] = useState(false);
+
+  // Pestaña activa: emitir un código nuevo o dar seguimiento a los emitidos.
+  const [vista, setVista] = useState<'emitir' | 'seguimiento'>('emitir');
 
   // Datos del aspirante y su encargado, capturados ANTES de emitir el código.
   const [datos, setDatos] = useState(DATOS_VACIOS);
@@ -21,6 +27,10 @@ export default function AdminCodigos() {
   // Listado de códigos ya emitidos (para ver quién los usó y cuándo).
   const [codigos, setCodigos] = useState<AccessCode[]>([]);
   const [cargandoLista, setCargandoLista] = useState(true);
+  // Filtro de la lista: todos, solo los que faltan por usar, o solo los usados.
+  const [filtro, setFiltro] = useState<'todos' | 'sin_usar' | 'usados'>('todos');
+  // Página actual de la tabla de seguimiento (10 códigos por página).
+  const [pagina, setPagina] = useState(1);
 
   // Año de matrícula del código: permite matrícula ordinaria (ciclo configurado)
   // o extraordinaria (un alumno que llega a mitad de año a matricularse al ciclo
@@ -56,6 +66,9 @@ export default function AdminCodigos() {
 
   useEffect(() => { cargarCodigos(); }, []);
 
+  // Al cambiar de filtro, volvemos a la primera página.
+  useEffect(() => { setPagina(1); }, [filtro]);
+
   const handleLogout = async () => {
     await cerrarSesionAdmin();
     navigate('/admin/login');
@@ -68,7 +81,7 @@ export default function AdminCodigos() {
   const handleGenerarCodigo = async () => {
     // Validación: exigimos los datos del aspirante y encargado.
     if (!datos.applicantName.trim() || !datos.guardianName.trim() || !datos.guardianPhone.trim() || !datos.guardianEmail.trim()) {
-      alert('Completa el nombre del aspirante y los datos del encargado antes de generar el código.');
+      await alert({ title: 'Faltan datos', message: 'Completa el nombre del aspirante y los datos del encargado antes de generar el código.', tone: 'error' });
       return;
     }
 
@@ -100,21 +113,36 @@ export default function AdminCodigos() {
       cargarCodigos();        // refrescamos la lista
     } catch (error) {
       console.error(error);
-      alert('Hubo un error al generar el código en Firebase.');
+      await alert({ title: 'Error', message: 'Hubo un error al generar el código en Firebase.', tone: 'error' });
     } finally {
       setGenerandoCodigo(false);
     }
   };
 
+  // ¿El código ya fue utilizado por un aspirante?
+  const fueUsado = (c: AccessCode): boolean =>
+    c.currentUses >= c.maxUses || (c.usedBy?.length ?? 0) > 0;
+
   // Calcula el estado visible de un código.
   const estadoDe = (c: AccessCode): { texto: string; clase: string } => {
-    if (c.currentUses >= c.maxUses) return { texto: 'Usado', clase: 'usado' };
+    if (fueUsado(c)) return { texto: 'Usado', clase: 'usado' };
     if (!c.isActive) return { texto: 'Desactivado', clase: 'desactivado' };
     return { texto: 'Disponible', clase: 'disponible' };
   };
 
   const formatoFecha = (fecha: Date) =>
-    new Date(fecha).toLocaleString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    new Date(fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  // Conteos, filtrado y paginación para el apartado de seguimiento.
+  const totalUsados = codigos.filter(fueUsado).length;
+  const totalSinUsar = codigos.length - totalUsados;
+  const codigosFiltrados = codigos.filter((c) =>
+    filtro === 'usados' ? fueUsado(c) : filtro === 'sin_usar' ? !fueUsado(c) : true
+  );
+  const totalPaginas = Math.max(1, Math.ceil(codigosFiltrados.length / POR_PAGINA));
+  const paginaActual = Math.min(pagina, totalPaginas);
+  const inicio = (paginaActual - 1) * POR_PAGINA;
+  const codigosPagina = codigosFiltrados.slice(inicio, inicio + POR_PAGINA);
 
   return (
     <div className="admin-codigos-layout">
@@ -145,7 +173,18 @@ export default function AdminCodigos() {
             </Link>
           </header>
 
-          {/* TARJETA PRINCIPAL DEL MÓDULO */}
+          {/* SUB-MENÚ DE PESTAÑAS */}
+          <div className="codigos-tabs">
+            <button className={`codigos-tab ${vista === 'emitir' ? 'active' : ''}`} onClick={() => setVista('emitir')}>
+              Emitir Código
+            </button>
+            <button className={`codigos-tab ${vista === 'seguimiento' ? 'active' : ''}`} onClick={() => setVista('seguimiento')}>
+              Seguimiento {!cargandoLista && `(${codigos.length})`}
+            </button>
+          </div>
+
+          {/* ===================== PESTAÑA: EMITIR ===================== */}
+          {vista === 'emitir' && (
           <section className="codigos-card">
             <div className="icon-wrapper-large-gold">
               <svg width="40" height="40" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -239,80 +278,118 @@ export default function AdminCodigos() {
               </div>
             )}
           </section>
+          )}
 
-          {/* LISTA DE CÓDIGOS EMITIDOS Y SU USO */}
+          {/* ===================== PESTAÑA: SEGUIMIENTO ===================== */}
+          {vista === 'seguimiento' && (
           <section className="codigos-lista-card">
-            <h3>Códigos emitidos</h3>
-            <p className="codigos-lista-sub">Consulta a quién se le entregó cada código y quién lo utilizó.</p>
+            <h3>Seguimiento de códigos</h3>
+            <p className="codigos-lista-sub">Consulta a quién se le entregó cada código y si ya lo usó. Los "Sin usar" son a quienes puedes llamar para preguntar si tuvieron problemas al registrarse.</p>
+
+            {/* Filtros con contador */}
+            {!cargandoLista && codigos.length > 0 && (
+              <div className="filtros-codigos">
+                <button className={`filtro-btn ${filtro === 'todos' ? 'active' : ''}`} onClick={() => setFiltro('todos')}>
+                  Todos <span className="filtro-num">{codigos.length}</span>
+                </button>
+                <button className={`filtro-btn ${filtro === 'sin_usar' ? 'active' : ''}`} onClick={() => setFiltro('sin_usar')}>
+                  Sin usar <span className="filtro-num">{totalSinUsar}</span>
+                </button>
+                <button className={`filtro-btn ${filtro === 'usados' ? 'active' : ''}`} onClick={() => setFiltro('usados')}>
+                  Usados <span className="filtro-num">{totalUsados}</span>
+                </button>
+              </div>
+            )}
 
             {cargandoLista ? (
               <div className="lista-cargando">Cargando códigos...</div>
             ) : codigos.length === 0 ? (
               <div className="lista-vacia">Aún no se ha generado ningún código.</div>
+            ) : codigosFiltrados.length === 0 ? (
+              <div className="lista-vacia">No hay códigos en esta categoría.</div>
             ) : (
-              <div className="codigos-lista">
-                {codigos.map((c) => {
-                  const estado = estadoDe(c);
-                  return (
-                    <div key={c.id} className="codigo-item">
-                      <div className="codigo-item-head">
-                        <span className="codigo-valor">{c.code}</span>
-                        <span className="codigo-anio">Matrícula {c.year}</span>
-                        <span className={`estado-badge ${estado.clase}`}>{estado.texto}</span>
-                      </div>
+              <>
+                <div className="tabla-scroll">
+                  <table className="tabla-codigos">
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>Aspirante</th>
+                        <th>Encargado</th>
+                        <th>Teléfono</th>
+                        <th>Año</th>
+                        <th>Estado</th>
+                        <th>Registro</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {codigosPagina.map((c) => {
+                        const estado = estadoDe(c);
+                        const usoFecha = c.usedBy && c.usedBy.length > 0 ? c.usedBy[0].usedAt : null;
+                        return (
+                          <tr key={c.id}>
+                            <td className="td-codigo">{c.code}</td>
+                            <td>{c.assignedTo?.applicantName || <span className="td-muted">—</span>}</td>
+                            <td>
+                              {c.assignedTo?.guardianName || <span className="td-muted">—</span>}
+                              {c.assignedTo?.guardianEmail && <span className="td-sub">{c.assignedTo.guardianEmail}</span>}
+                            </td>
+                            <td>
+                              {c.assignedTo?.guardianPhone ? (
+                                <a className="telefono-link" href={`tel:${c.assignedTo.guardianPhone.replace(/\s/g, '')}`}>
+                                  {c.assignedTo.guardianPhone}
+                                </a>
+                              ) : (
+                                <span className="td-muted">—</span>
+                              )}
+                            </td>
+                            <td>{c.year}</td>
+                            <td><span className={`estado-badge ${estado.clase}`}>{estado.texto}</span></td>
+                            <td>
+                              {usoFecha
+                                ? formatoFecha(usoFecha)
+                                : <span className="td-muted">Pendiente</span>}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
 
-                      {/* Datos con los que se emitió el código */}
-                      {c.assignedTo ? (
-                        <div className="codigo-datos-grid">
-                          <div className="dato-mini">
-                            <span className="etq">Aspirante</span>
-                            <span className="val">{c.assignedTo.applicantName || '—'}</span>
-                          </div>
-                          <div className="dato-mini">
-                            <span className="etq">Encargado</span>
-                            <span className="val">{c.assignedTo.guardianName || '—'}</span>
-                          </div>
-                          <div className="dato-mini">
-                            <span className="etq">Teléfono</span>
-                            <span className="val">{c.assignedTo.guardianPhone || '—'}</span>
-                          </div>
-                          <div className="dato-mini">
-                            <span className="etq">Correo</span>
-                            <span className="val">{c.assignedTo.guardianEmail || '—'}</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="codigo-datos-grid">
-                          <div className="dato-mini">
-                            <span className="etq">Emitido</span>
-                            <span className="val">{formatoFecha(c.createdAt)} (sin datos de encargado)</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Quién lo usó y cuándo */}
-                      <p className="codigo-usos-titulo">Uso del código</p>
-                      {c.usedBy && c.usedBy.length > 0 ? (
-                        c.usedBy.map((u, i) => (
-                          <div key={i} className="uso-fila">
-                            <span className="uso-nombre">{u.name}</span>
-                            {u.grade && u.grade !== 'all' && <span>· {u.grade}</span>}
-                            {u.email && <span>· {u.email}</span>}
-                            <span className="uso-fecha">{formatoFecha(u.usedAt)}</span>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="uso-vacio">Todavía no ha sido utilizado.</div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                {/* PAGINACIÓN */}
+                <div className="paginacion">
+                  <span className="paginacion-info">
+                    Mostrando {inicio + 1}–{Math.min(inicio + POR_PAGINA, codigosFiltrados.length)} de {codigosFiltrados.length}
+                  </span>
+                  <div className="paginacion-controles">
+                    <button
+                      className="pag-btn"
+                      onClick={() => setPagina((p) => Math.max(1, p - 1))}
+                      disabled={paginaActual <= 1}
+                      aria-label="Anterior"
+                    >
+                      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+                    </button>
+                    <span className="pag-actual">{paginaActual} / {totalPaginas}</span>
+                    <button
+                      className="pag-btn"
+                      onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
+                      disabled={paginaActual >= totalPaginas}
+                      aria-label="Siguiente"
+                    >
+                      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
           </section>
+          )}
 
         </div>
       </main>
+      {dialogs}
     </div>
   );
 }

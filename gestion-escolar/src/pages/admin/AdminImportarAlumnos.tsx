@@ -15,10 +15,12 @@ import { parseAlumnosSqlDump, type ErrorParseo } from '../../utils/alumnoSqlPars
 import { alumnoService, mapSqlRowToAlumno, pinPorDefecto, GRADUADO, type ResultadoImportacion } from '../../services/alumnoService';
 import { configService } from '../../services/configService';
 import logoImg from '../../assets/logo.png';
+import { useAdminDialogs } from '../../components/admin/useAdminDialogs';
 import type { AlumnoSqlRow } from '../../types/reingreso';
 
 export const AdminImportarAlumnos = () => {
   const navigate = useNavigate();
+  const { confirm, alert, dialogs } = useAdminDialogs();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [anioMatricula, setAnioMatricula] = useState<number>(new Date().getFullYear());
   const [importando, setImportando] = useState(false);
@@ -80,7 +82,7 @@ export const AdminImportarAlumnos = () => {
       setErroresParseo(errores);
       setNombreArchivo(file.name);
     } catch {
-      alert('No se pudo leer el archivo. Verifica que sea el volcado de texto de la tabla alumno.');
+      await alert({ title: 'Archivo no válido', message: 'No se pudo leer el archivo. Verifica que sea el volcado de texto de la tabla alumno.', tone: 'error' });
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
@@ -88,10 +90,12 @@ export const AdminImportarAlumnos = () => {
 
   const handleImportar = async () => {
     if (rows.length === 0) return;
-    const confirmar = window.confirm(
-      `Se importarán ${rows.length} alumnos a la colección 'alumnos' de Firebase.\n\n` +
-      `Si un carnet ya existe, sus datos se actualizarán (merge). ¿Continuar?`
-    );
+    const confirmar = await confirm({
+      title: 'Importar alumnos',
+      message: `Se importarán ${rows.length} alumnos a la colección de Firebase.\n\nSi un carnet ya existe, sus datos se actualizarán. ¿Continuar?`,
+      confirmLabel: 'Importar',
+      tone: 'navy',
+    });
     if (!confirmar) return;
 
     setImportando(true);
@@ -100,7 +104,7 @@ export const AdminImportarAlumnos = () => {
       const res = await alumnoService.importAlumnosDesdeSql(rows);
       setResultado(res);
     } catch (e) {
-      alert(`Error inesperado durante la importación: ${e instanceof Error ? e.message : e}`);
+      await alert({ title: 'Error de importación', message: `Error inesperado durante la importación: ${e instanceof Error ? e.message : e}`, tone: 'error' });
     } finally {
       setImportando(false);
     }
@@ -278,6 +282,7 @@ export const AdminImportarAlumnos = () => {
         </div>
       )}
       </div>
+      {dialogs}
     </div>
   );
 };

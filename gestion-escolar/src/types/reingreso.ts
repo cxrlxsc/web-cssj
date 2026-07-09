@@ -93,6 +93,9 @@ export interface AlumnoReingreso {
   // === FACTURACIÓN ===
   facturacion: DatosFacturacion;
 
+  // === CUENTA INSTITUCIONAL (solo alumnos de nuevo ingreso del sistema) ===
+  correoInstitucional?: string; // Correo Microsoft 365 asignado al aprobar la admisión
+
   // === METADATOS ===
   importadoDesdeSql?: boolean;  // true si vino de la migración de cssj_db
   createdAt?: Date;

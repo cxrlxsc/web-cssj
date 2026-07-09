@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import logoImg from '../../assets/logo.png';
 import { estiloPortada, COLOR_PORTADA_DEFAULT, type PortadaConfig } from '../../hooks/usePortada';
 import { cerrarSesionAdmin } from '../../auth/adminAuth';
+import { useAdminDialogs } from '../../components/admin/useAdminDialogs';
 import './adminStyles/AdminInstitucional.css';
 
 // Secciones del Gestor de Página Web. Cada una tiene un ícono y una
@@ -68,6 +69,7 @@ const PAGINAS_PORTADA: { id: string; nombre: string; tipo: 'franja' | 'imagen' }
 
 export default function AdminInstitucional() {
   const navigate = useNavigate();
+  const { confirm, alert, dialogs } = useAdminDialogs();
   const [pestañaActiva, setPestañaActiva] = useState('identidad');
 
   const handleLogout = async () => {
@@ -96,9 +98,9 @@ export default function AdminInstitucional() {
     setGuardandoIdentidad(true);
     try {
       await setDoc(doc(db, 'institucional', 'info_general'), { mision, vision }, { merge: true });
-      alert('¡Identidad actualizada con éxito!');
+      await alert({ title: 'Identidad actualizada', message: 'La misión y visión se guardaron con éxito.', tone: 'success' });
     } catch (error) {
-      alert('Hubo un error al guardar.');
+      await alert({ title: 'Error', message: 'Hubo un error al guardar.', tone: 'error' });
     } finally {
       setGuardandoIdentidad(false);
     }
@@ -127,9 +129,9 @@ export default function AdminInstitucional() {
     setGuardandoContacto(true);
     try {
       await setDoc(doc(db, 'institucional', 'contactos'), { telefono, email, direccion }, { merge: true });
-      alert('¡Datos de contacto actualizados!');
+      await alert({ title: 'Contacto actualizado', message: 'Los datos de contacto se guardaron correctamente.', tone: 'success' });
     } catch (error) {
-      alert('Hubo un error al guardar los contactos.');
+      await alert({ title: 'Error', message: 'Hubo un error al guardar los contactos.', tone: 'error' });
     } finally {
       setGuardandoContacto(false);
     }
@@ -154,21 +156,21 @@ export default function AdminInstitucional() {
     setGuardandoNoticia(true);
     try {
       await addDoc(collection(db, "noticias"), nuevaNoticia);
-      alert('Noticia publicada exitosamente');
+      await alert({ title: 'Noticia publicada', message: 'La noticia se publicó exitosamente.', tone: 'success' });
       setNuevaNoticia({ titulo: '', fecha: '', extracto: '', imagen: '', tag: 'Noticia', visitas: '0 Visitas' });
       cargarNoticias();
     } catch (error) {
-      alert('Error al publicar la noticia');
+      await alert({ title: 'Error', message: 'Error al publicar la noticia.', tone: 'error' });
     } finally {
       setGuardandoNoticia(false);
     }
   };
 
   const handleEliminarNoticia = async (id: string) => {
-    if (window.confirm("¿Estás seguro de eliminar esta noticia?")) {
-      await deleteDoc(doc(db, "noticias", id));
-      cargarNoticias();
-    }
+    const ok = await confirm({ title: 'Eliminar noticia', message: '¿Seguro que deseas eliminar esta noticia?', confirmLabel: 'Eliminar', tone: 'navy' });
+    if (!ok) return;
+    await deleteDoc(doc(db, "noticias", id));
+    cargarNoticias();
   };
 
   // ESTADOS Y LÓGICA: EVENTOS
@@ -196,21 +198,21 @@ export default function AdminInstitucional() {
 
       const eventoFinal = { ...nuevoEvento, dia: diaStr, mes: mesStr };
       await addDoc(collection(db, "eventos"), eventoFinal);
-      alert('Evento publicado exitosamente');
+      await alert({ title: 'Evento publicado', message: 'El evento se agendó exitosamente.', tone: 'success' });
       setNuevoEvento({ titulo: '', descripcion: '', fecha: '', categoria: 'Institucional' });
       cargarEventos();
     } catch (error) {
-      alert('Error al publicar el evento');
+      await alert({ title: 'Error', message: 'Error al publicar el evento.', tone: 'error' });
     } finally {
       setGuardandoEvento(false);
     }
   };
 
   const handleEliminarEvento = async (id: string) => {
-    if (window.confirm("¿Estás seguro de eliminar este evento?")) {
-      await deleteDoc(doc(db, "eventos", id));
-      cargarEventos();
-    }
+    const ok = await confirm({ title: 'Eliminar evento', message: '¿Seguro que deseas eliminar este evento?', confirmLabel: 'Eliminar', tone: 'navy' });
+    if (!ok) return;
+    await deleteDoc(doc(db, "eventos", id));
+    cargarEventos();
   };
 
   // ESTADOS Y LÓGICA: AUTORIDADES
@@ -232,21 +234,21 @@ export default function AdminInstitucional() {
     setGuardandoAutoridad(true);
     try {
       await addDoc(collection(db, "autoridades"), nuevaAutoridad);
-      alert('Autoridad agregada exitosamente');
+      await alert({ title: 'Autoridad agregada', message: 'La autoridad se agregó al directorio.', tone: 'success' });
       setNuevaAutoridad({ nombre: '', cargo: '', imagen: '' });
       cargarAutoridades();
     } catch (error) {
-      alert('Error al agregar autoridad');
+      await alert({ title: 'Error', message: 'Error al agregar la autoridad.', tone: 'error' });
     } finally {
       setGuardandoAutoridad(false);
     }
   };
 
   const handleEliminarAutoridad = async (id: string) => {
-    if (window.confirm("¿Estás seguro de eliminar este registro?")) {
-      await deleteDoc(doc(db, "autoridades", id));
-      cargarAutoridades();
-    }
+    const ok = await confirm({ title: 'Eliminar autoridad', message: '¿Seguro que deseas eliminar este registro?', confirmLabel: 'Eliminar', tone: 'navy' });
+    if (!ok) return;
+    await deleteDoc(doc(db, "autoridades", id));
+    cargarAutoridades();
   };
 
   // ESTADOS Y LÓGICA: PORTADAS / DISEÑO
@@ -269,11 +271,11 @@ export default function AdminInstitucional() {
 
   const handleSubirImagenPortada = async (id: string, file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert('El archivo debe ser una imagen (JPG, PNG, etc.).');
+      await alert({ title: 'Archivo no válido', message: 'El archivo debe ser una imagen (JPG, PNG, etc.).', tone: 'error' });
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      alert('La imagen es muy pesada. El máximo permitido es 5 MB.');
+      await alert({ title: 'Imagen muy pesada', message: 'El máximo permitido es 5 MB.', tone: 'error' });
       return;
     }
     setSubiendoImagen(id);
@@ -284,7 +286,7 @@ export default function AdminInstitucional() {
       const url = await getDownloadURL(storageRef);
       actualizarPortada(id, 'imagen', url);
     } catch (error) {
-      alert('Hubo un error al subir la imagen. Intenta de nuevo.');
+      await alert({ title: 'Error', message: 'Hubo un error al subir la imagen. Intenta de nuevo.', tone: 'error' });
     } finally {
       setSubiendoImagen(null);
     }
@@ -307,9 +309,9 @@ export default function AdminInstitucional() {
         if (entrada.color || entrada.imagen) limpio[id] = entrada;
       });
       await setDoc(doc(db, 'institucional', 'portadas'), limpio);
-      alert('¡Diseño de portadas actualizado! Recarga el portal público para ver los cambios.');
+      await alert({ title: 'Diseño actualizado', message: 'El diseño de portadas se guardó. Recarga el portal público para ver los cambios.', tone: 'success' });
     } catch (error) {
-      alert('Hubo un error al guardar el diseño.');
+      await alert({ title: 'Error', message: 'Hubo un error al guardar el diseño.', tone: 'error' });
     } finally {
       setGuardandoPortadas(false);
     }
@@ -679,6 +681,7 @@ export default function AdminInstitucional() {
           </div>{/* .institucional-panel */}
         </div>{/* .institucional-body */}
       </main>
+      {dialogs}
     </div>
   );
 }

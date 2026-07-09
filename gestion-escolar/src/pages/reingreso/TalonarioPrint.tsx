@@ -5,7 +5,8 @@ import Barcode from 'react-barcode';
 import { alumnoService } from '../../services/alumnoService';
 import { configService } from '../../services/configService';
 import { generarTalonario, type TalonarioInfo } from '../../utils/npeGenerator';
-import logoImg from '../../assets/logo.png'; 
+import { obtenerSesionEstudiante, cerrarSesionEstudiante } from '../../auth/studentSession';
+import logoImg from '../../assets/logo.png';
 
 export const TalonarioPrint = () => {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ export const TalonarioPrint = () => {
 
       } else {
         // 2. Si no es Nuevo Ingreso, buscamos si es un alumno Antiguo (Reingreso) en Firebase
-        const sessionCarnet = localStorage.getItem('studentSession');
+        const sessionCarnet = await obtenerSesionEstudiante();
 
         if (!sessionCarnet) {
           // Si no tiene pase VIP ni sesión de antiguo, lo expulsamos al login
@@ -66,7 +67,7 @@ export const TalonarioPrint = () => {
 
         const studentData = await alumnoService.getAlumno(sessionCarnet);
         if (!studentData) {
-          localStorage.removeItem('studentSession');
+          await cerrarSesionEstudiante();
           navigate('/reingreso/login');
           return;
         }

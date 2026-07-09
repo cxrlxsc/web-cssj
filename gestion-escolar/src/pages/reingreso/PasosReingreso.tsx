@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { alumnoService } from '../../services/alumnoService';
 import { configService } from '../../services/configService';
 import { reingresoFinanceService } from '../../services/reingresoFinanceService';
+import { obtenerSesionEstudiante, cerrarSesionEstudiante } from '../../auth/studentSession';
 import { compressImage } from '../../utils/imageCompression';
 
 type ComprobanteEstado = 'pendiente' | 'revision' | 'aprobado' | 'rechazado';
@@ -31,17 +32,16 @@ export const PasosReingreso = () => {
   const [isUploadingContrato, setIsUploadingContrato] = useState(false);
 
   useEffect(() => {
-    const sessionCarnet = localStorage.getItem('studentSession');
-    if (!sessionCarnet) {
-      navigate('/reingreso/login');
-      return;
-    }
-
-    // Expediente real desde Firebase (colección 'alumnos').
+    // Expediente real desde Firebase (colección 'alumnos'), tras asegurar la sesión.
     (async () => {
+      const sessionCarnet = await obtenerSesionEstudiante();
+      if (!sessionCarnet) {
+        navigate('/reingreso/login');
+        return;
+      }
       const studentData = await alumnoService.getAlumno(sessionCarnet);
       if (!studentData) {
-        localStorage.removeItem('studentSession');
+        await cerrarSesionEstudiante();
         navigate('/reingreso/login');
         return;
       }
@@ -60,8 +60,8 @@ export const PasosReingreso = () => {
 
   if (!student) return <div style={{ textAlign: 'center', marginTop: '3rem' }}>Cargando panel...</div>;
 
-  const handleLogout = () => {
-    localStorage.removeItem('studentSession');
+  const handleLogout = async () => {
+    await cerrarSesionEstudiante();
     navigate('/reingreso/login');
   };
 

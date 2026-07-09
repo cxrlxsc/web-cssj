@@ -63,11 +63,18 @@ export function gradoCanonico(grado: string | null | undefined): string | null {
 
 const DOC_PATH = { col: 'configuracion', id: 'matricula' } as const;
 
+// Año mínimo de operación del sistema. Se creó para el ciclo 2027 en adelante
+// (las matrículas de 2026 ya pasaron), así que nunca debe defaultear a algo menor.
+const ANIO_MINIMO_MATRICULA = 2027;
+
 /** Valores por defecto si el documento aún no existe (primer arranque). */
 function defaults(): ConfigMatricula {
   const hoy = new Date();
-  // De agosto en adelante normalmente ya se matricula el año siguiente
-  const anio = hoy.getMonth() >= 7 ? hoy.getFullYear() + 1 : hoy.getFullYear();
+  // La matrícula de un ciclo se trabaja el año anterior: de julio en adelante ya se
+  // está matriculando el AÑO SIGUIENTE, para que el sistema no se quede en un ciclo
+  // cuya matrícula ya cerró.
+  const anioCalculado = hoy.getMonth() >= 6 ? hoy.getFullYear() + 1 : hoy.getFullYear();
+  const anio = Math.max(anioCalculado, ANIO_MINIMO_MATRICULA);
   return {
     anioMatricula: anio,
     fechaLimitePago: `${anio}-07-31`,
