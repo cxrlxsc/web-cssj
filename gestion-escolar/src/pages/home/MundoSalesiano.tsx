@@ -4,6 +4,7 @@ import { Navbar } from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import { usePortada } from '../../hooks/usePortada';
 import './MundoSalesiano.css';
+import img1 from '../../../public/DB2031.jpeg'
 
 export default function MundoSalesiano() {
   const portada = usePortada('mundo-salesiano');
@@ -22,8 +23,7 @@ export default function MundoSalesiano() {
           <div className="animacion-fade-in">
             <h2>Don Bosco: Padre y Maestro</h2>
             <img 
-              src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1200&q=80" 
-              alt="Don Bosco" 
+              src={img1}
               style={{ width: '100%', height: '350px', objectFit: 'cover', borderRadius: '16px', marginBottom: '2rem' }}
             />
             <p>Nacido en Castelnuovo (Italia) en 1815, Juan Bosco dedicó su vida entera a la educación y salvación de los jóvenes más necesitados de la Revolución Industrial.</p>

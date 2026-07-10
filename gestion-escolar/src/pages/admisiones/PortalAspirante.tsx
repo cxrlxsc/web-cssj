@@ -48,10 +48,14 @@ const Icons = {
   ClipboardList: () => <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
 };
 
+// El código validado se recuerda en el navegador para que la familia no tenga
+// que escribirlo de nuevo en cada recarga o visita desde el mismo dispositivo.
+const CODIGO_GUARDADO_KEY = 'cssj_codigo_portal';
+
 export default function PortalAspirante() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialCode = searchParams.get('code') || '';
+  const initialCode = searchParams.get('code') || localStorage.getItem(CODIGO_GUARDADO_KEY) || '';
 
   const [step, setStep] = useState<'enter-code' | 'portal'>(initialCode ? 'portal' : 'enter-code');
   const [codeInput, setCodeInput] = useState(initialCode);
@@ -128,6 +132,8 @@ export default function PortalAspirante() {
     try {
       const codeData = await accessCodeService.getCodeByValue(code.toUpperCase().trim());
       if (!codeData) {
+        localStorage.removeItem(CODIGO_GUARDADO_KEY); // el código guardado ya no sirve
+        setStep('enter-code');
         setError('Código no válido o no encontrado');
         setLoading(false);
         return;
@@ -136,10 +142,15 @@ export default function PortalAspirante() {
 
       const admissions = await admissionService.getAdmissionsByAccessCode(codeData.code);
       if (admissions.length === 0) {
+        localStorage.removeItem(CODIGO_GUARDADO_KEY);
+        setStep('enter-code');
         setError('No hay ninguna solicitud asociada a este código.');
         setLoading(false);
         return;
       }
+
+      // Código válido: se recuerda para las próximas visitas desde este dispositivo
+      localStorage.setItem(CODIGO_GUARDADO_KEY, codeData.code);
 
       const latestAdmission = admissions.sort((a, b) => 
         new Date(b.applicationDate).getTime() - new Date(a.applicationDate).getTime()
@@ -157,6 +168,17 @@ export default function PortalAspirante() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Olvida el código recordado y vuelve a la pantalla de acceso (ej: otra
+  // familia u otro aspirante usando el mismo dispositivo).
+  const handleUsarOtroCodigo = () => {
+    localStorage.removeItem(CODIGO_GUARDADO_KEY);
+    setAccessCode(null);
+    setAdmission(null);
+    setCodeInput('');
+    setError('');
+    setStep('enter-code');
   };
 
   const handleFileSelect = (type: AdmissionDocumentType) => {
@@ -381,6 +403,21 @@ const handleGuardarExpediente = async (e: React.FormEvent<HTMLFormElement>) => {
     );
   }
 
+  // Con código recordado, el portal se abre mientras se re-validan los datos:
+  // mostramos una pantalla de carga en lugar del portal vacío.
+  if (!admission) {
+    return (
+      <div className="portal-page">
+        <Navbar />
+        <section className="hero-portal">
+          <h1 className="titulo-portal">Mi Solicitud</h1>
+          <p>Cargando tu portal...</p>
+        </section>
+        <Footer />
+      </div>
+    );
+  }
+
   const evalAcademica = evaluations.find(e => e.phaseType === 'academic');
   const evalPsicologica = evaluations.find(e => e.phaseType === 'psychological');
   const evalEntrevista = evaluations.find(e => e.phaseType === 'psychological_interview' || e.phaseType === 'interview');
@@ -405,6 +442,12 @@ const handleGuardarExpediente = async (e: React.FormEvent<HTMLFormElement>) => {
             <div>
               <h2 style={{ color: '#002a4a', fontSize: '1.5rem', fontWeight: 800, margin: '0 0 0.5rem 0' }}>Estado de tu Solicitud</h2>
               <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>Código de seguimiento: <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{accessCode?.code}</span></p>
+              <button
+                onClick={handleUsarOtroCodigo}
+                style={{ marginTop: '0.4rem', padding: 0, background: 'none', border: 'none', color: '#0068B3', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Usar otro código
+              </button>
             </div>
             {getPortalStatusBadge()}
           </div>
@@ -572,6 +615,21 @@ const handleGuardarExpediente = async (e: React.FormEvent<HTMLFormElement>) => {
                 <Icons.Check /> ¡Documentos Aprobados!
               </h3>
               <p style={{ margin: 0, fontSize: '1rem' }}>Tu expediente está completo. A continuación verás el estado de tus evaluaciones programadas. Debes presentarte a la institución en las fechas indicadas.</p>
+            </div>
+
+            {/* AVISO: INDICACIONES PARA EL DÍA DE LAS EVALUACIONES */}
+            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', padding: '1.5rem', borderRadius: '8px', color: '#92400e' }}>
+              <h3 style={{ margin: '0 0 0.6rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.05rem' }}>
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                Indicaciones importantes para el día de tus evaluaciones
+              </h3>
+              <ul style={{ margin: 0, paddingLeft: '1.3rem', fontSize: '0.95rem', lineHeight: 1.8 }}>
+                <li>Preséntate <strong>15 minutos antes</strong> de la hora de tu cita.</li>
+                <li>Trae únicamente <strong>lápiz, borrador y sacapuntas</strong>.</li>
+                <li><strong>No se permiten celulares</strong>, relojes inteligentes, audífonos ni ningún aparato electrónico.</li>
+                <li>No se permite el ingreso con cuadernos, calculadora ni material de apoyo.</li>
+                <li>El aspirante debe venir acompañado de su <strong>padre, madre o encargado</strong>.</li>
+              </ul>
             </div>
 
             {/* TARJETA: EXAMEN ACADÉMICO */}

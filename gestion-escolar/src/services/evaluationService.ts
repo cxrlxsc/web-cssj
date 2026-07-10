@@ -222,6 +222,9 @@ export const evaluationService = {
       scheduledAt: data.scheduledAt?.toDate?.() || data.scheduledAt,
       createdAt: data.createdAt?.toDate?.() || data.createdAt,
       updatedAt: data.updatedAt?.toDate?.() || data.updatedAt,
+      // El límite de tiempo del examen en línea se calcula desde examStartedAt
+      examStartedAt: data.examStartedAt?.toDate?.() || data.examStartedAt,
+      examCompletedAt: data.examCompletedAt?.toDate?.() || data.examCompletedAt,
     } as AdmissionEvaluation;
   },
 

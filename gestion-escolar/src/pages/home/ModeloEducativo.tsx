@@ -4,6 +4,11 @@ import { Navbar } from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import { usePortada } from '../../hooks/usePortada';
 import './ModeloEducativo.css';
+import Img1 from '../../../public/educativo.jpeg';
+import Img2 from '../../../public/educativo2.jpeg';
+import Img3 from '../../../public/educativo3.jpeg';
+
+
 
 export default function ModeloEducativo() {
   const portada = usePortada('modelo-educativo');
@@ -45,7 +50,7 @@ export default function ModeloEducativo() {
             </ul>
           </div>
           <div className="pilar-imagen">
-            <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=800" alt="Académico" />
+            <img src={Img1} alt="Académico" />
           </div>
         </div>
 
@@ -92,7 +97,7 @@ export default function ModeloEducativo() {
             </div>
           </div>
           <div className="pilar-imagen">
-            <img src="https://images.unsplash.com/photo-1581092921461-7d65505b19d0?auto=format&fit=crop&w=800" alt="Técnico" />
+            <img src={Img2} alt="Técnico" />
           </div>
         </div>
 
@@ -107,7 +112,7 @@ export default function ModeloEducativo() {
             </div>
           </div>
           <div className="pilar-imagen">
-            <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=800" alt="Pastoral" />
+            <img src={Img3} alt="Pastoral" />
           </div>
         </div>
 
